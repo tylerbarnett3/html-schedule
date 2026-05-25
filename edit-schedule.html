@@ -2216,6 +2216,12 @@
                 }, AUTO_SAVE_DELAY);
             }
 
+            function updateEmployeeDisplayOrder() {
+                employees.forEach((employee, index) => {
+                    employee.displayOrder = index;
+                });
+            }
+
             function performAutoSave() {
                 if (isSaving) {
                     // If already saving, queue another save
@@ -2225,6 +2231,7 @@
 
                 isSaving = true;
                 updateSaveStatus("saving");
+                updateEmployeeDisplayOrder();
 
                 const data = {
                     employees: employees,
@@ -2288,9 +2295,6 @@
                     undoStack.shift(); // Remove oldest state
                 }
                 updateUndoButton();
-
-                // Trigger auto-save after state change
-                autoSave();
             }
 
             function undo() {
@@ -2345,8 +2349,7 @@
             }
 
             function saveData() {
-                // Data is auto-saved by Wix when changes happen
-                // This function is kept for compatibility but doesn't need to do anything
+                autoSave();
             }
 
             // Floating modal positioning
@@ -3833,6 +3836,7 @@
                 }
 
                 closeEditShiftModal();
+                saveData();
                 renderCalendar();
                 renderEmployees();
             }
@@ -4371,6 +4375,7 @@
                 showLoading("Saving...");
                 isSaving = true;
                 updateSaveStatus("saving");
+                updateEmployeeDisplayOrder();
 
                 const data = {
                     employees: employees,

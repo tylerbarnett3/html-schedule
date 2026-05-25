@@ -54,7 +54,8 @@ async function syncToDatabase(data) {
                         _id: emp.wixId,
                         name: emp.name,
                         archived: emp.archived || false,
-                        color: emp.color || '#7F6C50'
+                        color: emp.color || '#7F6C50',
+                        displayOrder: typeof emp.displayOrder === 'number' ? emp.displayOrder : 0
                     });
                     employeeIdMap[emp.id] = emp.wixId;
                 } else {
@@ -66,7 +67,8 @@ async function syncToDatabase(data) {
                     data: {
                         name: emp.name,
                         archived: emp.archived || false,
-                        color: emp.color || '#7F6C50'
+                        color: emp.color || '#7F6C50',
+                        displayOrder: typeof emp.displayOrder === 'number' ? emp.displayOrder : 0
                     }
                 });
             }
@@ -230,11 +232,19 @@ async function deleteShiftFromDatabase(data) {
 
 async function loadFromDatabase() {
     try {
-        // Load ALL employees in the order they were created
+        // Load ALL employees, then apply saved custom order when present.
         const employees = await wixData.query('Employees')
             .ascending('_createdDate')
             .limit(1000)
             .find();
+        const employeeItems = employees.items.slice().reverse().sort((a, b) => {
+            const aHasOrder = typeof a.displayOrder === 'number';
+            const bHasOrder = typeof b.displayOrder === 'number';
+            if (aHasOrder && bHasOrder) return a.displayOrder - b.displayOrder;
+            if (aHasOrder) return -1;
+            if (bHasOrder) return 1;
+            return 0;
+        });
         
         // Load ALL shifts
         let allShifts = [];
@@ -265,8 +275,8 @@ async function loadFromDatabase() {
         const employeeIdMap = {};
         const employeesData = [];
         
-        for (let i = 0; i < employees.items.length; i++) {
-            const emp = employees.items[i];
+        for (let i = 0; i < employeeItems.length; i++) {
+            const emp = employeeItems[i];
             const localId = Date.now() + i;
             
             // Store the mapping
@@ -280,6 +290,7 @@ async function loadFromDatabase() {
                 name: emp.name,
                 archived: emp.archived || false,
                 color: emp.color || '#7F6C50',
+                displayOrder: typeof emp.displayOrder === 'number' ? emp.displayOrder : i,
                 rates: rates.map(r => ({
                     wixId: r._id,
                     rate: r.rate,
@@ -289,8 +300,6 @@ async function loadFromDatabase() {
             });
         }
 
-        employeesData.reverse();
-        
         // Convert shifts - FIX THE MAPPING
         const shiftsData = allShifts.map((shift, index) => {
             // The shift.employee is an OBJECT when using include(), not just an ID
