@@ -26,11 +26,9 @@ $w.onReady(function () {
             }
         } else if (action === 'TIME_OFF_REQUEST_SUBMITTED') {
             // When a request is submitted from View page, reload Edit page data
-            console.log('🔵 Time-off request was submitted, reloading data...');
             await loadFromDatabase();
         } else if (action === 'TIME_OFF_REQUEST_CANCELLED') {
             // When a request is cancelled from View page, reload Edit page data
-            console.log('🔵 Time-off request was cancelled, reloading data...');
             await loadFromDatabase();
         }
     });
@@ -39,14 +37,11 @@ $w.onReady(function () {
 async function syncToDatabase(data) {
     validateSyncPayload(data);
 
-    console.log('Smart sync starting with:', data.employees.length, 'employees and', data.shifts.length, 'shifts');
     try {
         // ===== SYNC EMPLOYEES =====
         const existingEmployees = await wixData.query('Employees').limit(1000).find();
         const existingEmpMap = new Map(existingEmployees.items.map(e => [e._id, e]));
         const employeeIdMap = {}; // Maps local IDs to Wix IDs
-        
-        console.log('Found', existingEmployees.items.length, 'existing employees in database');
         
         const employeesToUpdate = [];
         const employeesToInsert = [];
@@ -79,13 +74,11 @@ async function syncToDatabase(data) {
         
         // Batch update existing employees
         if (employeesToUpdate.length > 0) {
-            console.log('Updating', employeesToUpdate.length, 'employees');
             await wixData.bulkUpdate('Employees', employeesToUpdate);
         }
         
         // Batch insert new employees
         if (employeesToInsert.length > 0) {
-            console.log('Inserting', employeesToInsert.length, 'new employees');
             const insertData = employeesToInsert.map(e => e.data);
             const results = await wixData.bulkInsert('Employees', insertData);
             // Map the results back to local IDs
@@ -99,8 +92,6 @@ async function syncToDatabase(data) {
         // ===== SYNC RATES =====
         const existingRates = await loadAllEmployeeRates();
         const existingRatesMap = new Map(existingRates.map(r => [r._id, r]));
-        
-        console.log('Found', existingRates.length, 'existing rates in database');
         
         const ratesToUpdate = [];
         const ratesToInsert = [];
@@ -136,12 +127,10 @@ async function syncToDatabase(data) {
         }
         
         if (ratesToUpdate.length > 0) {
-            console.log('Updating', ratesToUpdate.length, 'rates');
             await wixData.bulkUpdate('EmployeeRates', ratesToUpdate);
         }
         
         if (ratesToInsert.length > 0) {
-            console.log('Inserting', ratesToInsert.length, 'new rates');
             await wixData.bulkInsert('EmployeeRates', ratesToInsert);
         }
         
@@ -159,7 +148,6 @@ async function syncToDatabase(data) {
         }
         
         const existingShiftsMap = new Map(allExistingShifts.map(s => [s._id, s]));
-        console.log('Found', allExistingShifts.length, 'existing shifts in database');
         
         const shiftsToUpdate = [];
         const shiftsToInsert = [];
@@ -199,7 +187,6 @@ async function syncToDatabase(data) {
         
         // Batch update shifts
         if (shiftsToUpdate.length > 0) {
-            console.log('Updating', shiftsToUpdate.length, 'shifts');
             // Split into batches of 50 for safety
             for (let i = 0; i < shiftsToUpdate.length; i += 50) {
                 const batch = shiftsToUpdate.slice(i, i + 50);
@@ -209,7 +196,6 @@ async function syncToDatabase(data) {
         
         // Batch insert shifts
         if (shiftsToInsert.length > 0) {
-            console.log('Inserting', shiftsToInsert.length, 'new shifts');
             // Split into batches of 50 for safety
             for (let i = 0; i < shiftsToInsert.length; i += 50) {
                 const batch = shiftsToInsert.slice(i, i + 50);
@@ -218,8 +204,6 @@ async function syncToDatabase(data) {
         }
         
         // Sync never deletes shifts automatically. Shift deletes use DELETE_SHIFT explicitly.
-        
-        console.log('Smart sync complete!');
     } catch (error) {
         console.error('Sync error:', error);
         throw error;
@@ -238,7 +222,6 @@ function validateSyncPayload(data) {
 
 async function deleteShiftFromDatabase(data) {
     if (!data || !data.wixId) {
-        console.log('No persisted Wix shift ID provided; nothing to delete from database.');
         return;
     }
 
@@ -247,8 +230,6 @@ async function deleteShiftFromDatabase(data) {
 
 async function loadFromDatabase() {
     try {
-        console.log('Loading from database...');
-        
         // Load ALL employees in the order they were created
         const employees = await wixData.query('Employees')
             .ascending('_createdDate')
@@ -268,9 +249,6 @@ async function loadFromDatabase() {
             shiftsResult = await shiftsResult.next();
             allShifts = allShifts.concat(shiftsResult.items);
         }
-        
-        console.log('Loaded employees:', employees.items.length);
-        console.log('Loaded shifts:', allShifts.length);
         
         const allRates = await loadAllEmployeeRates();
         const ratesByEmployeeId = new Map();
@@ -313,18 +291,12 @@ async function loadFromDatabase() {
 
         employeesData.reverse();
         
-        console.log('Employee ID map:', employeeIdMap);
-        
         // Convert shifts - FIX THE MAPPING
         const shiftsData = allShifts.map((shift, index) => {
             // The shift.employee is an OBJECT when using include(), not just an ID
             const wixEmployeeId = shift.employee._id || shift.employee;
             const localEmployeeId = employeeIdMap[wixEmployeeId];
             const employee = employeesData.find(e => e.id === localEmployeeId);
-            
-            if (index < 5) { // Only log first 5 for debugging
-                console.log(`Shift ${index}: wixId=${wixEmployeeId}, localId=${localEmployeeId}, employee=${employee?.name}`);
-            }
             
             return {
                 id: Date.now() + index + 100000,
@@ -341,8 +313,6 @@ async function loadFromDatabase() {
                 requestedBy: shift.requestedBy || null
             };
         }).filter(shift => shift.employeeId !== undefined); // Filter out shifts with no valid employee
-        
-        console.log('Sending to iframe:', employeesData.length, 'employees and', shiftsData.length, 'shifts');
         
         $w('#html1').postMessage({
             action: 'LOAD_COMPLETE',

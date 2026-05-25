@@ -1,44 +1,35 @@
 import wixData from 'wix-data';
 
 $w.onReady(function () {
-    console.log('Employee schedule view page ready');
-    
     const iframe = $w('#html1');
     
     // Set up message listener
     iframe.onMessage(async (event) => {
-        console.log('Received message from iframe:', event.data);
         const { action } = event.data;
         
         if (action === 'LOAD_FROM_DATABASE') {
-            console.log('Loading schedule data...');
             await loadFromDatabase();
         }
 
         // Handle time-off request submission
         if (action === 'SUBMIT_TIME_OFF_REQUEST') {
-            console.log('🔵 Handling time-off request submission...');
             await handleTimeOffRequest(event.data.data);
         }
         
         // Handle time-off request cancellation
         if (action === 'CANCEL_TIME_OFF_REQUEST') {
-            console.log('🔵 Handling time-off cancellation...');
             await handleCancelRequest(event.data.shiftData);
         }
     });
     
     // Also try to load immediately on page ready
     setTimeout(async () => {
-        console.log('Auto-loading schedule data on page ready');
         await loadFromDatabase();
     }, 1000);
 });
 
 async function loadFromDatabase() {
     try {
-        console.log('Loading schedule data for employee view...');
-        
         // Load ALL employees
         const employees = await wixData.query('Employees')
             .ascending('_createdDate')
@@ -58,8 +49,6 @@ async function loadFromDatabase() {
             shiftsResult = await shiftsResult.next();
             allShifts = allShifts.concat(shiftsResult.items);
         }
-        
-        console.log('Loaded:', employees.items.length, 'employees and', allShifts.length, 'shifts');
         
         // Create employee ID mapping
         const employeeIdMap = {};
@@ -104,8 +93,6 @@ async function loadFromDatabase() {
             };
         }).filter(shift => shift.employeeId !== undefined);
         
-        console.log('Sending to iframe:', employeesData.length, 'employees and', shiftsData.length, 'shifts');
-        
         $w('#html1').postMessage({
             action: 'LOAD_COMPLETE',
             employees: employeesData,
@@ -118,8 +105,6 @@ async function loadFromDatabase() {
 }
 
 async function handleTimeOffRequest(requestData) {
-    console.log('🟢 Creating time-off request:', requestData);
-    
     const { employeeId, employeeName, dates, requestDate } = requestData;
     
     try {
@@ -138,7 +123,6 @@ async function handleTimeOffRequest(requestData) {
         }
         
         const wixEmployeeId = employeeQuery.items[0]._id;
-        console.log('Found Wix employee ID:', wixEmployeeId, 'for', employeeName);
         
         const skippedDates = [];
         const submittedDates = [];
@@ -154,7 +138,6 @@ async function handleTimeOffRequest(requestData) {
 
             if (existingRequest.items.length > 0) {
                 skippedDates.push(date);
-                console.log('Skipping duplicate time-off request for', date);
                 continue;
             }
 
@@ -170,10 +153,7 @@ async function handleTimeOffRequest(requestData) {
                 requestedBy: employeeName
             });
             submittedDates.push(date);
-            console.log('✅ Inserted shift for', date);
         }
-        
-        console.log('✅ Time-off request processed. Submitted:', submittedDates.length, 'Skipped:', skippedDates.length);
         
         // Notify iframe of success
         $w('#html1').postMessage({
@@ -195,8 +175,6 @@ async function handleTimeOffRequest(requestData) {
 }
 
 async function handleCancelRequest(shiftData) {
-    console.log('🟡 Cancelling shift:', shiftData);
-    
     try {
         const { employeeName, date } = shiftData;
         
@@ -228,7 +206,6 @@ async function handleCancelRequest(shiftData) {
         if (shiftsResult.items.length > 0) {
             const shiftIds = shiftsResult.items.map(shift => shift._id);
             await wixData.bulkRemove('Shifts', shiftIds);
-            console.log('✅ Shift cancelled:', shiftIds.length, 'matching pending request(s) removed');
             
             // Notify iframe of success
             $w('#html1').postMessage({ action: 'TIME_OFF_REQUEST_CANCELLED' });
