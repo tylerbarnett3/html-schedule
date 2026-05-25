@@ -149,6 +149,8 @@
         }
 
         .day-column {
+            display: flex;
+            flex-direction: column;
             min-height: 120px;
         }
 
@@ -163,6 +165,9 @@
         }
 
         .shifts-container {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
             padding: 10px;
         }
 
@@ -192,6 +197,23 @@
             padding: 30px 20px;
             font-size: 13px;
             font-style: italic;
+        }
+
+        .closed-day-message {
+            flex: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 160px;
+            padding: 18px 10px;
+            border-radius: 12px;
+            background: linear-gradient(135deg, #8fae8b 0%, #6f906b 100%);
+            color: white;
+            text-align: center;
+            font-size: 20px;
+            font-weight: 800;
+            letter-spacing: 0.12em;
+            line-height: 1.45;
         }
 
         .loading-overlay,
@@ -1029,6 +1051,7 @@
         
         let employees = [];
         let shifts = [];
+        let closedDays = [];
         let currentStartDate = new Date();
         let currentEndDate = new Date();
         let selectedEmployees = new Set();
@@ -1132,6 +1155,7 @@
                 console.log('Processing LOAD_COMPLETE message');
                 employees = event.data.employees || [];
                 shifts = event.data.shifts || [];
+                closedDays = normalizeClosedDays(event.data.closedDays || []);
                 
                 console.log('Loaded:', employees.length, 'employees,', shifts.length, 'shifts');
                 
@@ -1155,11 +1179,11 @@
                 const skippedText = formatDateList(skippedDates);
 
                 if (submittedDates.length > 0 && skippedDates.length > 0) {
-                    alert(`Time-off request submitted. Skipped dates that already had a pending or approved request: ${skippedText}`);
+                    alert(`Time-off request submitted. Skipped dates that are closed or already had a pending or approved request: ${skippedText}`);
                 } else if (submittedDates.length > 0) {
                     alert('Time-off request submitted! Your manager will review it shortly.');
                 } else if (skippedDates.length > 0) {
-                    alert(`No new requests were submitted. These dates already had pending or approved requests: ${skippedText}`);
+                    alert(`No new requests were submitted. These dates are closed or already had pending or approved requests: ${skippedText}`);
                 }
             } else if (event.data && event.data.action === 'TIME_OFF_ERROR') {
                 hideLoading();
@@ -1306,6 +1330,19 @@
             return Math.floor(timeDiff / (1000 * 60 * 60 * 24)) + 1;
         }
 
+        function normalizeClosedDays(days) {
+            return [...new Set((days || []).map(day => {
+                if (!day) return null;
+                if (day instanceof Date) return formatDate(day);
+                const value = String(day);
+                return value.includes('T') ? value.split('T')[0] : value;
+            }).filter(Boolean))].sort();
+        }
+
+        function isClosedDate(dateStr) {
+            return closedDays.includes(dateStr);
+        }
+
         function formatDate(date) {
             return date.toISOString().split('T')[0];
         }
@@ -1371,7 +1408,10 @@
                         dateDisplay = `${date.getDate()} ${date.toLocaleDateString('en-US', { month: 'short' })}`;
                     }
                     
+                    const dayIsClosed = isClosedDate(dateStr);
+
                     const dayShifts = shifts.filter(s => {
+                        if (dayIsClosed) return false;
                         if (s.date !== dateStr) return false;
                         
                         // Filter out denied requests
@@ -1430,7 +1470,7 @@
                                 ${dateDisplay}
                             </div>
                             <div class="shifts-container" style="padding: 8px;">
-                                ${dayShifts.map((shift, index) => {
+                                ${dayIsClosed ? '<div class="closed-day-message">C<br>L<br>O<br>S<br>E<br>D</div>' : dayShifts.map((shift, index) => {
                                     const employee = employees.find(e => e.id === shift.employeeId);
                                     let bgColor;
                                     let shiftText;
@@ -1558,8 +1598,9 @@
                 const isPast = date < today;
                 const isTooFar = date > maxDate;
                 const hasConflict = checkDateConflict(dateStr);
+                const isClosed = isClosedDate(dateStr);
                 
-                const isDisabled = isPast || isTooFar || hasConflict;
+                const isDisabled = isPast || isTooFar || hasConflict || isClosed;
                 const isSelected = selectedDates.includes(dateStr);
                 
                 const selectedClass = isSelected ? 'selected' : '';
@@ -1567,6 +1608,7 @@
                 html += `
                     <button class="date-picker-date ${selectedClass}"
                             onclick="toggleDateSelection('${dateStr}')"
+                            title="${isClosed ? 'Closed for business' : ''}"
                             ${isDisabled ? 'disabled' : ''}>
                         ${day}
                     </button>
@@ -1578,6 +1620,8 @@
         }
 
         function checkDateConflict(dateStr) {
+            if (isClosedDate(dateStr)) return true;
+
             const selectedEmployeeId = parseInt(document.getElementById('requestEmployeeSelect').value);
             if (!selectedEmployeeId) return false;
             
@@ -1646,6 +1690,11 @@
 
             if (selectedDates.length === 0) {
                 alert('Please select at least one date');
+                return;
+            }
+
+            if (selectedDates.some(dateStr => isClosedDate(dateStr))) {
+                alert('Time-off requests cannot be submitted for closed business days.');
                 return;
             }
 
