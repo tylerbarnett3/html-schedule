@@ -35,6 +35,14 @@ async function loadFromDatabase() {
             .ascending('_createdDate')
             .limit(1000)
             .find();
+        const employeeItems = employees.items.slice().reverse().sort((a, b) => {
+            const aHasOrder = typeof a.displayOrder === 'number';
+            const bHasOrder = typeof b.displayOrder === 'number';
+            if (aHasOrder && bHasOrder) return a.displayOrder - b.displayOrder;
+            if (aHasOrder) return -1;
+            if (bHasOrder) return 1;
+            return 0;
+        });
         
         // Load ALL shifts
         let allShifts = [];
@@ -54,8 +62,8 @@ async function loadFromDatabase() {
         const employeeIdMap = {};
         const employeesData = [];
         
-        for (let i = 0; i < employees.items.length; i++) {
-            const emp = employees.items[i];
+        for (let i = 0; i < employeeItems.length; i++) {
+            const emp = employeeItems[i];
             const localId = Date.now() + i;
             
             employeeIdMap[emp._id] = localId;
@@ -66,11 +74,10 @@ async function loadFromDatabase() {
                 name: emp.name,
                 archived: emp.archived || false,
                 color: emp.color || '#7F6C50',
+                displayOrder: typeof emp.displayOrder === 'number' ? emp.displayOrder : i,
                 rates: [] // Empty rates array for employee view
             });
         }
-        
-        employeesData.reverse();
         
         // Convert shifts
         const shiftsData = allShifts.map((shift, index) => {
