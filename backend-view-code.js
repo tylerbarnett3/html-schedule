@@ -1,0 +1,253 @@
+import wixData from 'wix-data';
+
+$w.onReady(function () {
+    console.log('Employee schedule view page ready');
+    
+    const iframe = $w('#html1');
+    
+    // Set up message listener
+    iframe.onMessage(async (event) => {
+        console.log('Received message from iframe:', event.data);
+        const { action } = event.data;
+        
+        if (action === 'LOAD_FROM_DATABASE') {
+            console.log('Loading schedule data...');
+            await loadFromDatabase();
+        }
+
+        // Handle time-off request submission
+        if (action === 'SUBMIT_TIME_OFF_REQUEST') {
+            console.log('🔵 Handling time-off request submission...');
+            await handleTimeOffRequest(event.data.data);
+        }
+        
+        // Handle time-off request cancellation
+        if (action === 'CANCEL_TIME_OFF_REQUEST') {
+            console.log('🔵 Handling time-off cancellation...');
+            await handleCancelRequest(event.data.shiftData);
+        }
+    });
+    
+    // Also try to load immediately on page ready
+    setTimeout(async () => {
+        console.log('Auto-loading schedule data on page ready');
+        await loadFromDatabase();
+    }, 1000);
+});
+
+async function loadFromDatabase() {
+    try {
+        console.log('Loading schedule data for employee view...');
+        
+        // Load ALL employees
+        const employees = await wixData.query('Employees')
+            .ascending('_createdDate')
+            .limit(1000)
+            .find();
+        
+        // Load ALL shifts
+        let allShifts = [];
+        let shiftsQuery = wixData.query('Shifts')
+            .include('employee')
+            .limit(100);
+        
+        let shiftsResult = await shiftsQuery.find();
+        allShifts = allShifts.concat(shiftsResult.items);
+        
+        while (shiftsResult.hasNext()) {
+            shiftsResult = await shiftsResult.next();
+            allShifts = allShifts.concat(shiftsResult.items);
+        }
+        
+        console.log('Loaded:', employees.items.length, 'employees and', allShifts.length, 'shifts');
+        
+        // Create employee ID mapping
+        const employeeIdMap = {};
+        const employeesData = [];
+        
+        for (let i = 0; i < employees.items.length; i++) {
+            const emp = employees.items[i];
+            const localId = Date.now() + i;
+            
+            employeeIdMap[emp._id] = localId;
+            
+            // NO RATES IN EMPLOYEE VIEW - employees should not see each other's rates
+            employeesData.push({
+                id: localId,
+                name: emp.name,
+                archived: emp.archived || false,
+                color: emp.color || '#7F6C50',
+                rates: [] // Empty rates array for employee view
+            });
+        }
+        
+        employeesData.reverse();
+        
+        // Convert shifts
+        const shiftsData = allShifts.map((shift, index) => {
+            const wixEmployeeId = shift.employee._id || shift.employee;
+            const localEmployeeId = employeeIdMap[wixEmployeeId];
+            const employee = employeesData.find(e => e.id === localEmployeeId);
+            
+            return {
+                id: Date.now() + index + 100000,
+                employeeId: localEmployeeId,
+                employeeName: employee?.name || 'Unknown',
+                date: shift.date,
+                startTime: shift.startTime,
+                endTime: shift.endTime,
+                isDayOff: shift.isDayOff || false,
+                isTimeOffRequest: shift.isTimeOffRequest || false,
+                requestStatus: shift.requestStatus || null,
+                requestDate: shift.requestDate || null,
+                requestedBy: shift.requestedBy || null
+            };
+        }).filter(shift => shift.employeeId !== undefined);
+        
+        console.log('Sending to iframe:', employeesData.length, 'employees and', shiftsData.length, 'shifts');
+        
+        $w('#html1').postMessage({
+            action: 'LOAD_COMPLETE',
+            employees: employeesData,
+            shifts: shiftsData
+        });
+        
+    } catch (error) {
+        console.error('Load error:', error);
+    }
+}
+
+async function handleTimeOffRequest(requestData) {
+    console.log('🟢 Creating time-off request:', requestData);
+    
+    const { employeeId, employeeName, dates, requestDate } = requestData;
+    
+    try {
+        // FIRST: Find the Wix database ID for this employee
+        const employeeQuery = await wixData.query('Employees')
+            .eq('name', employeeName)
+            .find();
+        
+        if (employeeQuery.items.length === 0) {
+            console.error('❌ Employee not found in database:', employeeName);
+            $w('#html1').postMessage({ 
+                action: 'TIME_OFF_ERROR', 
+                message: 'Employee not found in database' 
+            });
+            return;
+        }
+        
+        const wixEmployeeId = employeeQuery.items[0]._id;
+        console.log('Found Wix employee ID:', wixEmployeeId, 'for', employeeName);
+        
+        const skippedDates = [];
+        const submittedDates = [];
+
+        // Insert a shift for each non-conflicting date.
+        for (let date of dates) {
+            const existingRequest = await wixData.query('Shifts')
+                .eq('employee', wixEmployeeId)
+                .eq('date', date)
+                .eq('isTimeOffRequest', true)
+                .hasSome('requestStatus', ['pending', 'approved'])
+                .find();
+
+            if (existingRequest.items.length > 0) {
+                skippedDates.push(date);
+                console.log('Skipping duplicate time-off request for', date);
+                continue;
+            }
+
+            await wixData.insert('Shifts', {
+                employee: wixEmployeeId, // Use the WIX database ID, not local ID
+                date: date,
+                startTime: null,
+                endTime: null,
+                isDayOff: false,
+                isTimeOffRequest: true,
+                requestStatus: 'pending',
+                requestDate: requestDate,
+                requestedBy: employeeName
+            });
+            submittedDates.push(date);
+            console.log('✅ Inserted shift for', date);
+        }
+        
+        console.log('✅ Time-off request processed. Submitted:', submittedDates.length, 'Skipped:', skippedDates.length);
+        
+        // Notify iframe of success
+        $w('#html1').postMessage({
+            action: 'TIME_OFF_REQUEST_SUBMITTED',
+            submittedDates,
+            skippedDates
+        });
+        
+        // Reload data to show the new request
+        await loadFromDatabase();
+        
+    } catch (error) {
+        console.error('❌ Error submitting time-off request:', error);
+        $w('#html1').postMessage({ 
+            action: 'TIME_OFF_ERROR', 
+            message: error.message 
+        });
+    }
+}
+
+async function handleCancelRequest(shiftData) {
+    console.log('🟡 Cancelling shift:', shiftData);
+    
+    try {
+        const { employeeName, date } = shiftData;
+        
+        // Query to find the exact shift using employee reference
+        // First find the employee's Wix ID
+        const employeeQuery = await wixData.query('Employees')
+            .eq('name', employeeName)
+            .find();
+        
+        if (employeeQuery.items.length === 0) {
+            console.error('❌ Employee not found in database');
+            $w('#html1').postMessage({ 
+                action: 'CANCEL_ERROR', 
+                message: 'Employee not found in database' 
+            });
+            return;
+        }
+        
+        const wixEmployeeId = employeeQuery.items[0]._id;
+        
+        // Query shifts using the employee reference field
+        const shiftsResult = await wixData.query('Shifts')
+            .eq('employee', wixEmployeeId)
+            .eq('date', date)
+            .eq('isTimeOffRequest', true)
+            .eq('requestStatus', 'pending')
+            .find();
+        
+        if (shiftsResult.items.length > 0) {
+            const shiftIds = shiftsResult.items.map(shift => shift._id);
+            await wixData.bulkRemove('Shifts', shiftIds);
+            console.log('✅ Shift cancelled:', shiftIds.length, 'matching pending request(s) removed');
+            
+            // Notify iframe of success
+            $w('#html1').postMessage({ action: 'TIME_OFF_REQUEST_CANCELLED' });
+            
+            // Reload data
+            await loadFromDatabase();
+        } else {
+            console.error('❌ Shift not found in database');
+            $w('#html1').postMessage({ 
+                action: 'CANCEL_ERROR', 
+                message: 'Time-off request not found' 
+            });
+        }
+        
+    } catch (error) {
+        console.error('❌ Error cancelling shift:', error);
+        $w('#html1').postMessage({ 
+            action: 'CANCEL_ERROR', 
+            message: error.message 
+        });
+    }
+}

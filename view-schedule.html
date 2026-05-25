@@ -1,0 +1,1597 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <title>Employee Schedule - View Only</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: #FFFFFF;
+            min-height: 100vh;
+            padding: 20px;
+            -webkit-text-size-adjust: 100%;
+        }
+
+        @media (max-width: 768px) {
+            body {
+                padding: 10px;
+            }
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 16px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            overflow: visible;
+        }
+
+        /* Prevent scrolling within the iframe - let parent page scroll */
+        html, body {
+            overflow: visible;
+            height: auto;
+        }
+
+        .header {
+            background: #846F52;
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+
+        .header h1 {
+            font-size: 32px;
+            margin-bottom: 10px;
+        }
+
+        .header p {
+            font-size: 16px;
+            opacity: 0.9;
+        }
+
+        @media (max-width: 768px) {
+            .header h1 {
+                font-size: 24px;
+            }
+            
+            .header p {
+                font-size: 14px;
+            }
+        }
+
+        .main-content {
+            display: grid;
+            grid-template-columns: 280px 1fr;
+            gap: 0;
+        }
+
+        @media (max-width: 1024px) {
+            .main-content {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .sidebar {
+            background: linear-gradient(180deg, #f5f3f0 0%, #f8f9fa 100%);
+            padding: 20px;
+            border-right: 1px solid #e2ddd5;
+        }
+
+        @media (max-width: 1024px) {
+            .sidebar {
+                border-right: none;
+                border-bottom: 1px solid #e2ddd5;
+                padding: 15px;
+            }
+        }
+
+        .section {
+            margin-bottom: 16px;
+        }
+
+        .section h2 {
+            font-size: 18px;
+            margin-bottom: 15px;
+            color: #333;
+            font-weight: 600;
+        }
+
+        .sidebar-toggle {
+            display: flex;
+            align-items: center;
+            cursor: pointer;
+            padding: 12px 14px;
+            background: white;
+            border-radius: 8px;
+            border: 1px solid #e8e4de;
+            transition: all 0.2s;
+        }
+
+        .sidebar-toggle:hover {
+            background: #f8f7f5;
+            border-color: #d4cfc6;
+        }
+
+        .sidebar-toggle input[type="checkbox"] {
+            width: 18px;
+            height: 18px;
+            margin: 0;
+            margin-right: 10px;
+            cursor: pointer;
+            accent-color: #6B5A42;
+        }
+
+        .sidebar-toggle .toggle-label {
+            flex: 1;
+            font-size: 13px;
+            font-weight: 600;
+            color: #4a4540;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .drawer-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 12px 14px;
+            background: #6B5A42;
+            color: white;
+            border-radius: 8px;
+            cursor: pointer;
+            margin-bottom: 0;
+            transition: all 0.2s;
+            border: none;
+            box-shadow: 0 2px 4px rgba(107, 90, 66, 0.2);
+        }
+
+        .drawer-header:hover {
+            background: #5a4a36;
+            transform: translateY(-1px);
+            box-shadow: 0 3px 6px rgba(107, 90, 66, 0.25);
+        }
+
+        .drawer-header h2 {
+            margin: 0;
+            font-size: 14px;
+            font-weight: 600;
+            color: white;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .drawer-toggle {
+            font-size: 14px;
+            transition: transform 0.3s;
+            transform: rotate(0deg);
+            color: rgba(255,255,255,0.8);
+        }
+
+        .drawer-toggle.open {
+            transform: rotate(180deg);
+        }
+
+        .drawer-content {
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 0.3s ease-out;
+            padding: 0;
+            background: white;
+            border-radius: 0 0 8px 8px;
+            margin-top: 0;
+        }
+
+        .drawer-content.open {
+            max-height: 2000px;
+            transition: max-height 0.5s ease-in;
+            padding: 14px;
+            border: 1px solid #e2ddd5;
+            border-top: none;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+        }
+
+        .drawer-header.drawer-open {
+            border-radius: 8px 8px 0 0;
+            margin-bottom: 0;
+        }
+
+        .filter-checkbox-item {
+            display: flex;
+            align-items: center;
+            padding: 10px 12px;
+            margin-bottom: 6px;
+            background: #f8f7f5;
+            border-radius: 6px;
+            border: 1px solid #e8e4de;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .filter-checkbox-item:hover {
+            background: #f0eeea;
+            border-color: #d4cfc6;
+        }
+
+        .filter-checkbox-item input[type="checkbox"] {
+            margin-right: 10px;
+            cursor: pointer;
+            width: 16px;
+            height: 16px;
+            accent-color: #6B5A42;
+        }
+
+        .filter-checkbox-item label {
+            cursor: pointer;
+            flex: 1;
+            font-size: 13px;
+            color: #4a4540;
+            font-weight: 500;
+        }
+
+        .btn {
+            width: 100%;
+            padding: 10px 14px;
+            border: none;
+            border-radius: 6px;
+            font-size: 13px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+            -webkit-tap-highlight-color: transparent;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+        }
+
+        .btn-secondary {
+            background: #e8e4de;
+            color: #5a4a36;
+        }
+
+        .btn-secondary:hover {
+            background: #ddd8d0;
+        }
+
+        .btn-primary {
+            background: #6B5A42;
+            color: white;
+            box-shadow: 0 2px 4px rgba(107, 90, 66, 0.2);
+        }
+
+        .btn-primary:hover {
+            background: #5a4a36;
+            transform: translateY(-1px);
+            box-shadow: 0 3px 6px rgba(107, 90, 66, 0.25);
+        }
+
+        .btn-success {
+            background: #48bb78;
+            color: white;
+            box-shadow: 0 2px 4px rgba(72, 187, 120, 0.2);
+        }
+
+        .btn-success:hover {
+            background: #38a169;
+            transform: translateY(-1px);
+        }
+
+        .btn-delete {
+            background: #f56565;
+            color: white;
+        }
+
+        .btn-delete:hover {
+            background: #e53e3e;
+        }
+
+        .schedule-area {
+            padding: 30px;
+        }
+
+        @media (max-width: 768px) {
+            .schedule-area {
+                padding: 15px;
+                padding-left: 10px;
+                padding-right: 10px;
+            }
+        }
+
+        .week-navigation {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 30px;
+        }
+
+        .week-navigation .nav-button {
+            padding: 10px 20px;
+            background: #6B5A42;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: 600;
+        }
+
+        .week-navigation .nav-button:hover {
+            background: #5a4a36;
+        }
+
+        @media (max-width: 768px) {
+            .week-navigation {
+                flex-direction: column;
+                gap: 15px;
+                margin-bottom: 20px;
+            }
+            
+            .week-navigation .nav-button {
+                display: none;
+            }
+            
+            .week-navigation > div {
+                width: 100%;
+            }
+            
+            .week-navigation > div > div:last-child {
+                flex-direction: column !important;
+                gap: 8px !important;
+            }
+            
+            .week-navigation input[type="date"] {
+                width: 100% !important;
+            }
+            
+            .current-week {
+                font-size: 16px !important;
+                text-align: center;
+            }
+        }
+
+        .current-week {
+            font-size: 20px;
+            font-weight: 600;
+            color: #2d3748;
+        }
+
+        @media (max-width: 768px) {
+            .current-week {
+                font-size: 16px;
+                text-align: center;
+            }
+        }
+
+        .calendar {
+            display: grid;
+            grid-template-columns: repeat(7, 1fr);
+            gap: 1px;
+            background: #e2e8f0;
+            border: 1px solid #e2e8f0;
+            border-radius: 8px;
+            overflow: hidden;
+        }
+
+        @media (max-width: 768px) {
+            .calendar {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+
+        @media (max-width: 480px) {
+            .calendar {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+
+        .day-column {
+            background: white;
+            min-height: 120px;
+        }
+
+        .day-column .date-header {
+            padding: 8px;
+            font-weight: 600;
+            color: #2d3748;
+            border-bottom: 1px solid #e2e8f0;
+        }
+
+        @media (max-width: 768px) {
+            .day-column {
+                min-height: 150px;
+            }
+            
+            .day-column-gray {
+                background: #f8f9fa;
+            }
+            
+            .day-column .date-header {
+                font-size: 11px;
+                white-space: nowrap;
+                overflow: hidden;
+                text-overflow: ellipsis;
+            }
+        }
+
+        .day-header {
+            background: #f7fafc;
+            padding: 15px;
+            text-align: center;
+            border-bottom: 2px solid #e2e8f0;
+            font-weight: 600;
+            color: #2d3748;
+        }
+
+        @media (max-width: 768px) {
+            .day-header {
+                display: none;
+            }
+        }
+
+        .shifts-container {
+            padding: 10px;
+        }
+
+        .shift-card {
+            color: white;
+            padding: 8px;
+            margin-bottom: 6px;
+            border-radius: 4px;
+            font-size: 11px;
+            position: relative;
+        }
+
+        @media (max-width: 768px) {
+            .shift-card {
+                padding: 12px;
+                font-size: 13px;
+                margin-bottom: 8px;
+            }
+        }
+
+        .shift-card.day-off {
+            background: linear-gradient(135deg, #f56565 0%, #c53030 100%);
+        }
+
+        .shift-card.pending-time-off {
+            background: #FDB913;
+        }
+
+        .shift-employee {
+            font-weight: 600;
+            margin-bottom: 4px;
+        }
+
+        .shift-time {
+            font-size: 10px;
+            opacity: 0.9;
+        }
+
+        @media (max-width: 768px) {
+            .shift-time {
+                font-size: 12px;
+            }
+        }
+
+        .shift-cancel {
+            margin-top: 6px;
+            padding: 4px 8px;
+            background: rgba(255, 255, 255, 0.3);
+            border: 1px solid rgba(255, 255, 255, 0.5);
+            border-radius: 4px;
+            color: white;
+            font-size: 10px;
+            cursor: pointer;
+            font-weight: 600;
+        }
+
+        .shift-cancel:hover {
+            background: rgba(255, 255, 255, 0.4);
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 30px 20px;
+            color: #a09a92;
+            font-size: 13px;
+            font-style: italic;
+        }
+
+        .loading-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.8);
+            z-index: 10000;
+            justify-content: flex-start;
+            align-items: center;
+            flex-direction: column;
+            padding-top: 60px;
+        }
+        
+        .loading-overlay.active {
+            display: flex;
+        }
+        
+        .loading-content {
+            background: white;
+            padding: 40px;
+            border-radius: 12px;
+            text-align: center;
+            min-width: 300px;
+        }
+        
+        .loading-spinner {
+            width: 50px;
+            height: 50px;
+            border: 5px solid #f3f3f3;
+            border-top: 5px solid #6B5A42;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 20px;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        .loading-message {
+            font-size: 18px;
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 10px;
+        }
+
+        .modal-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.3);
+            z-index: 999;
+        }
+
+        .modal-overlay.active {
+            display: block;
+        }
+
+        .modal {
+            display: none;
+            position: absolute;
+            z-index: 1000;
+            padding: 0;
+        }
+
+        .modal.active {
+            display: block;
+        }
+
+        .modal-content {
+            background: white;
+            padding: 25px;
+            border-radius: 12px;
+            width: 500px;
+            max-height: 70vh;
+            overflow-y: auto;
+            -webkit-overflow-scrolling: touch;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.3);
+            border: 1px solid #e2e8f0;
+        }
+
+        .modal-header {
+            margin-bottom: 20px;
+        }
+
+        .modal-header h2 {
+            font-size: 24px;
+            color: #2d3748;
+        }
+
+        .modal-actions {
+            display: flex;
+            gap: 10px;
+            margin-top: 20px;
+        }
+
+        .input-group {
+            margin-bottom: 15px;
+        }
+
+        .input-group label {
+            display: block;
+            margin-bottom: 5px;
+            font-size: 14px;
+            font-weight: 600;
+            color: #2d3748;
+        }
+
+        .input-group select {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #cbd5e0;
+            border-radius: 6px;
+            font-size: 14px;
+        }
+
+        .date-picker-nav {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+
+        .date-picker-nav button {
+            padding: 8px 16px;
+            background: #e2e8f0;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: 600;
+            color: #2d3748;
+        }
+
+        .date-picker-nav button:hover {
+            background: #cbd5e0;
+        }
+
+        .date-picker-grid {
+            display: grid;
+            grid-template-columns: repeat(7, 1fr);
+            gap: 4px;
+            margin-bottom: 15px;
+        }
+
+        .date-picker-day-header {
+            text-align: center;
+            font-weight: 600;
+            padding: 8px;
+            font-size: 12px;
+            color: #718096;
+        }
+
+        .date-picker-date {
+            aspect-ratio: 1;
+            border: 1px solid #cbd5e0;
+            border-radius: 6px;
+            background: white;
+            cursor: pointer;
+            font-size: 14px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s;
+        }
+
+        .date-picker-date:hover:not(:disabled) {
+            background: #edf2f7;
+        }
+
+        .date-picker-date.selected {
+            background: #4299e1;
+            color: white;
+            border-color: #3182ce;
+        }
+
+        .date-picker-date:disabled {
+            background: #f7fafc;
+            color: #cbd5e0;
+            cursor: not-allowed;
+            opacity: 0.5;
+        }
+
+        .selected-dates-container {
+            margin-top: 15px;
+            padding: 15px;
+            background: #f7fafc;
+            border-radius: 6px;
+            min-height: 60px;
+        }
+
+        .selected-dates-label {
+            font-weight: 600;
+            margin-bottom: 10px;
+            color: #2d3748;
+        }
+
+        .selected-dates-chips {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+        }
+
+        .date-chip {
+            background: #4299e1;
+            color: white;
+            padding: 6px 12px;
+            border-radius: 16px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 13px;
+        }
+
+        .date-chip-remove {
+            background: transparent;
+            border: none;
+            color: white;
+            cursor: pointer;
+            font-size: 18px;
+            padding: 0;
+            width: 20px;
+            height: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            line-height: 1;
+        }
+
+        .date-chip-remove:hover {
+            opacity: 0.8;
+        }
+    </style>
+</head>
+<body>
+    <!-- Loading Overlay -->
+    <div id="loadingOverlay" class="loading-overlay">
+        <div class="loading-content">
+            <div class="loading-spinner"></div>
+            <div class="loading-message" id="loadingMessage">Loading...</div>
+        </div>
+    </div>
+    
+    <div class="container">
+        <div class="header">
+            <h1>Mad Potter Schedule</h1>
+            <button onclick="openTimeOffRequestModal()" 
+                    style="margin-top: 15px; padding: 10px 20px; background: #4299e1; color: white; border: none; border-radius: 6px; cursor: pointer; font-weight: 600; font-size: 14px;">
+                Request Time Off
+            </button>
+        </div>
+
+        <div class="main-content">
+            <div class="sidebar">
+                <!-- Day Off Toggle -->
+                <div class="section">
+                    <label class="sidebar-toggle">
+                        <input type="checkbox" id="showDayOffsCheckbox" checked onchange="toggleDayOffs()" aria-label="Toggle visibility of days off on calendar">
+                        <span class="toggle-label">Show Days Off</span>
+                    </label>
+                </div>
+                <!-- Employee Filter -->
+                <div class="section">
+                    <div class="drawer-header" id="filterDrawerHeader" onclick="toggleDrawer('filterDrawer')" role="button" aria-expanded="false" aria-controls="filterDrawer">
+                        <h2 style="margin: 0;">Filter by Employee</h2>
+                        <span class="drawer-toggle" id="filterDrawerToggle" aria-hidden="true">▼</span>
+                    </div>
+                    <div class="drawer-content" id="filterDrawer">
+                        <div style="margin-bottom: 12px; display: flex; gap: 8px;">
+                            <button class="btn btn-secondary" onclick="selectAllEmployees()" style="flex: 1; padding: 8px 12px;">Select All</button>
+                            <button class="btn btn-secondary" onclick="deselectAllEmployees()" style="flex: 1; padding: 8px 12px;">Clear All</button>
+                        </div>
+                        <div id="employeeFilterList"></div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="schedule-area">
+                <div class="week-navigation">
+                    <button class="nav-button" onclick="previousPeriod()">⬅️ Previous Period</button>
+                    <div style="display: flex; flex-direction: column; align-items: center; gap: 8px;">
+                        <div class="current-week" id="currentWeek"></div>
+                        <div style="display: flex; gap: 10px; align-items: center;">
+                            <label style="font-size: 14px; color: #555;">Start:</label>
+                            <input type="date" id="customStartDate" style="padding: 6px 10px; border: 1px solid #cbd5e0; border-radius: 6px; font-size: 14px;" onchange="setCustomDates()">
+                            <label style="font-size: 14px; color: #555;">End:</label>
+                            <input type="date" id="customEndDate" style="padding: 6px 10px; border: 1px solid #cbd5e0; border-radius: 6px; font-size: 14px;" onchange="setCustomDates()">
+                        </div>
+                    </div>
+                    <button class="nav-button" onclick="nextPeriod()">Next Period ➡️</button>
+                </div>
+
+                <div class="calendar" id="calendar"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal overlay for click-to-close -->
+    <div class="modal-overlay" id="modalOverlay" onclick="closeAllModals()"></div>
+
+    <!-- Time-Off Request Modal -->
+    <div class="modal" id="timeOffRequestModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Request Time Off</h2>
+            </div>
+            
+            <div class="input-group">
+                <label>Your Name</label>
+                <select id="requestEmployeeSelect">
+                    <option value="">Select your name</option>
+                </select>
+            </div>
+            
+            <div class="input-group">
+                <label>Select Date(s) - Click to select/deselect</label>
+                
+                <div class="date-picker-nav">
+                    <button type="button" onclick="previousMonth()">← Previous</button>
+                    <span id="currentMonthLabel" style="font-weight: 600; color: #2d3748;"></span>
+                    <button type="button" onclick="nextMonth()">Next →</button>
+                </div>
+                
+                <div class="date-picker-grid" id="datePickerGrid"></div>
+                
+                <div class="selected-dates-container">
+                    <div class="selected-dates-label">Selected Dates:</div>
+                    <div class="selected-dates-chips" id="selectedDatesChips">
+                        <span style="color: #718096; font-size: 13px;">No dates selected</span>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="modal-actions">
+                <button class="btn btn-secondary" onclick="closeTimeOffRequestModal()">Cancel</button>
+                <button class="btn btn-success" onclick="submitTimeOffRequest()">Submit Request</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Cancel Confirmation Modal -->
+    <div class="modal" id="cancelConfirmModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Confirm Cancellation</h2>
+            </div>
+            <p style="margin-bottom: 20px; color: #4a5568;">To cancel this time-off request, please select your name to confirm:</p>
+            <div class="input-group">
+                <label>Your Name</label>
+                <select id="cancelConfirmName">
+                    <option value="">Select your name</option>
+                </select>
+            </div>
+            <div class="modal-actions">
+                <button class="btn btn-secondary" onclick="closeCancelConfirmModal()">Cancel</button>
+                <button class="btn btn-delete" onclick="confirmCancelRequest()">Confirm Cancellation</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // VERSION: Read-Only with Time-Off Requests
+        console.log('Schedule App Version: Read-Only with Time-Off Requests');
+        
+        let employees = [];
+        let shifts = [];
+        let currentStartDate = new Date();
+        let currentEndDate = new Date();
+        let selectedEmployees = new Set();
+        let showDayOffs = true;
+
+        // Time-off request variables
+        let selectedDates = [];
+        let currentPickerMonth = new Date();
+        let cancelingShiftId = null;
+        let cancelingEmployeeName = null;
+
+        // Initialize to today and 35 days from today
+        currentStartDate.setHours(0, 0, 0, 0);
+        currentEndDate.setHours(0, 0, 0, 0);
+        currentEndDate.setDate(currentEndDate.getDate() + 34);
+
+        function showLoading() {
+            document.getElementById('loadingOverlay').classList.add('active');
+        }
+        
+        function hideLoading() {
+            document.getElementById('loadingOverlay').classList.remove('active');
+        }
+
+        // Floating modal positioning
+        let lastClickEvent = null;
+        
+        document.addEventListener('click', function(e) {
+            lastClickEvent = e;
+        }, true);
+
+        function openFloatingModal(modalId) {
+            const modal = document.getElementById(modalId);
+            const overlay = document.getElementById('modalOverlay');
+            
+            if (!modal || !lastClickEvent) return;
+            
+            // Show overlay
+            overlay.classList.add('active');
+            
+            // Get click position
+            const clickX = lastClickEvent.pageX;
+            const clickY = lastClickEvent.pageY;
+            
+            // Get viewport dimensions
+            const viewportWidth = window.innerWidth;
+            const modalWidth = 500; // Match CSS width
+            
+            // Calculate horizontal position - try to center on click, but keep in bounds
+            let left = clickX - (modalWidth / 2);
+            left = Math.max(10, Math.min(left, viewportWidth - modalWidth - 10));
+            
+            // Position vertically below the click point
+            let top = clickY + 20;
+            
+            // Apply position
+            modal.style.left = left + 'px';
+            modal.style.top = top + 'px';
+            
+            // Show modal
+            modal.classList.add('active');
+        }
+
+        function closeAllModals() {
+            document.querySelectorAll('.modal').forEach(modal => {
+                modal.classList.remove('active');
+            });
+            document.getElementById('modalOverlay').classList.remove('active');
+            
+            // Reset state variables
+            selectedDates = [];
+            cancelingShiftId = null;
+            cancelingEmployeeName = null;
+        }
+
+        // Helper function to open modal at current scroll position
+        function loadFromDatabase() {
+            console.log('Requesting schedule data from Wix...');
+            showLoading();
+            
+            window.parent.postMessage({
+                action: 'LOAD_FROM_DATABASE'
+            }, '*');
+            
+            setTimeout(() => {
+                if (employees.length === 0) {
+                    console.error('No data received after 10 seconds');
+                    hideLoading();
+                    const calendar = document.getElementById('calendar');
+                    if (calendar) {
+                        calendar.innerHTML = '<div class="empty-state" style="grid-column: 1 / -1;">Unable to load schedule. Please refresh the page.</div>';
+                    }
+                }
+            }, 10000);
+        }
+
+        window.addEventListener('message', function(event) {
+            console.log('Received message:', event.data);
+            
+            if (event.data && event.data.action === 'LOAD_COMPLETE') {
+                console.log('Processing LOAD_COMPLETE message');
+                employees = event.data.employees || [];
+                shifts = event.data.shifts || [];
+                
+                console.log('Loaded:', employees.length, 'employees,', shifts.length, 'shifts');
+                
+                employees.forEach(emp => {
+                    if (!emp.color) {
+                        emp.color = '#7F6C50';
+                    }
+                });
+                
+                selectedEmployees = new Set(employees.map(e => e.id));
+                
+                renderEmployeeFilter();
+                renderCalendar();
+                updateDateInputs();
+                
+                hideLoading();
+                console.log('Rendering complete');
+            } else if (event.data && event.data.action === 'TIME_OFF_REQUEST_SUBMITTED') {
+                const submittedDates = event.data.submittedDates || [];
+                const skippedDates = event.data.skippedDates || [];
+                const skippedText = formatDateList(skippedDates);
+
+                if (submittedDates.length > 0 && skippedDates.length > 0) {
+                    alert(`Time-off request submitted. Skipped dates that already had a pending or approved request: ${skippedText}`);
+                } else if (submittedDates.length > 0) {
+                    alert('Time-off request submitted! Your manager will review it shortly.');
+                } else if (skippedDates.length > 0) {
+                    alert(`No new requests were submitted. These dates already had pending or approved requests: ${skippedText}`);
+                }
+            } else if (event.data && event.data.action === 'TIME_OFF_ERROR') {
+                hideLoading();
+                alert(event.data.message || 'There was an error submitting your time-off request.');
+            }
+        });
+
+        function renderEmployeeFilter() {
+            const filterList = document.getElementById('employeeFilterList');
+            if (!filterList) return;
+            
+            if (employees.length === 0) {
+                filterList.innerHTML = '<div class="empty-state">No employees</div>';
+                return;
+            }
+
+            filterList.innerHTML = employees.map(emp => `
+                <div class="filter-checkbox-item" onclick="toggleEmployeeFilter(${emp.id})">
+                    <input type="checkbox" 
+                           id="filter-${emp.id}" 
+                           ${selectedEmployees.has(emp.id) ? 'checked' : ''}
+                           onclick="event.stopPropagation(); toggleEmployeeFilter(${emp.id})">
+                    <label for="filter-${emp.id}">${emp.name}</label>
+                </div>
+            `).join('');
+        }
+
+        function toggleEmployeeFilter(employeeId) {
+            if (selectedEmployees.has(employeeId)) {
+                selectedEmployees.delete(employeeId);
+            } else {
+                selectedEmployees.add(employeeId);
+            }
+            renderEmployeeFilter();
+            renderCalendar();
+        }
+
+        function selectAllEmployees() {
+            employees.forEach(emp => selectedEmployees.add(emp.id));
+            renderEmployeeFilter();
+            renderCalendar();
+        }
+
+        function deselectAllEmployees() {
+            selectedEmployees.clear();
+            renderEmployeeFilter();
+            renderCalendar();
+        }
+
+        function toggleDayOffs() {
+            showDayOffs = document.getElementById('showDayOffsCheckbox').checked;
+            renderCalendar();
+        }
+
+        function toggleDrawer(drawerId) {
+            const drawer = document.getElementById(drawerId);
+            const toggle = document.getElementById(drawerId + 'Toggle');
+            const header = document.getElementById(drawerId + 'Header');
+            
+            if (drawer.classList.contains('open')) {
+                drawer.classList.remove('open');
+                toggle.classList.remove('open');
+                if (header) {
+                    header.classList.remove('drawer-open');
+                    header.setAttribute('aria-expanded', 'false');
+                }
+            } else {
+                drawer.classList.add('open');
+                toggle.classList.add('open');
+                if (header) {
+                    header.classList.add('drawer-open');
+                    header.setAttribute('aria-expanded', 'true');
+                }
+            }
+        }
+
+        function previousPeriod() {
+            const dayCount = getDayCount();
+            currentStartDate.setDate(currentStartDate.getDate() - dayCount);
+            currentEndDate.setDate(currentEndDate.getDate() - dayCount);
+            updateDateInputs();
+            renderCalendar();
+        }
+
+        function nextPeriod() {
+            const dayCount = getDayCount();
+            currentStartDate.setDate(currentStartDate.getDate() + dayCount);
+            currentEndDate.setDate(currentEndDate.getDate() + dayCount);
+            updateDateInputs();
+            renderCalendar();
+        }
+
+        function setCustomDates() {
+            const startInput = document.getElementById('customStartDate');
+            const endInput = document.getElementById('customEndDate');
+            
+            if (startInput.value && endInput.value) {
+                const newStart = new Date(startInput.value + 'T00:00:00');
+                const newEnd = new Date(endInput.value + 'T00:00:00');
+                
+                if (newEnd < newStart) {
+                    alert('End date must be after start date');
+                    updateDateInputs();
+                    return;
+                }
+                
+                currentStartDate = newStart;
+                currentEndDate = newEnd;
+                renderCalendar();
+            } else if (startInput.value) {
+                currentStartDate = new Date(startInput.value + 'T00:00:00');
+                currentEndDate = new Date(currentStartDate);
+                currentEndDate.setDate(currentEndDate.getDate() + 34);
+                updateDateInputs();
+                renderCalendar();
+            } else if (endInput.value) {
+                currentEndDate = new Date(endInput.value + 'T00:00:00');
+                currentStartDate = new Date(currentEndDate);
+                currentStartDate.setDate(currentStartDate.getDate() - 34);
+                updateDateInputs();
+                renderCalendar();
+            }
+        }
+
+        function updateDateInputs() {
+            const startInput = document.getElementById('customStartDate');
+            const endInput = document.getElementById('customEndDate');
+            
+            if (startInput && endInput) {
+                const formatDate = (date) => {
+                    const year = date.getFullYear();
+                    const month = String(date.getMonth() + 1).padStart(2, '0');
+                    const day = String(date.getDate()).padStart(2, '0');
+                    return `${year}-${month}-${day}`;
+                };
+                
+                startInput.value = formatDate(currentStartDate);
+                endInput.value = formatDate(currentEndDate);
+            }
+        }
+
+        function getDayCount() {
+            const timeDiff = currentEndDate - currentStartDate;
+            return Math.floor(timeDiff / (1000 * 60 * 60 * 24)) + 1;
+        }
+
+        function formatDate(date) {
+            return date.toISOString().split('T')[0];
+        }
+
+        function formatDateList(dateStrings) {
+            return dateStrings.map(dateStr => {
+                const date = new Date(dateStr + 'T00:00:00');
+                return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+            }).join(', ');
+        }
+
+        function formatTime12Hour(time24) {
+            if (!time24) return '—';
+            const [hours, minutes] = time24.split(':');
+            const hour = parseInt(hours);
+            const ampm = hour >= 12 ? 'PM' : 'AM';
+            const hour12 = hour % 12 || 12;
+            return `${hour12}:${minutes} ${ampm}`;
+        }
+
+        function renderCalendar() {
+            const calendar = document.getElementById('calendar');
+            if (!calendar) return;
+            const dayNames = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+            const dayNamesFull = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+            
+            const dayCount = getDayCount();
+            
+            const currentWeekEl = document.getElementById('currentWeek');
+            if (currentWeekEl) {
+                currentWeekEl.textContent = '';
+            }
+
+            let calendarHTML = '';
+            
+            const totalCells = Math.ceil(dayCount / 7) * 7;
+            
+            const startDayOfWeek = currentStartDate.getDay();
+            for (let i = 0; i < 7; i++) {
+                const dayIndex = (startDayOfWeek + i) % 7;
+                calendarHTML += `
+                    <div class="day-header" style="min-height: auto; padding: 10px; font-weight: 700;">
+                        ${dayNames[dayIndex]}
+                    </div>
+                `;
+            }
+
+            const isMobile = window.innerWidth <= 768;
+
+            for (let i = 0; i < totalCells; i++) {
+                if (i < dayCount) {
+                    const date = new Date(currentStartDate);
+                    date.setDate(date.getDate() + i);
+                    const dateStr = formatDate(date);
+                    
+                    let dateDisplay;
+                    if (isMobile) {
+                        const dayName = dayNamesFull[date.getDay()];
+                        const monthName = date.toLocaleDateString('en-US', { month: 'short' });
+                        dateDisplay = `${dayName}, ${monthName} ${date.getDate()}`;
+                    } else {
+                        dateDisplay = `${date.getDate()} ${date.toLocaleDateString('en-US', { month: 'short' })}`;
+                    }
+                    
+                    const dayShifts = shifts.filter(s => {
+                        if (s.date !== dateStr) return false;
+                        
+                        // Filter out denied requests
+                        if (s.requestStatus === 'denied') return false;
+                        
+                        if (!showDayOffs && s.isDayOff && !s.isTimeOffRequest) return false;
+                        if (!showDayOffs && s.isTimeOffRequest && s.requestStatus === 'pending') return false;
+                        
+                        // If no employees selected, show no shifts
+                        if (selectedEmployees.size === 0) return false;
+                        return selectedEmployees.has(s.employeeId);
+                    }).sort((a, b) => {
+                        // Pending time-off requests at top
+                        if (a.isTimeOffRequest && a.requestStatus === 'pending' && !(b.isTimeOffRequest && b.requestStatus === 'pending')) return -1;
+                        if (b.isTimeOffRequest && b.requestStatus === 'pending' && !(a.isTimeOffRequest && a.requestStatus === 'pending')) return 1;
+
+                        // Both are pending time-off requests - sort by creation time
+                        if (a.isTimeOffRequest && a.requestStatus === 'pending' && b.isTimeOffRequest && b.requestStatus === 'pending') {
+                            // Try requestDate first if available, otherwise use id
+                            if (a.requestDate && b.requestDate) {
+                                return new Date(a.requestDate) - new Date(b.requestDate); // Earlier dates first
+                            }
+                            return a.id - b.id; // Lower id = created first = appears first
+                        }
+
+                        // Regular shifts in middle (by time)
+                        if (!a.isDayOff && !a.isTimeOffRequest && !b.isDayOff && !b.isTimeOffRequest) {
+                            return (a.startTime || '').localeCompare(b.startTime || '');
+                        }
+
+                        // Day offs at bottom
+                        if (a.isDayOff && !b.isDayOff) return 1;
+                        if (!a.isDayOff && b.isDayOff) return -1;
+
+                        // Both are day offs - sort by creation time for approved time-off requests
+                        if (a.isDayOff && b.isDayOff) {
+                            // Try requestDate first if available, otherwise use id
+                            if (a.requestDate && b.requestDate) {
+                                return new Date(a.requestDate) - new Date(b.requestDate); // Earlier dates first
+                            }
+                            return a.id - b.id;
+                        }
+
+                        return 0;
+                    });
+                    
+                    const cellIndex = i + 7;
+                    const row = Math.floor(cellIndex / 2);
+                    const col = cellIndex % 2;
+                    const isGray = (row + col) % 2 === 1;
+                    const bgClass = isGray ? 'day-column-gray' : '';
+                    
+                    calendarHTML += `
+                        <div class="day-column ${bgClass}">
+                            <div class="date-header">
+                                ${dateDisplay}
+                            </div>
+                            <div class="shifts-container" style="padding: 8px;">
+                                ${dayShifts.map((shift, index) => {
+                                    const employee = employees.find(e => e.id === shift.employeeId);
+                                    let bgColor;
+                                    let shiftText;
+                                    let extraButton = '';
+
+                                    // Check approved FIRST (before checking pending)
+                                    if (shift.requestStatus === 'approved' || shift.isDayOff) {
+                                        bgColor = 'linear-gradient(135deg, #f56565 0%, #c53030 100%)';
+                                        shiftText = 'DAY OFF';
+                                    } else if (shift.isTimeOffRequest && shift.requestStatus === 'pending') {
+                                        // Count total pending/approved time-off requests for this day
+                                        const totalTimeOffRequests = shifts.filter(s =>
+                                            s.date === dateStr &&
+                                            s.isTimeOffRequest &&
+                                            (s.requestStatus === 'pending' || s.requestStatus === 'approved')
+                                        ).length;
+
+                                        // Count how many pending requests come before this one in the sorted list
+                                        const pendingRequestsBefore = dayShifts.slice(0, index).filter(s =>
+                                            s.isTimeOffRequest && s.requestStatus === 'pending'
+                                        ).length;
+
+                                        // If 4+ total requests and this is the 4th+ pending request, use purple
+                                        if (totalTimeOffRequests >= 4 && pendingRequestsBefore >= 3) {
+                                            bgColor = '#9333EA'; // Purple
+                                        } else {
+                                            bgColor = '#FDB913'; // Yellow
+                                        }
+
+                                        shiftText = 'PENDING TIME OFF';
+                                        extraButton = `<button class="shift-cancel" onclick="cancelTimeOffRequest(${shift.id}, '${shift.employeeName}')">Cancel Request</button>`;
+                                    } else {
+                                        bgColor = employee?.color || '#7F6C50';
+                                        shiftText = formatTime12Hour(shift.startTime) + ' - ' + formatTime12Hour(shift.endTime);
+                                    }
+
+                                    return `
+                                    <div class="shift-card" style="background: ${bgColor};">
+                                        <div class="shift-employee">${shift.employeeName}</div>
+                                        <div class="shift-time">${shiftText}</div>
+                                        ${extraButton}
+                                    </div>
+                                `}).join('')}
+                            </div>
+                        </div>
+                    `;
+                } else {
+                    const cellIndex = i + 7;
+                    const row = Math.floor(cellIndex / 2);
+                    const col = cellIndex % 2;
+                    const isGray = (row + col) % 2 === 1;
+                    const bgStyle = isGray ? 'background: #f8f9fa;' : 'background: white;';
+                    calendarHTML += `<div class="day-column" style="${bgStyle}"></div>`;
+                }
+            }
+
+            calendar.innerHTML = calendarHTML;
+        }
+
+        // Time-Off Request Functions
+        let requestEmployeeListenerAttached = false;
+        
+        function handleRequestEmployeeChange() {
+            selectedDates = []; // Clear selections when changing employee
+            renderDatePicker();
+        }
+        
+        function openTimeOffRequestModal() {
+            selectedDates = [];
+            currentPickerMonth = new Date();
+            
+            // Populate employee dropdown
+            const select = document.getElementById('requestEmployeeSelect');
+            const activeEmployees = employees.filter(emp => !emp.archived);
+            select.innerHTML = '<option value="">Select your name</option>' +
+                activeEmployees.map(emp => `<option value="${emp.id}">${emp.name}</option>`).join('');
+            
+            // Add event listener only once to avoid memory leak
+            if (!requestEmployeeListenerAttached) {
+                select.addEventListener('change', handleRequestEmployeeChange);
+                requestEmployeeListenerAttached = true;
+            }
+            
+            renderDatePicker();
+            openFloatingModal('timeOffRequestModal');
+        }
+
+        function closeTimeOffRequestModal() {
+            closeAllModals();
+        }
+
+        function renderDatePicker() {
+            const grid = document.getElementById('datePickerGrid');
+            const year = currentPickerMonth.getFullYear();
+            const month = currentPickerMonth.getMonth();
+            
+            document.getElementById('currentMonthLabel').textContent = 
+                currentPickerMonth.toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
+            
+            const firstDay = new Date(year, month, 1);
+            const lastDay = new Date(year, month + 1, 0);
+            const daysInMonth = lastDay.getDate();
+            const startDayOfWeek = firstDay.getDay();
+            
+            let html = '';
+            
+            const dayNames = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+            dayNames.forEach(day => {
+                html += `<div class="date-picker-day-header">${day}</div>`;
+            });
+            
+            for (let i = 0; i < startDayOfWeek; i++) {
+                html += '<div></div>';
+            }
+            
+            const today = new Date();
+            today.setHours(0, 0, 0, 0);
+            const maxDate = new Date(today);
+            maxDate.setDate(maxDate.getDate() + 365);
+            
+            for (let day = 1; day <= daysInMonth; day++) {
+                const date = new Date(year, month, day);
+                const dateStr = formatDate(date);
+                
+                const isPast = date < today;
+                const isTooFar = date > maxDate;
+                const hasConflict = checkDateConflict(dateStr);
+                
+                const isDisabled = isPast || isTooFar || hasConflict;
+                const isSelected = selectedDates.includes(dateStr);
+                
+                const selectedClass = isSelected ? 'selected' : '';
+                
+                html += `
+                    <button class="date-picker-date ${selectedClass}"
+                            onclick="toggleDateSelection('${dateStr}')"
+                            ${isDisabled ? 'disabled' : ''}>
+                        ${day}
+                    </button>
+                `;
+            }
+            
+            grid.innerHTML = html;
+            renderSelectedDatesChips();
+        }
+
+        function checkDateConflict(dateStr) {
+            const selectedEmployeeId = parseInt(document.getElementById('requestEmployeeSelect').value);
+            if (!selectedEmployeeId) return false;
+            
+            return shifts.some(s => 
+                s.date === dateStr && 
+                s.employeeId === selectedEmployeeId && 
+                s.isTimeOffRequest && 
+                (s.requestStatus === 'pending' || s.requestStatus === 'approved')
+            );
+        }
+
+        function toggleDateSelection(dateStr) {
+            const index = selectedDates.indexOf(dateStr);
+            if (index > -1) {
+                selectedDates.splice(index, 1);
+            } else {
+                selectedDates.push(dateStr);
+            }
+            selectedDates.sort();
+            renderDatePicker();
+        }
+
+        function renderSelectedDatesChips() {
+            const container = document.getElementById('selectedDatesChips');
+            if (selectedDates.length === 0) {
+                container.innerHTML = '<span style="color: #718096; font-size: 13px;">No dates selected</span>';
+                return;
+            }
+            
+            container.innerHTML = selectedDates.map(dateStr => {
+                const date = new Date(dateStr + 'T00:00:00');
+                const formatted = date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+                return `
+                    <div class="date-chip">
+                        <span>${formatted}</span>
+                        <button class="date-chip-remove" onclick="toggleDateSelection('${dateStr}')">×</button>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function previousMonth() {
+            currentPickerMonth.setMonth(currentPickerMonth.getMonth() - 1);
+            renderDatePicker();
+        }
+
+        function nextMonth() {
+            const today = new Date();
+            const maxMonth = new Date(today.getFullYear(), today.getMonth() + 12, 1);
+            
+            const nextMonth = new Date(currentPickerMonth.getFullYear(), currentPickerMonth.getMonth() + 1, 1);
+            if (nextMonth <= maxMonth) {
+                currentPickerMonth = nextMonth;
+                renderDatePicker();
+            }
+        }
+
+        function submitTimeOffRequest() {
+            const employeeId = parseInt(document.getElementById('requestEmployeeSelect').value);
+            const employee = employees.find(e => e.id === employeeId);
+
+            if (!employeeId || !employee) {
+                alert('Please select your name');
+                return;
+            }
+
+            if (selectedDates.length === 0) {
+                alert('Please select at least one date');
+                return;
+            }
+
+            // Check for high-volume dates (3+ pending/approved requests)
+            const highVolumeDates = selectedDates.filter(dateStr => {
+                const requestCount = shifts.filter(s =>
+                    s.date === dateStr &&
+                    s.isTimeOffRequest &&
+                    (s.requestStatus === 'pending' || s.requestStatus === 'approved')
+                ).length;
+                return requestCount >= 3;
+            });
+
+            // Show warning if any high-volume dates detected
+            if (highVolumeDates.length > 0) {
+                const formattedDates = highVolumeDates.map(dateStr => {
+                    const date = new Date(dateStr + 'T00:00:00');
+                    return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+                }).join(', ');
+
+                const warningMessage = highVolumeDates.length === 1
+                    ? `Warning: ${formattedDates} already has 3 or more time-off requests. Your request may not be approved due to high volume.\n\nDo you want to submit anyway?`
+                    : `Warning: The following dates already have 3 or more time-off requests:\n${formattedDates}\n\nYour requests for these days may not be approved due to high volume.\n\nDo you want to submit anyway?`;
+
+                if (!confirm(warningMessage)) {
+                    return;
+                }
+            }
+
+            window.parent.postMessage({
+                action: 'SUBMIT_TIME_OFF_REQUEST',
+                data: {
+                    employeeId: employeeId,
+                    employeeName: employee.name,
+                    dates: selectedDates,
+                    requestDate: new Date().toISOString()
+                }
+            }, '*');
+
+            selectedDates = [];
+            closeTimeOffRequestModal();
+            showLoading();
+        }
+
+        function cancelTimeOffRequest(shiftId, employeeName) {
+            const shift = shifts.find(s => s.id === shiftId);
+            if (!shift) return;
+            
+            cancelingShiftId = shiftId;
+            cancelingEmployeeName = employeeName;
+            
+            const select = document.getElementById('cancelConfirmName');
+            const activeEmployees = employees.filter(e => !e.archived);
+            select.innerHTML = '<option value="">Select your name</option>' +
+                activeEmployees.map(e => `<option value="${e.name}">${e.name}</option>`).join('');
+            
+            openFloatingModal('cancelConfirmModal');
+        }
+
+        function closeCancelConfirmModal() {
+            closeAllModals();
+        }
+
+        function confirmCancelRequest() {
+            const selectedName = document.getElementById('cancelConfirmName').value;
+            
+            if (!selectedName) {
+                alert('Please select your name to confirm');
+                return;
+            }
+            
+            if (selectedName !== cancelingEmployeeName) {
+                alert('Name does not match. You can only cancel your own time-off requests.');
+                return;
+            }
+            
+            const shift = shifts.find(s => s.id === cancelingShiftId);
+            
+            window.parent.postMessage({
+                action: 'CANCEL_TIME_OFF_REQUEST',
+                shiftData: {
+                    employeeName: shift.employeeName,
+                    date: shift.date
+                }
+            }, '*');
+            
+            closeCancelConfirmModal();
+            
+            alert('Time-off request cancelled.');
+        }
+
+        // Initialize - Auto-load on page load
+        window.addEventListener('load', function() {
+            setTimeout(() => {
+                loadFromDatabase();
+            }, 500);
+        });
+    </script>
+</body>
+</html>
