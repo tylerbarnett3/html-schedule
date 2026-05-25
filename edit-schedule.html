@@ -1191,6 +1191,51 @@
                 outline-offset: 3px;
             }
 
+            .toolbar {
+                gap: 12px;
+            }
+
+            .toolbar-group {
+                display: inline-flex;
+                flex-direction: row;
+                align-items: center;
+                gap: 8px;
+                min-width: 0;
+            }
+
+            .toolbar-btn {
+                width: auto;
+                min-width: max-content;
+                min-height: 36px;
+                padding: 8px 13px;
+                display: inline-flex;
+                flex: 0 0 auto;
+                align-items: center;
+                justify-content: center;
+                gap: 7px;
+                white-space: nowrap;
+                line-height: 1;
+                font-size: 14px;
+                letter-spacing: -0.01em;
+            }
+
+            .toolbar-btn svg {
+                width: 18px;
+                height: 18px;
+                flex: 0 0 18px;
+                display: block;
+            }
+
+            .save-status {
+                min-height: 36px;
+                display: inline-flex;
+                flex: 0 0 auto;
+                align-items: center;
+                justify-content: center;
+                white-space: nowrap;
+                line-height: 1;
+            }
+
             @media (max-width: 1024px) {
                 .sidebar {
                     border-right: none;
@@ -1217,6 +1262,11 @@
 
                 .toolbar-group {
                     flex-direction: column;
+                }
+
+                .toolbar-btn,
+                .save-status {
+                    width: 100%;
                 }
 
                 .week-navigation {
@@ -1261,17 +1311,15 @@
         </style>
     </head>
     <body>
-        <!-- Loading Overlay -->
-        <div id="loadingOverlay" class="loading-overlay">
-            <div class="loading-content">
-                <div class="loading-spinner"></div>
-                <div class="loading-message" id="loadingMessage">
-                    Processing...
-                </div>
-                <div class="loading-details" id="loadingDetails"></div>
-            </div>
+    <!-- Loading Overlay -->
+    <div id="loadingOverlay" class="loading-overlay">
+        <div class="loading-content">
+            <div class="loading-spinner"></div>
+            <div class="loading-message" id="loadingMessage">Processing...</div>
+            <div class="loading-details" id="loadingDetails"></div>
         </div>
-
+    </div>
+    
         <div class="container">
             <div class="header">
                 <h1>Mad Potter Schedule</h1>
