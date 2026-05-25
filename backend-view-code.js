@@ -57,6 +57,10 @@ async function loadFromDatabase() {
             shiftsResult = await shiftsResult.next();
             allShifts = allShifts.concat(shiftsResult.items);
         }
+
+        const closedDays = normalizeClosedDays(
+            (await loadAllClosedDays()).map(day => day.date)
+        );
         
         // Create employee ID mapping
         const employeeIdMap = {};
@@ -103,12 +107,36 @@ async function loadFromDatabase() {
         $w('#html1').postMessage({
             action: 'LOAD_COMPLETE',
             employees: employeesData,
-            shifts: shiftsData
+            shifts: shiftsData,
+            closedDays: closedDays
         });
         
     } catch (error) {
         console.error('Load error:', error);
     }
+}
+
+async function loadAllClosedDays() {
+    let allClosedDays = [];
+    let closedDaysQuery = wixData.query('ClosedDays').limit(100);
+    let closedDaysResult = await closedDaysQuery.find();
+    allClosedDays = allClosedDays.concat(closedDaysResult.items);
+
+    while (closedDaysResult.hasNext()) {
+        closedDaysResult = await closedDaysResult.next();
+        allClosedDays = allClosedDays.concat(closedDaysResult.items);
+    }
+
+    return allClosedDays;
+}
+
+function normalizeClosedDays(days) {
+    return [...new Set((days || []).map(day => {
+        if (!day) return null;
+        if (day instanceof Date) return day.toISOString().split('T')[0];
+        const value = String(day);
+        return value.includes('T') ? value.split('T')[0] : value;
+    }).filter(Boolean))].sort();
 }
 
 async function handleTimeOffRequest(requestData) {
@@ -133,9 +161,18 @@ async function handleTimeOffRequest(requestData) {
         
         const skippedDates = [];
         const submittedDates = [];
+        const closedDays = normalizeClosedDays(
+            (await loadAllClosedDays()).map(day => day.date)
+        );
+        const closedDateSet = new Set(closedDays);
 
         // Insert a shift for each non-conflicting date.
         for (let date of dates) {
+            if (closedDateSet.has(date)) {
+                skippedDates.push(date);
+                continue;
+            }
+
             const existingRequest = await wixData.query('Shifts')
                 .eq('employee', wixEmployeeId)
                 .eq('date', date)

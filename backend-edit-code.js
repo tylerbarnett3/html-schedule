@@ -24,6 +24,14 @@ $w.onReady(function () {
                 console.error('Shift delete failed:', error);
                 iframe.postMessage({ action: 'DELETE_SHIFT_ERROR', message: error.message });
             }
+        } else if (action === 'DELETE_SHIFTS_FOR_DATES') {
+            try {
+                await deleteShiftsForDatesFromDatabase(data);
+                iframe.postMessage({ action: 'DELETE_SHIFTS_FOR_DATES_COMPLETE' });
+            } catch (error) {
+                console.error('Closed-day shift delete failed:', error);
+                iframe.postMessage({ action: 'DELETE_SHIFTS_FOR_DATES_ERROR', message: error.message });
+            }
         } else if (action === 'TIME_OFF_REQUEST_SUBMITTED') {
             // When a request is submitted from View page, reload Edit page data
             await loadFromDatabase();
@@ -206,6 +214,29 @@ async function syncToDatabase(data) {
         }
         
         // Sync never deletes shifts automatically. Shift deletes use DELETE_SHIFT explicitly.
+
+        // ===== SYNC CLOSED DAYS =====
+        const desiredClosedDays = normalizeClosedDays(data.closedDays || []);
+        const existingClosedDays = (await loadAllClosedDays())
+            .map(day => ({ ...day, date: normalizeClosedDays([day.date])[0] }))
+            .filter(day => day.date);
+        const existingClosedDateSet = new Set(existingClosedDays.map(day => day.date));
+        const desiredClosedDateSet = new Set(desiredClosedDays);
+
+        const closedDaysToInsert = desiredClosedDays
+            .filter(date => !existingClosedDateSet.has(date))
+            .map(date => ({ date }));
+        const closedDayIdsToRemove = existingClosedDays
+            .filter(day => !desiredClosedDateSet.has(day.date))
+            .map(day => day._id);
+
+        if (closedDaysToInsert.length > 0) {
+            await wixData.bulkInsert('ClosedDays', closedDaysToInsert);
+        }
+
+        if (closedDayIdsToRemove.length > 0) {
+            await wixData.bulkRemove('ClosedDays', closedDayIdsToRemove);
+        }
     } catch (error) {
         console.error('Sync error:', error);
         throw error;
@@ -217,7 +248,11 @@ function validateSyncPayload(data) {
         throw new Error('Invalid sync payload: employees and shifts arrays are required.');
     }
 
-    if (data.employees.length === 0 && data.shifts.length === 0) {
+    if (data.closedDays !== undefined && !Array.isArray(data.closedDays)) {
+        throw new Error('Invalid sync payload: closedDays must be an array.');
+    }
+
+    if (data.employees.length === 0 && data.shifts.length === 0 && (!data.closedDays || data.closedDays.length === 0)) {
         throw new Error('Refusing to sync empty schedule data. Reload from the database and try again.');
     }
 }
@@ -228,6 +263,40 @@ async function deleteShiftFromDatabase(data) {
     }
 
     await wixData.remove('Shifts', data.wixId);
+}
+
+async function deleteShiftsForDatesFromDatabase(data) {
+    const dates = normalizeClosedDays(data?.dates || []);
+    if (dates.length === 0) {
+        return;
+    }
+
+    let shiftsToDelete = [];
+    let shiftsQuery = wixData.query('Shifts')
+        .hasSome('date', dates)
+        .limit(100);
+
+    let shiftsResult = await shiftsQuery.find();
+    shiftsToDelete = shiftsToDelete.concat(shiftsResult.items);
+
+    while (shiftsResult.hasNext()) {
+        shiftsResult = await shiftsResult.next();
+        shiftsToDelete = shiftsToDelete.concat(shiftsResult.items);
+    }
+
+    const idsToDelete = shiftsToDelete.map(shift => shift._id);
+    for (let i = 0; i < idsToDelete.length; i += 50) {
+        await wixData.bulkRemove('Shifts', idsToDelete.slice(i, i + 50));
+    }
+}
+
+function normalizeClosedDays(days) {
+    return [...new Set((days || []).map(day => {
+        if (!day) return null;
+        if (day instanceof Date) return day.toISOString().split('T')[0];
+        const value = String(day);
+        return value.includes('T') ? value.split('T')[0] : value;
+    }).filter(Boolean))].sort();
 }
 
 async function loadFromDatabase() {
@@ -261,6 +330,9 @@ async function loadFromDatabase() {
         }
         
         const allRates = await loadAllEmployeeRates();
+        const closedDays = normalizeClosedDays(
+            (await loadAllClosedDays()).map(day => day.date)
+        );
         const ratesByEmployeeId = new Map();
         allRates.forEach(rate => {
             const employeeId = rate.employee?._id || rate.employee;
@@ -326,7 +398,8 @@ async function loadFromDatabase() {
         $w('#html1').postMessage({
             action: 'LOAD_COMPLETE',
             employees: employeesData,
-            shifts: shiftsData
+            shifts: shiftsData,
+            closedDays: closedDays
         });
         
     } catch (error) {
@@ -346,4 +419,18 @@ async function loadAllEmployeeRates() {
     }
 
     return allRates;
+}
+
+async function loadAllClosedDays() {
+    let allClosedDays = [];
+    let closedDaysQuery = wixData.query('ClosedDays').limit(100);
+    let closedDaysResult = await closedDaysQuery.find();
+    allClosedDays = allClosedDays.concat(closedDaysResult.items);
+
+    while (closedDaysResult.hasNext()) {
+        closedDaysResult = await closedDaysResult.next();
+        allClosedDays = allClosedDays.concat(closedDaysResult.items);
+    }
+
+    return allClosedDays;
 }

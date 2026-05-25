@@ -303,6 +303,8 @@
             }
 
             .day-column {
+                display: flex;
+                flex-direction: column;
                 min-height: 120px;
             }
 
@@ -313,6 +315,9 @@
             }
 
             .shifts-container {
+                flex: 1;
+                display: flex;
+                flex-direction: column;
                 padding: 10px;
             }
 
@@ -340,6 +345,35 @@
             .add-shift-btn {
                 width: 100%;
                 padding: 6px;
+            }
+
+            .closed-day-message {
+                flex: 1;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                min-height: 160px;
+                padding: 18px 10px;
+                border-radius: 12px;
+                background: linear-gradient(135deg, #8fae8b 0%, #6f906b 100%);
+                color: white;
+                text-align: center;
+                font-size: 20px;
+                font-weight: 800;
+                letter-spacing: 0.12em;
+                line-height: 1.45;
+            }
+
+            .reopen-day-btn {
+                width: 100%;
+                margin-top: 8px;
+                padding: 6px;
+                border: none;
+                border-radius: 8px;
+                background: #48bb78;
+                color: white;
+                cursor: pointer;
+                font-weight: 700;
             }
 
             .modal-overlay,
@@ -1756,7 +1790,7 @@
                 <div class="modal-header">
                     <h2>Add Shift</h2>
                 </div>
-                <div class="input-group">
+                <div class="input-group" id="shiftEmployeeGroup">
                     <label>Employee(s)</label>
                     <div
                         style="
@@ -1769,6 +1803,7 @@
                     </div>
                 </div>
                 <div
+                    id="dayOffToggleContainer"
                     style="
                         display: flex;
                         align-items: center;
@@ -1813,7 +1848,56 @@
                                 line-height: 1;
                                 vertical-align: middle;
                             "
-                            >Day Off</span
+                        >Day Off</span
+                        >
+                    </div>
+                </div>
+                <div
+                    style="
+                        display: flex;
+                        align-items: center;
+                        padding: 10px 12px;
+                        cursor: pointer;
+                        border-radius: 6px;
+                        border: 1px solid #e2e8f0;
+                        background: #f7fafc;
+                        transition: background 0.2s;
+                        margin-bottom: 12px;
+                    "
+                    onclick="document.getElementById('isClosedForBusiness').click()"
+                    onmouseenter="this.style.background = '#edf2f7'"
+                    onmouseleave="this.style.background = '#f7fafc'"
+                >
+                    <div
+                        style="
+                            display: flex;
+                            flex-direction: row;
+                            align-items: center;
+                            gap: 10px;
+                        "
+                    >
+                        <input
+                            type="checkbox"
+                            id="isClosedForBusiness"
+                            onchange="toggleClosedForBusinessMode()"
+                            onclick="event.stopPropagation()"
+                            style="
+                                width: 18px;
+                                height: 18px;
+                                margin: 0;
+                                padding: 0;
+                                cursor: pointer;
+                                vertical-align: middle;
+                            "
+                        />
+                        <span
+                            style="
+                                font-size: 14px;
+                                font-weight: 500;
+                                line-height: 1;
+                                vertical-align: middle;
+                            "
+                            >Closed for Business</span
                         >
                     </div>
                 </div>
@@ -2175,6 +2259,7 @@
 
             let employees = [];
             let shifts = [];
+            let closedDays = [];
             let currentStartDate = new Date();
             let currentEndDate = new Date();
             let selectedDay = null;
@@ -2236,6 +2321,7 @@
                 const data = {
                     employees: employees,
                     shifts: shifts,
+                    closedDays: closedDays,
                 };
 
                 // Send to Wix parent page
@@ -2289,6 +2375,7 @@
                 const state = {
                     employees: JSON.parse(JSON.stringify(employees)),
                     shifts: JSON.parse(JSON.stringify(shifts)),
+                    closedDays: JSON.parse(JSON.stringify(closedDays)),
                 };
                 undoStack.push(state);
                 if (undoStack.length > maxUndoSteps) {
@@ -2303,6 +2390,7 @@
                 const previousState = undoStack.pop();
                 employees = previousState.employees;
                 shifts = previousState.shifts;
+                closedDays = normalizeClosedDays(previousState.closedDays || []);
 
                 // Rebuild selectedEmployees set
                 selectedEmployees.clear();
@@ -2346,6 +2434,45 @@
                 sendToWix("DELETE_SHIFT", {
                     wixId: shift.wixId,
                 });
+            }
+
+            function deleteShiftsForDatesFromWix(dates) {
+                if (!dates || dates.length === 0) return;
+
+                sendToWix("DELETE_SHIFTS_FOR_DATES", {
+                    dates: dates,
+                });
+            }
+
+            function normalizeClosedDays(days) {
+                return [
+                    ...new Set(
+                        (days || [])
+                            .map((day) => {
+                                if (!day) return null;
+                                if (day instanceof Date) return formatDate(day);
+                                const value = String(day);
+                                return value.includes("T")
+                                    ? value.split("T")[0]
+                                    : value;
+                            })
+                            .filter(Boolean),
+                    ),
+                ].sort();
+            }
+
+            function isClosedDate(dateStr) {
+                return closedDays.includes(dateStr);
+            }
+
+            function reopenBusinessDay(dateStr) {
+                if (!isClosedDate(dateStr)) return;
+
+                saveState();
+                closedDays = closedDays.filter((day) => day !== dateStr);
+                saveData();
+                renderCalendar();
+                showToast("Business Day Reopened", dateStr, "success");
             }
 
             function saveData() {
@@ -2425,6 +2552,7 @@
                     case "LOAD_DATA":
                         employees = message.employees || [];
                         shifts = message.shifts || [];
+                        closedDays = normalizeClosedDays(message.closedDays || []);
                         selectedEmployees = new Set(employees.map((e) => e.id));
                         renderEmployees();
                         updateEmployeeSelect();
@@ -2443,6 +2571,7 @@
                 const data = {
                     employees: employees,
                     shifts: shifts,
+                    closedDays: closedDays,
                     exportDate: new Date().toISOString(),
                 };
                 const dataStr = JSON.stringify(data, null, 2);
@@ -2509,6 +2638,9 @@
 
                                     employees = data.employees || [];
                                     shifts = data.shifts || [];
+                                    closedDays = normalizeClosedDays(
+                                        data.closedDays || [],
+                                    );
 
                                     // Ensure all employees have required fields
                                     employees.forEach((emp) => {
@@ -2544,6 +2676,10 @@
                                             validEmployeeIds.has(s.employeeId),
                                         );
                                     }
+
+                                    shifts = shifts.filter(
+                                        (s) => !isClosedDate(s.date),
+                                    );
 
                                     // Ensure all shifts have required fields
                                     shifts.forEach((shift) => {
@@ -2641,6 +2777,7 @@
                     ) {
                         employees = [];
                         shifts = [];
+                        closedDays = [];
                         selectedEmployees.clear();
                         localStorage.removeItem("shiftSchedulerData");
                         renderEmployees();
@@ -2722,6 +2859,11 @@
                         // Add shift info for each day of the week
                         week.weekDates.forEach((date) => {
                             const dateStr = formatDate(date);
+                            if (isClosedDate(dateStr)) {
+                                row.push("CLOSED");
+                                return;
+                            }
+
                             const dayShifts = shifts.filter(
                                 (s) =>
                                     s.date === dateStr &&
@@ -2961,6 +3103,11 @@
                 }
 
                 if (draggedShiftId && newDate) {
+                    if (isClosedDate(newDate)) {
+                        alert("Reopen this business day before moving shifts here.");
+                        return false;
+                    }
+
                     const shift = shifts.find((s) => s.id === draggedShiftId);
                     if (shift) {
                         saveState(); // Save state before drag
@@ -3847,6 +3994,29 @@
                 timeFields.style.display = isDayOff ? "none" : "block";
             }
 
+            function toggleClosedForBusinessMode() {
+                const isClosed = document.getElementById(
+                    "isClosedForBusiness",
+                ).checked;
+                const employeeGroup = document.getElementById("shiftEmployeeGroup");
+                const dayOffContainer = document.getElementById(
+                    "dayOffToggleContainer",
+                );
+                const timeFields = document.getElementById("shiftTimeFields");
+
+                employeeGroup.style.display = isClosed ? "none" : "block";
+                dayOffContainer.style.display = isClosed ? "none" : "flex";
+
+                if (isClosed) {
+                    document.getElementById("isDayOff").checked = false;
+                    timeFields.style.display = "none";
+                } else {
+                    toggleDayOffMode();
+                }
+
+                renderShiftDatePicker();
+            }
+
             function renderShiftEmployeeList() {
                 const list = document.getElementById("shiftEmployeeList");
                 const activeEmployees = employees.filter(
@@ -3885,8 +4055,8 @@
             }
 
             function openShiftModal(dateStr) {
-                if (employees.length === 0) {
-                    alert("Please add employees first");
+                if (isClosedDate(dateStr)) {
+                    alert("This day is closed for business. Reopen it before adding shifts.");
                     return;
                 }
 
@@ -3902,6 +4072,11 @@
                 );
 
                 document.getElementById("isDayOff").checked = false;
+                document.getElementById("isClosedForBusiness").checked = false;
+                document.getElementById("shiftEmployeeGroup").style.display =
+                    "block";
+                document.getElementById("dayOffToggleContainer").style.display =
+                    "flex";
                 document.getElementById("shiftTimeFields").style.display =
                     "block";
                 renderShiftEmployeeList();
@@ -3957,11 +4132,18 @@
                     const date = new Date(year, month, day);
                     const dateStr = formatDate(date);
                     const isSelected = selectedShiftDates.includes(dateStr);
+                    const isClosed = isClosedDate(dateStr);
+                    const isClosedMode = document.getElementById(
+                        "isClosedForBusiness",
+                    ).checked;
+                    const isDisabled = isClosed && !isClosedMode;
                     const selectedClass = isSelected ? "selected" : "";
 
                     html += `
                     <button type="button" class="date-picker-date ${selectedClass}"
-                            onclick="toggleShiftDateSelection('${dateStr}')">
+                            onclick="toggleShiftDateSelection('${dateStr}')"
+                            title="${isClosed ? "Closed for business" : ""}"
+                            ${isDisabled ? "disabled" : ""}>
                         ${day}
                     </button>
                 `;
@@ -3972,6 +4154,11 @@
             }
 
             function toggleShiftDateSelection(dateStr) {
+                const isClosedMode = document.getElementById(
+                    "isClosedForBusiness",
+                ).checked;
+                if (isClosedDate(dateStr) && !isClosedMode) return;
+
                 const index = selectedShiftDates.indexOf(dateStr);
                 if (index > -1) {
                     selectedShiftDates.splice(index, 1);
@@ -4022,6 +4209,9 @@
 
             function saveShift() {
                 const isDayOff = document.getElementById("isDayOff").checked;
+                const isClosedForBusiness = document.getElementById(
+                    "isClosedForBusiness",
+                ).checked;
                 const selectedEmployeeCheckboxes = document.querySelectorAll(
                     ".shift-employee-checkbox:checked",
                 );
@@ -4029,13 +4219,45 @@
                     selectedEmployeeCheckboxes,
                 ).map((cb) => parseInt(cb.value));
 
+                if (selectedShiftDates.length === 0) {
+                    alert("Please select at least one date");
+                    return;
+                }
+
+                if (isClosedForBusiness) {
+                    const datesToClose = normalizeClosedDays(selectedShiftDates);
+
+                    saveState();
+                    closedDays = normalizeClosedDays([
+                        ...closedDays,
+                        ...datesToClose,
+                    ]);
+                    shifts = shifts.filter((shift) => !datesToClose.includes(shift.date));
+                    deleteShiftsForDatesFromWix(datesToClose);
+
+                    closeShiftModal();
+                    saveData();
+                    renderCalendar();
+                    renderEmployees();
+                    renderTimeOffDrawer();
+                    showToast(
+                        "Closed for Business",
+                        `${datesToClose.length} day${datesToClose.length === 1 ? "" : "s"} marked closed`,
+                        "success",
+                    );
+                    return;
+                }
+
                 if (selectedEmployeeIds.length === 0) {
                     alert("Please select at least one employee");
                     return;
                 }
 
-                if (selectedShiftDates.length === 0) {
-                    alert("Please select at least one date");
+                const selectedClosedDates = selectedShiftDates.filter((dateStr) =>
+                    isClosedDate(dateStr),
+                );
+                if (selectedClosedDates.length > 0) {
+                    alert("Reopen closed business days before adding shifts.");
                     return;
                 }
 
@@ -4169,9 +4391,12 @@
                             dateDisplay = `${date.getDate()} ${date.toLocaleDateString("en-US", { month: "short" })}`;
                         }
 
+                        const dayIsClosed = isClosedDate(dateStr);
+
                         // Filter shifts by date AND selected employees AND day off preference
                         const dayShifts = shifts
                             .filter((s) => {
+                                if (dayIsClosed) return false;
                                 if (s.date !== dateStr) return false;
 
                                 // FILTER OUT DENIED REQUESTS - don't show on calendar
@@ -4268,15 +4493,19 @@
                                 ${dateDisplay}
                             </div>
                             <div class="shifts-container" style="padding: 8px;"
-                                 ondragover="handleDragOver(event)"
-                                 ondragenter="handleDragEnter(event)"
-                                 ondragleave="handleDragLeave(event)"
-                                 ondrop="handleDrop(event, '${dateStr}')">
-                                ${dayShifts
-                                    .map((shift, index) => {
-                                        const employee = employees.find(
-                                            (e) => e.id === shift.employeeId,
-                                        );
+                                  ondragover="handleDragOver(event)"
+                                  ondragenter="handleDragEnter(event)"
+                                  ondragleave="handleDragLeave(event)"
+                                  ondrop="handleDrop(event, '${dateStr}')">
+                                ${
+                                    dayIsClosed
+                                        ? `<div class="closed-day-message">C<br>L<br>O<br>S<br>E<br>D</div>
+                                           <button class="reopen-day-btn" onclick="reopenBusinessDay('${dateStr}')">Reopen</button>`
+                                        : dayShifts
+                                              .map((shift, index) => {
+                                         const employee = employees.find(
+                                             (e) => e.id === shift.employeeId,
+                                         );
                                         let bgColor;
                                         let shiftText;
 
@@ -4347,11 +4576,12 @@
                                         style="background: ${bgColor};">
                                         <div class="shift-employee">${shift.employeeName}</div>
                                         <div class="shift-time">${shiftText}</div>
-                                    </div>
-                                `;
-                                    })
-                                    .join("")}
-                                <button class="add-shift-btn" onclick="openShiftModal('${dateStr}')">+ Add</button>
+                                     </div>
+                                 `;
+                                              })
+                                              .join("") +
+                                          `<button class="add-shift-btn" onclick="openShiftModal('${dateStr}')">+ Add</button>`
+                                }
                             </div>
                         </div>
                     `;
@@ -4380,6 +4610,7 @@
                 const data = {
                     employees: employees,
                     shifts: shifts,
+                    closedDays: closedDays,
                 };
 
                 // Send to Wix parent page
@@ -4453,6 +4684,9 @@
 
                         employees = event.data.employees || [];
                         shifts = event.data.shifts || [];
+                        closedDays = normalizeClosedDays(
+                            event.data.closedDays || [],
+                        );
 
                         // Ensure all employees have a color
                         employees.forEach((emp) => {
