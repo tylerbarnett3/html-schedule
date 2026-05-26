@@ -860,6 +860,12 @@
         }
 
         @media (max-width: 768px) {
+            html,
+            body {
+                max-width: 100%;
+                overflow-x: hidden;
+            }
+
             body {
                 padding: 8px;
             }
@@ -874,6 +880,32 @@
 
             .week-navigation {
                 padding: 14px;
+                gap: 12px;
+                align-items: stretch;
+            }
+
+            .week-navigation > div {
+                min-width: 0;
+                width: 100%;
+            }
+
+            .week-navigation > div > div:last-child {
+                display: grid !important;
+                grid-template-columns: auto minmax(0, 1fr);
+                width: 100%;
+                gap: 8px;
+                align-items: center;
+            }
+
+            .current-week {
+                text-align: center;
+            }
+
+            #customStartDate,
+            #customEndDate {
+                min-width: 0;
+                width: 100% !important;
+                min-height: 44px;
             }
 
             .week-navigation .period-nav-btn {
@@ -892,6 +924,15 @@
                 overflow: visible;
             }
 
+            .sidebar {
+                padding: 14px;
+            }
+
+            .schedule-area {
+                min-width: 0;
+                padding: 12px;
+            }
+
             .day-column {
                 min-height: 168px;
             }
@@ -902,14 +943,78 @@
             }
 
             .modal {
+                position: fixed;
+                top: 50% !important;
                 left: 10px !important;
                 right: 10px;
                 width: auto;
+                transform: translateY(-50%);
             }
 
             .modal-content {
-                width: auto;
-                max-height: 76vh;
+                width: 100%;
+                max-height: calc(100dvh - 32px);
+                padding: 18px;
+            }
+
+            .date-picker-nav {
+                gap: 8px;
+            }
+
+            .date-picker-nav button {
+                min-height: 44px;
+                padding: 8px 10px;
+            }
+
+            .date-picker-grid {
+                grid-template-columns: repeat(7, minmax(0, 1fr));
+            }
+
+            .date-picker-date {
+                min-width: 0;
+                min-height: 40px;
+            }
+
+            .loading-content {
+                width: calc(100vw - 32px);
+                min-width: 0;
+                padding: 28px 18px;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .calendar {
+                grid-template-columns: 1fr;
+            }
+
+            .week-navigation > div > div:last-child,
+            .date-picker-nav {
+                grid-template-columns: 1fr;
+                flex-direction: column;
+            }
+
+            .week-navigation label {
+                text-align: left;
+            }
+
+            #employeeFilterList {
+                grid-template-columns: 1fr;
+            }
+
+            .day-column {
+                min-height: 140px;
+            }
+
+            .closed-day-message {
+                min-height: 120px;
+            }
+
+            .header button {
+                width: 100%;
+            }
+
+            .modal-actions {
+                gap: 8px;
             }
         }
     </style>
@@ -926,7 +1031,6 @@
     <div class="container">
         <div class="header">
             <h1>Mad Potter Schedule</h1>
-            <p>See who is in, who is off, and request time away without losing the flow of the schedule.</p>
             <button onclick="openTimeOffRequestModal()" 
                     style="margin-top: 15px; padding: 10px 20px; background: #4299e1; color: white; border: none; border-radius: 6px; cursor: pointer; font-weight: 600; font-size: 14px;">
                 Request Time Off
@@ -1091,6 +1195,16 @@
             
             // Show overlay
             overlay.classList.add('active');
+
+            if (window.innerWidth <= 768) {
+                modal.style.left = '10px';
+                modal.style.right = '10px';
+                modal.style.top = '50%';
+                modal.classList.add('active');
+                return;
+            }
+
+            modal.style.right = 'auto';
             
             // Get click position
             const clickX = lastClickEvent.pageX;
