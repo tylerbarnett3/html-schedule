@@ -1,1911 +1,2582 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <title>Employee Schedule - View Only</title>
-    <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-
-        html,
-        body {
-            overflow: visible;
-            height: auto;
-        }
-
-        body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
-            min-height: 100vh;
-            -webkit-text-size-adjust: 100%;
-        }
-
-        .container {
-            max-width: 1400px;
-            margin: 0 auto;
-        }
-
-        .header {
-            color: white;
-            text-align: center;
-        }
-
-        .main-content {
-            display: grid;
-            grid-template-columns: 280px 1fr;
-        }
-
-        .section {
-            margin-bottom: 16px;
-        }
-
-        .drawer-header,
-        .sidebar-toggle,
-        .filter-checkbox-item,
-        .btn,
-        .date-chip,
-        .date-chip-remove {
-            display: flex;
-            align-items: center;
-        }
-
-        .drawer-header {
-            justify-content: space-between;
-            cursor: pointer;
-        }
-
-        .drawer-header h2 {
-            margin: 0;
-            color: white;
-            font-size: 14px;
-        }
-
-        .drawer-toggle {
-            transition: transform 0.3s;
-        }
-
-        .drawer-toggle.open {
-            transform: rotate(180deg);
-        }
-
-        .drawer-content {
-            max-height: 0;
-            overflow: hidden;
-            padding: 0;
-            transition: max-height 0.3s ease-out;
-        }
-
-        .drawer-content.open {
-            max-height: 2000px;
-            padding: 14px;
-            transition: max-height 0.5s ease-in;
-        }
-
-        .sidebar-toggle,
-        .filter-checkbox-item {
-            cursor: pointer;
-            padding: 12px 14px;
-        }
-
-        .sidebar-toggle input[type="checkbox"],
-        .filter-checkbox-item input[type="checkbox"] {
-            width: 18px;
-            height: 18px;
-            margin: 0 10px 0 0;
-            cursor: pointer;
-            accent-color: #6b5a42;
-        }
-
-        .sidebar-toggle .toggle-label,
-        .filter-checkbox-item label {
-            flex: 1;
-            font-size: 13px;
-            font-weight: 600;
-            cursor: pointer;
-        }
-
-        .filter-checkbox-item {
-            margin-bottom: 6px;
-        }
-
-        .btn,
-        .nav-button,
-        .date-picker-nav button,
-        .date-picker-date,
-        .shift-cancel,
-        .date-chip-remove {
-            border: none;
-            cursor: pointer;
-            font-weight: 600;
-            -webkit-tap-highlight-color: transparent;
-        }
-
-        .btn {
-            width: 100%;
-            justify-content: center;
-            gap: 6px;
-            padding: 10px 14px;
-            font-size: 13px;
-        }
-
-        .week-navigation {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-
-        .current-week {
-            font-weight: 600;
-        }
-
-        .calendar {
-            display: grid;
-            grid-template-columns: repeat(7, 1fr);
-        }
-
-        .day-column {
-            display: flex;
-            flex-direction: column;
-            min-height: 120px;
-        }
-
-        .day-column .date-header,
-        .day-header {
-            padding: 8px;
-            font-weight: 600;
-        }
-
-        .day-header {
-            text-align: center;
-        }
-
-        .shifts-container {
-            flex: 1;
-            display: flex;
-            flex-direction: column;
-            padding: 10px;
-        }
-
-        .shift-card {
-            position: relative;
-            color: white;
-        }
-
-        .shift-employee {
-            font-weight: 600;
-            margin-bottom: 4px;
-        }
-
-        .shift-time,
-        .shift-cancel {
-            font-size: 10px;
-        }
-
-        .shift-cancel {
-            margin-top: 6px;
-            padding: 4px 8px;
-            color: white;
-        }
-
-        .empty-state {
-            text-align: center;
-            padding: 30px 20px;
-            font-size: 13px;
-            font-style: italic;
-        }
-
-        .closed-day-message {
-            flex: 1;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            min-height: 160px;
-            padding: 18px 10px;
-            border-radius: 12px;
-            background: linear-gradient(135deg, #8fae8b 0%, #6f906b 100%);
-            color: white;
-            text-align: center;
-            font-size: 20px;
-            font-weight: 800;
-            letter-spacing: 0.12em;
-            line-height: 1.45;
-        }
-
-        .loading-overlay,
-        .modal-overlay,
-        .modal {
-            display: none;
-        }
-
-        .loading-overlay,
-        .modal-overlay {
-            position: fixed;
-            inset: 0;
-        }
-
-        .loading-overlay {
-            z-index: 10000;
-            justify-content: flex-start;
-            align-items: center;
-            flex-direction: column;
-            padding-top: 60px;
-        }
-
-        .loading-overlay.active {
-            display: flex;
-        }
-
-        .loading-content {
-            min-width: 300px;
-            padding: 40px;
-            text-align: center;
-        }
-
-        .loading-spinner {
-            width: 50px;
-            height: 50px;
-            border: 5px solid transparent;
-            border-radius: 50%;
-            animation: spin 1s linear infinite;
-            margin: 0 auto 20px;
-        }
-
-        @keyframes spin {
-            to {
-                transform: rotate(360deg);
-            }
-        }
-
-        .modal-overlay {
-            z-index: 999;
-        }
-
-        .modal-overlay.active {
-            display: block;
-        }
-
-        .modal {
-            position: absolute;
-            z-index: 1000;
-        }
-
-        .modal.active {
-            display: block;
-        }
-
-        .modal-content {
-            width: 500px;
-            max-height: 70vh;
-            padding: 25px;
-            overflow-y: auto;
-            -webkit-overflow-scrolling: touch;
-        }
-
-        .modal-header {
-            margin-bottom: 20px;
-        }
-
-        .modal-actions,
-        .date-picker-nav,
-        .selected-dates-chips {
-            display: flex;
-            gap: 10px;
-        }
-
-        .modal-actions {
-            margin-top: 20px;
-        }
-
-        .input-group {
-            margin-bottom: 15px;
-        }
-
-        .input-group label {
-            display: block;
-            margin-bottom: 5px;
-        }
-
-        .input-group select {
-            width: 100%;
-            padding: 10px;
-            font-size: 14px;
-        }
-
-        .date-picker-nav {
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 15px;
-        }
-
-        .date-picker-nav button {
-            padding: 8px 16px;
-        }
-
-        .date-picker-grid {
-            display: grid;
-            grid-template-columns: repeat(7, 1fr);
-            gap: 4px;
-            margin-bottom: 15px;
-        }
-
-        .date-picker-day-header,
-        .date-picker-date {
-            display: flex;
-            align-items: center;
-            justify-content: center;
-        }
-
-        .date-picker-day-header {
-            padding: 8px;
-            font-size: 12px;
-            font-weight: 600;
-        }
-
-        .date-picker-date {
-            aspect-ratio: 1;
-            font-size: 14px;
-        }
-
-        .date-picker-date:disabled {
-            cursor: not-allowed;
-            opacity: 0.5;
-        }
-
-        .selected-dates-container {
-            margin-top: 15px;
-            padding: 15px;
-            min-height: 60px;
-        }
-
-        .selected-dates-label {
-            margin-bottom: 10px;
-        }
-
-        .selected-dates-chips {
-            flex-wrap: wrap;
-            gap: 8px;
-        }
-
-        .date-chip {
-            gap: 8px;
-            padding: 6px 12px;
-            font-size: 13px;
-        }
-
-        .date-chip-remove {
-            width: 20px;
-            height: 20px;
-            justify-content: center;
-            background: transparent;
-            color: white;
-            font-size: 18px;
-            line-height: 1;
-        }
-
-        @media (max-width: 1024px) {
-            .main-content {
-                grid-template-columns: 1fr;
-            }
-        }
-
-        @media (max-width: 768px) {
-            .week-navigation,
-            .modal-actions {
-                flex-direction: column;
+    <head>
+        <meta charset="UTF-8" />
+        <meta
+            name="viewport"
+            content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"
+        />
+        <meta name="apple-mobile-web-app-capable" content="yes" />
+        <meta
+            name="apple-mobile-web-app-status-bar-style"
+            content="black-translucent"
+        />
+        <title>Employee Schedule - View Only</title>
+        <style>
+            * {
+                margin: 0;
+                padding: 0;
+                box-sizing: border-box;
             }
 
-            .week-navigation > div,
-            .week-navigation input[type="date"],
-            .modal-actions .btn {
-                width: 100%;
-            }
-
-            .calendar {
-                grid-template-columns: repeat(2, 1fr);
-            }
-
-            .day-header {
-                display: none;
-            }
-
-            .day-column .date-header {
-                white-space: nowrap;
-                overflow: hidden;
-                text-overflow: ellipsis;
-            }
-
-            .modal-content {
-                width: 300px;
-                max-height: 60vh;
-            }
-        }
-
-        :root {
-            --clay-950: #21170f;
-            --clay-900: #352619;
-            --clay-800: #4c3725;
-            --clay-700: #6b4f36;
-            --clay-600: #846f52;
-            --clay-500: #a1825d;
-            --clay-200: #eadfce;
-            --clay-100: #f6efe4;
-            --cream: #fffaf1;
-            --paper: rgba(255, 252, 246, 0.93);
-            --ink: #2b2219;
-            --muted: #7d6f61;
-            --line: rgba(91, 65, 40, 0.14);
-            --gold: #d8a94f;
-            --green: #3f9a6b;
-            --red: #cf5448;
-            --blue: #3d7e9f;
-            --shadow-soft: 0 18px 50px rgba(58, 39, 21, 0.13);
-            --shadow-card: 0 10px 26px rgba(58, 39, 21, 0.1);
-            --radius-xl: 28px;
-            --radius-lg: 20px;
-            --radius-md: 14px;
-        }
-
-        body {
-            color: var(--ink);
-            background:
-                radial-gradient(circle at top left, rgba(216, 169, 79, 0.26), transparent 34rem),
-                radial-gradient(circle at 92% 18%, rgba(132, 111, 82, 0.24), transparent 28rem),
-                linear-gradient(135deg, #fff9ed 0%, #f4eadb 42%, #eadfce 100%);
-            padding: 26px;
-        }
-
-        body::before {
-            content: "";
-            position: fixed;
-            inset: 0;
-            pointer-events: none;
-            background-image:
-                linear-gradient(rgba(255,255,255,0.32) 1px, transparent 1px),
-                linear-gradient(90deg, rgba(255,255,255,0.24) 1px, transparent 1px);
-            background-size: 38px 38px;
-            mask-image: linear-gradient(to bottom, rgba(0,0,0,0.55), transparent 70%);
-        }
-
-        .container {
-            position: relative;
-            background: var(--paper);
-            border: 1px solid rgba(255, 255, 255, 0.72);
-            border-radius: var(--radius-xl);
-            box-shadow: var(--shadow-soft);
-            overflow: hidden;
-            backdrop-filter: blur(16px);
-        }
-
-        .header {
-            position: relative;
-            overflow: hidden;
-            background:
-                linear-gradient(135deg, rgba(33, 23, 15, 0.94), rgba(76, 55, 37, 0.92)),
-                radial-gradient(circle at 22% 20%, rgba(216, 169, 79, 0.52), transparent 22rem);
-            padding: 38px 32px 32px;
-        }
-
-        .header::before {
-            content: "";
-            position: absolute;
-            inset: auto -8% -80% -8%;
-            height: 170px;
-            background: radial-gradient(ellipse at center, rgba(255, 250, 241, 0.22), transparent 68%);
-        }
-
-        .header h1,
-        .header p,
-        .header button {
-            position: relative;
-        }
-
-        .header h1 {
-            font-size: clamp(28px, 4vw, 48px);
-            line-height: 1;
-            letter-spacing: -0.04em;
-            margin-bottom: 10px;
-            text-shadow: 0 8px 28px rgba(0,0,0,0.28);
-        }
-
-        .header p {
-            max-width: 620px;
-            margin: 0 auto;
-            color: rgba(255, 250, 241, 0.76);
-            font-size: 15px;
-            line-height: 1.5;
-        }
-
-        .header button {
-            margin-top: 20px !important;
-            padding: 12px 22px !important;
-            background: linear-gradient(135deg, var(--gold), #f0c86d) !important;
-            color: var(--clay-950) !important;
-            border: 1px solid rgba(255,255,255,0.35) !important;
-            border-radius: 999px !important;
-            box-shadow: 0 14px 28px rgba(0,0,0,0.22) !important;
-            letter-spacing: -0.01em;
-            transition: transform 0.18s ease, box-shadow 0.18s ease !important;
-        }
-
-        .header button:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 18px 34px rgba(0,0,0,0.26) !important;
-        }
-
-        .main-content {
-            background: rgba(255, 250, 241, 0.34);
-        }
-
-        .sidebar {
-            background: linear-gradient(180deg, rgba(255, 250, 241, 0.78), rgba(246, 239, 228, 0.86));
-            border-right: 1px solid var(--line);
-            padding: 22px;
-        }
-
-        .section {
-            margin-bottom: 18px;
-        }
-
-        .drawer-header,
-        .sidebar-toggle {
-            border: 1px solid rgba(255,255,255,0.65);
-            box-shadow: var(--shadow-card);
-        }
-
-        .drawer-header {
-            background: linear-gradient(135deg, var(--clay-800), var(--clay-600));
-            padding: 14px 16px;
-            border-radius: var(--radius-md);
-        }
-
-        .drawer-header:hover {
-            background: linear-gradient(135deg, var(--clay-900), var(--clay-700));
-        }
-
-        .drawer-content.open {
-            background: rgba(255, 252, 246, 0.92);
-            border: 1px solid var(--line);
-            border-top: none;
-            box-shadow: var(--shadow-card);
-            border-radius: 0 0 var(--radius-md) var(--radius-md);
-        }
-
-        .sidebar-toggle,
-        .filter-checkbox-item,
-        .selected-dates-container,
-        .input-group select {
-            background: rgba(255, 252, 246, 0.82);
-            border-color: var(--line);
-            border-radius: var(--radius-md);
-        }
-
-        .filter-checkbox-item {
-            box-shadow: 0 8px 18px rgba(58, 39, 21, 0.06);
-        }
-
-        .filter-checkbox-item:hover,
-        .sidebar-toggle:hover {
-            background: #fffaf1;
-            border-color: rgba(132, 111, 82, 0.28);
-        }
-
-        #employeeFilterList {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
-            gap: 8px;
-        }
-
-        #employeeFilterList .filter-checkbox-item {
-            min-width: 0;
-            margin-bottom: 0;
-        }
-
-        #employeeFilterList .filter-checkbox-item label {
-            min-width: 0;
-            overflow: hidden;
-            text-overflow: ellipsis;
-            white-space: nowrap;
-        }
-
-        .input-group label,
-        .selected-dates-label {
-            color: var(--clay-800);
-            font-weight: 800;
-            letter-spacing: -0.01em;
-        }
-
-        .input-group select,
-        #customStartDate,
-        #customEndDate {
-            background: rgba(255, 252, 246, 0.92) !important;
-            border: 1px solid var(--line) !important;
-            border-radius: 12px !important;
-            color: var(--ink);
-            box-shadow: inset 0 1px 0 rgba(255,255,255,0.78);
-            outline: none;
-        }
-
-        .input-group select:focus,
-        #customStartDate:focus,
-        #customEndDate:focus {
-            border-color: rgba(216, 169, 79, 0.78) !important;
-            box-shadow: 0 0 0 4px rgba(216, 169, 79, 0.18);
-        }
-
-        .btn,
-        .nav-button,
-        .date-picker-nav button,
-        .shift-cancel {
-            border-radius: 999px;
-            transition: transform 0.18s ease, box-shadow 0.18s ease, background 0.18s ease, border-color 0.18s ease;
-        }
-
-        .btn-primary,
-        .nav-button {
-            background: linear-gradient(135deg, var(--clay-800), var(--clay-600)) !important;
-            color: #fffaf1;
-            box-shadow: 0 12px 24px rgba(76, 55, 37, 0.2);
-        }
-
-        .btn-secondary,
-        .date-picker-nav button {
-            background: #efe4d2;
-            color: var(--clay-900);
-        }
-
-        .btn-success {
-            background: linear-gradient(135deg, #2f855f, var(--green));
-        }
-
-        .btn-delete {
-            background: linear-gradient(135deg, #b84238, var(--red));
-        }
-
-        .btn:hover,
-        .nav-button:hover,
-        .date-picker-nav button:hover,
-        .shift-cancel:hover {
-            transform: translateY(-2px);
-        }
-
-        .schedule-area {
-            padding: clamp(18px, 3vw, 34px);
-        }
-
-        .week-navigation {
-            background: rgba(255, 252, 246, 0.82);
-            border: 1px solid rgba(255,255,255,0.75);
-            border-radius: var(--radius-lg);
-            padding: 16px;
-            box-shadow: var(--shadow-card);
-            margin-bottom: 22px;
-        }
-
-        .current-week {
-            color: var(--clay-900);
-            font-size: clamp(17px, 2vw, 23px);
-            font-weight: 800;
-            letter-spacing: -0.03em;
-        }
-
-        .week-navigation label {
-            color: var(--muted) !important;
-            font-weight: 700;
-        }
-
-        .calendar {
-            gap: 12px;
-            background: transparent;
-            border: none;
-            border-radius: 0;
-            overflow: visible;
-        }
-
-        .day-header {
-            background: rgba(76, 55, 37, 0.09);
-            border: 1px solid var(--line);
-            border-radius: 14px;
-            color: var(--clay-800);
-            text-transform: uppercase;
-            letter-spacing: 0.12em;
-            font-size: 11px;
-        }
-
-        .day-column {
-            min-height: 178px;
-            background: rgba(255, 252, 246, 0.86) !important;
-            border: 1px solid rgba(255,255,255,0.74);
-            border-radius: var(--radius-lg);
-            box-shadow: var(--shadow-card);
-            overflow: hidden;
-        }
-
-        .day-column-gray {
-            background: rgba(246, 239, 228, 0.68) !important;
-        }
-
-        .day-column .date-header {
-            background: linear-gradient(180deg, rgba(255, 250, 241, 0.98), rgba(246, 239, 228, 0.68));
-            border-bottom: 1px solid var(--line) !important;
-            color: var(--clay-900) !important;
-            font-weight: 800 !important;
-            letter-spacing: -0.01em;
-        }
-
-        .shifts-container {
-            min-height: 128px;
-        }
-
-        .shift-card {
-            border-radius: 14px;
-            padding: 10px 11px;
-            margin-bottom: 8px;
-            border: 1px solid rgba(255,255,255,0.26);
-            box-shadow: 0 10px 20px rgba(33, 23, 15, 0.18);
-            overflow: hidden;
-        }
-
-        .shift-card::before {
-            content: "";
-            position: absolute;
-            inset: 0;
-            background: linear-gradient(135deg, rgba(255,255,255,0.2), transparent 42%);
-            pointer-events: none;
-        }
-
-        .shift-employee,
-        .shift-time,
-        .shift-cancel {
-            position: relative;
-        }
-
-        .shift-employee {
-            font-size: 12px;
-            letter-spacing: -0.01em;
-        }
-
-        .shift-time {
-            font-size: 10px;
-            text-transform: uppercase;
-            letter-spacing: 0.06em;
-            opacity: 0.88;
-        }
-
-        .shift-card.day-off,
-        .shift-card.pending-time-off {
-            color: #24190f;
-        }
-
-        .shift-cancel {
-            background: rgba(255, 250, 241, 0.26);
-            border-color: rgba(255, 250, 241, 0.5);
-            font-size: 10px;
-        }
-
-        .modal-overlay {
-            background: rgba(33, 23, 15, 0.36);
-            backdrop-filter: blur(6px);
-        }
-
-        .modal-content,
-        .loading-content {
-            background: rgba(255, 252, 246, 0.96);
-            border: 1px solid rgba(255,255,255,0.82);
-            border-radius: 24px;
-            box-shadow: 0 30px 80px rgba(33, 23, 15, 0.26);
-        }
-
-        .modal-header h2,
-        .loading-message {
-            color: var(--clay-900);
-            letter-spacing: -0.03em;
-        }
-
-        .loading-overlay {
-            background: rgba(33, 23, 15, 0.58);
-            backdrop-filter: blur(8px);
-        }
-
-        .loading-spinner {
-            border-color: rgba(132, 111, 82, 0.18);
-            border-top-color: var(--gold);
-        }
-
-        .date-picker-date {
-            border-color: var(--line);
-            border-radius: 12px;
-        }
-
-        .date-picker-date:hover:not(:disabled) {
-            background: #fff5df;
-            border-color: rgba(216, 169, 79, 0.62);
-        }
-
-        .date-picker-date.selected,
-        .date-chip {
-            background: linear-gradient(135deg, var(--clay-800), var(--clay-600));
-            color: #fffaf1;
-        }
-
-        .period-nav-btn {
-            width: 48px;
-            height: 48px;
-            padding: 0 !important;
-            border-radius: 50% !important;
-            display: inline-flex !important;
-            align-items: center;
-            justify-content: center;
-        }
-
-        .period-nav-btn svg {
-            width: 22px;
-            height: 22px;
-        }
-
-        .period-nav-btn:focus-visible {
-            outline: 3px solid rgba(216, 169, 79, 0.44);
-            outline-offset: 3px;
-        }
-
-        @media (max-width: 1024px) {
-            .sidebar {
-                border-right: none;
-                border-bottom: 1px solid var(--line);
-            }
-        }
-
-        @media (max-width: 768px) {
             html,
             body {
-                max-width: 100%;
-                overflow-x: hidden;
+                overflow: visible;
+                height: auto;
             }
 
             body {
-                padding: 8px;
+                font-family:
+                    -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+                    Oxygen, Ubuntu, Cantarell, sans-serif;
+                min-height: 100vh;
+                -webkit-text-size-adjust: 100%;
             }
 
             .container {
-                border-radius: 22px;
+                max-width: 1400px;
+                margin: 0 auto;
             }
 
             .header {
-                padding: 28px 18px 24px;
+                color: white;
+                text-align: center;
+            }
+
+            .main-content {
+                display: grid;
+                grid-template-columns: 280px 1fr;
+            }
+
+            .section {
+                margin-bottom: 16px;
+            }
+
+            .drawer-header,
+            .sidebar-toggle,
+            .filter-checkbox-item,
+            .btn,
+            .date-chip,
+            .date-chip-remove {
+                display: flex;
+                align-items: center;
+            }
+
+            .drawer-header {
+                justify-content: space-between;
+                cursor: pointer;
+            }
+
+            .drawer-header h2 {
+                margin: 0;
+                color: white;
+                font-size: 14px;
+            }
+
+            .drawer-toggle {
+                transition: transform 0.3s;
+            }
+
+            .drawer-toggle.open {
+                transform: rotate(180deg);
+            }
+
+            .drawer-content {
+                max-height: 0;
+                overflow: hidden;
+                padding: 0;
+                transition: max-height 0.3s ease-out;
+            }
+
+            .drawer-content.open {
+                max-height: 2000px;
+                padding: 14px;
+                transition: max-height 0.5s ease-in;
+            }
+
+            .sidebar-toggle,
+            .filter-checkbox-item {
+                cursor: pointer;
+                padding: 12px 14px;
+            }
+
+            .sidebar-toggle input[type="checkbox"],
+            .filter-checkbox-item input[type="checkbox"] {
+                width: 18px;
+                height: 18px;
+                margin: 0 10px 0 0;
+                cursor: pointer;
+                accent-color: #6b5a42;
+            }
+
+            .sidebar-toggle .toggle-label,
+            .filter-checkbox-item label {
+                flex: 1;
+                font-size: 13px;
+                font-weight: 600;
+                cursor: pointer;
+            }
+
+            .filter-checkbox-item {
+                margin-bottom: 6px;
+            }
+
+            .btn,
+            .nav-button,
+            .date-picker-nav button,
+            .date-picker-date,
+            .shift-cancel,
+            .date-chip-remove {
+                border: none;
+                cursor: pointer;
+                font-weight: 600;
+                -webkit-tap-highlight-color: transparent;
+            }
+
+            .btn {
+                width: 100%;
+                justify-content: center;
+                gap: 6px;
+                padding: 10px 14px;
+                font-size: 13px;
             }
 
             .week-navigation {
-                padding: 14px;
-                gap: 12px;
-                align-items: stretch;
-            }
-
-            .week-navigation > div {
-                min-width: 0;
-                width: 100%;
-            }
-
-            .week-navigation > div > div:last-child {
-                display: grid !important;
-                grid-template-columns: auto minmax(0, 1fr);
-                width: 100%;
-                gap: 8px;
+                display: flex;
+                justify-content: space-between;
                 align-items: center;
             }
 
             .current-week {
-                text-align: center;
-            }
-
-            #customStartDate,
-            #customEndDate {
-                min-width: 0;
-                width: 100% !important;
-                min-height: 44px;
-            }
-
-            .week-navigation .period-nav-btn {
-                display: inline-flex !important;
-                width: 100% !important;
-                border-radius: 999px !important;
-            }
-
-            #employeeFilterList {
-                grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+                font-weight: 600;
             }
 
             .calendar {
-                grid-template-columns: repeat(2, minmax(0, 1fr));
-                gap: 10px;
-                overflow: visible;
-            }
-
-            .sidebar {
-                padding: 14px;
-            }
-
-            .schedule-area {
-                min-width: 0;
-                padding: 12px;
+                display: grid;
+                grid-template-columns: repeat(7, 1fr);
             }
 
             .day-column {
-                min-height: 168px;
-            }
-
-            .shift-card {
-                padding: 11px;
-                border-radius: 13px;
-            }
-
-            .modal {
-                position: fixed;
-                top: 50% !important;
-                left: 10px !important;
-                right: 10px;
-                width: auto;
-                transform: translateY(-50%);
-            }
-
-            .modal-content {
-                width: 100%;
-                max-height: calc(100dvh - 32px);
-                padding: 18px;
-            }
-
-            .date-picker-nav {
-                gap: 8px;
-            }
-
-            .date-picker-nav button {
-                min-height: 44px;
-                padding: 8px 10px;
-            }
-
-            .date-picker-grid {
-                grid-template-columns: repeat(7, minmax(0, 1fr));
-            }
-
-            .date-picker-date {
-                min-width: 0;
-                min-height: 40px;
-            }
-
-            .loading-content {
-                width: calc(100vw - 32px);
-                min-width: 0;
-                padding: 28px 18px;
-            }
-        }
-
-        @media (max-width: 480px) {
-            .calendar {
-                grid-template-columns: 1fr;
-            }
-
-            .week-navigation > div > div:last-child,
-            .date-picker-nav {
-                grid-template-columns: 1fr;
+                display: flex;
                 flex-direction: column;
-            }
-
-            .week-navigation label {
-                text-align: left;
-            }
-
-            #employeeFilterList {
-                grid-template-columns: 1fr;
-            }
-
-            .day-column {
-                min-height: 140px;
-            }
-
-            .closed-day-message {
                 min-height: 120px;
             }
 
-            .header button {
-                width: 100%;
+            .day-column .date-header,
+            .day-header {
+                padding: 8px;
+                font-weight: 600;
+            }
+
+            .day-header {
+                text-align: center;
+            }
+
+            .shifts-container {
+                flex: 1;
+                display: flex;
+                flex-direction: column;
+                padding: 10px;
+            }
+
+            .shift-card {
+                position: relative;
+                color: white;
+            }
+
+            .shift-employee {
+                font-weight: 600;
+                margin-bottom: 4px;
+            }
+
+            .shift-time,
+            .shift-cancel {
+                font-size: 10px;
+            }
+
+            .shift-cancel {
+                margin-top: 6px;
+                padding: 4px 8px;
+                color: white;
+            }
+
+            .empty-state {
+                text-align: center;
+                padding: 30px 20px;
+                font-size: 13px;
+                font-style: italic;
+            }
+
+            .closed-day-message {
+                flex: 1;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                min-height: 160px;
+                padding: 18px 10px;
+                border-radius: 12px;
+                background: linear-gradient(135deg, #8fae8b 0%, #6f906b 100%);
+                color: white;
+                text-align: center;
+                font-size: 20px;
+                font-weight: 800;
+                letter-spacing: 0.12em;
+                line-height: 1.45;
+            }
+
+            .loading-overlay,
+            .modal-overlay,
+            .modal {
+                display: none;
+            }
+
+            .loading-overlay,
+            .modal-overlay {
+                position: fixed;
+                inset: 0;
+            }
+
+            .loading-overlay {
+                z-index: 10000;
+                justify-content: flex-start;
+                align-items: center;
+                flex-direction: column;
+                padding-top: 60px;
+            }
+
+            .loading-overlay.active {
+                display: flex;
+            }
+
+            .loading-content {
+                min-width: 300px;
+                padding: 40px;
+                text-align: center;
+            }
+
+            .loading-spinner {
+                width: 50px;
+                height: 50px;
+                border: 5px solid transparent;
+                border-radius: 50%;
+                animation: spin 1s linear infinite;
+                margin: 0 auto 20px;
+            }
+
+            @keyframes spin {
+                to {
+                    transform: rotate(360deg);
+                }
+            }
+
+            .modal-overlay {
+                z-index: 999;
+            }
+
+            .modal-overlay.active {
+                display: block;
+            }
+
+            .modal {
+                position: absolute;
+                z-index: 1000;
+            }
+
+            .modal.active {
+                display: block;
+            }
+
+            .modal-content {
+                width: 500px;
+                max-height: 70vh;
+                padding: 25px;
+                overflow-y: auto;
+                -webkit-overflow-scrolling: touch;
+            }
+
+            .modal-header {
+                margin-bottom: 20px;
+            }
+
+            .modal-actions,
+            .date-picker-nav,
+            .selected-dates-chips {
+                display: flex;
+                gap: 10px;
             }
 
             .modal-actions {
+                margin-top: 20px;
+            }
+
+            .input-group {
+                margin-bottom: 15px;
+            }
+
+            .input-group label {
+                display: block;
+                margin-bottom: 5px;
+            }
+
+            .input-group select {
+                width: 100%;
+                padding: 10px;
+                font-size: 14px;
+            }
+
+            .date-picker-nav {
+                justify-content: space-between;
+                align-items: center;
+                margin-bottom: 15px;
+            }
+
+            .request-month-nav {
+                gap: 12px;
+                min-height: 54px;
+                padding-top: 14px;
+            }
+
+            .request-month-label {
+                flex: 1;
+                color: #2d3748;
+                font-weight: 800;
+                text-align: center;
+            }
+
+            .date-picker-nav button {
+                padding: 8px 16px;
+            }
+
+            .date-picker-nav-icon {
+                width: 44px;
+                height: 44px;
+                flex: 0 0 44px;
+                display: inline-flex;
+                align-items: center;
+                justify-content: center;
+                padding: 0 !important;
+                border-radius: 999px !important;
+            }
+
+            .date-picker-nav-icon svg {
+                width: 22px;
+                height: 22px;
+            }
+
+            .date-picker-grid {
+                display: grid;
+                grid-template-columns: repeat(7, 1fr);
+                gap: 4px;
+                margin-bottom: 15px;
+            }
+
+            .date-picker-day-header,
+            .date-picker-date {
+                display: flex;
+                align-items: center;
+                justify-content: center;
+            }
+
+            .date-picker-day-header {
+                padding: 8px;
+                font-size: 12px;
+                font-weight: 600;
+            }
+
+            .date-picker-date {
+                aspect-ratio: 1;
+                font-size: 14px;
+            }
+
+            .date-picker-date:disabled {
+                cursor: not-allowed;
+                opacity: 0.5;
+            }
+
+            .selected-dates-container {
+                margin-top: 15px;
+                padding: 15px;
+                min-height: 60px;
+            }
+
+            .selected-dates-label {
+                margin-bottom: 10px;
+            }
+
+            .selected-dates-chips {
+                flex-wrap: wrap;
                 gap: 8px;
             }
-        }
-    </style>
-</head>
-<body>
-    <!-- Loading Overlay -->
-    <div id="loadingOverlay" class="loading-overlay">
-        <div class="loading-content">
-            <div class="loading-spinner"></div>
-            <div class="loading-message" id="loadingMessage">Loading...</div>
-        </div>
-    </div>
-    
-    <div class="container">
-        <div class="header">
-            <h1>Mad Potter Schedule</h1>
-            <button onclick="openTimeOffRequestModal()" 
-                    style="margin-top: 15px; padding: 10px 20px; background: #4299e1; color: white; border: none; border-radius: 6px; cursor: pointer; font-weight: 600; font-size: 14px;">
-                Request Time Off
-            </button>
-        </div>
 
-        <div class="main-content">
-            <div class="sidebar">
-                <!-- Day Off Toggle -->
-                <div class="section">
-                    <label class="sidebar-toggle">
-                        <input type="checkbox" id="showDayOffsCheckbox" checked onchange="toggleDayOffs()" aria-label="Toggle visibility of days off on calendar">
-                        <span class="toggle-label">Show Days Off</span>
-                    </label>
-                </div>
-                <!-- Employee Filter -->
-                <div class="section">
-                    <div class="drawer-header" id="filterDrawerHeader" onclick="toggleDrawer('filterDrawer')" role="button" aria-expanded="false" aria-controls="filterDrawer">
-                        <h2 style="margin: 0;">Filter by Employee</h2>
-                        <span class="drawer-toggle" id="filterDrawerToggle" aria-hidden="true">▼</span>
-                    </div>
-                    <div class="drawer-content" id="filterDrawer">
-                        <div style="margin-bottom: 12px; display: flex; gap: 8px;">
-                            <button class="btn btn-secondary" onclick="selectAllEmployees()" style="flex: 1; padding: 8px 12px;">Select All</button>
-                            <button class="btn btn-secondary" onclick="deselectAllEmployees()" style="flex: 1; padding: 8px 12px;">Clear All</button>
-                        </div>
-                        <div id="employeeFilterList"></div>
-                    </div>
-                </div>
-            </div>
-
-            <div class="schedule-area">
-                <div class="week-navigation">
-                    <button class="nav-button period-nav-btn" onclick="previousPeriod()" aria-label="Previous period" title="Previous period">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-arrow-left-icon lucide-arrow-left" aria-hidden="true"><path d="m12 19-7-7 7-7"/><path d="M19 12H5"/></svg>
-                    </button>
-                    <div style="display: flex; flex-direction: column; align-items: center; gap: 8px;">
-                        <div class="current-week" id="currentWeek"></div>
-                        <div style="display: flex; gap: 10px; align-items: center;">
-                            <label style="font-size: 14px; color: #555;">Start:</label>
-                            <input type="date" id="customStartDate" style="padding: 6px 10px; border: 1px solid #cbd5e0; border-radius: 6px; font-size: 14px;" onchange="setCustomDates()">
-                            <label style="font-size: 14px; color: #555;">End:</label>
-                            <input type="date" id="customEndDate" style="padding: 6px 10px; border: 1px solid #cbd5e0; border-radius: 6px; font-size: 14px;" onchange="setCustomDates()">
-                        </div>
-                    </div>
-                    <button class="nav-button period-nav-btn" onclick="nextPeriod()" aria-label="Next period" title="Next period">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-arrow-right-icon lucide-arrow-right" aria-hidden="true"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>
-                    </button>
-                </div>
-
-                <div class="calendar" id="calendar"></div>
-            </div>
-        </div>
-    </div>
-
-    <!-- Modal overlay for click-to-close -->
-    <div class="modal-overlay" id="modalOverlay" onclick="closeAllModals()"></div>
-
-    <!-- Time-Off Request Modal -->
-    <div class="modal" id="timeOffRequestModal">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h2>Request Time Off</h2>
-            </div>
-            
-            <div class="input-group">
-                <label>Your Name</label>
-                <select id="requestEmployeeSelect">
-                    <option value="">Select your name</option>
-                </select>
-            </div>
-            
-            <div class="input-group">
-                <label>Select Date(s) - Click to select/deselect</label>
-                
-                <div class="date-picker-nav">
-                    <button type="button" onclick="previousMonth()">← Previous</button>
-                    <span id="currentMonthLabel" style="font-weight: 600; color: #2d3748;"></span>
-                    <button type="button" onclick="nextMonth()">Next →</button>
-                </div>
-                
-                <div class="date-picker-grid" id="datePickerGrid"></div>
-                
-                <div class="selected-dates-container">
-                    <div class="selected-dates-label">Selected Dates:</div>
-                    <div class="selected-dates-chips" id="selectedDatesChips">
-                        <span style="color: #718096; font-size: 13px;">No dates selected</span>
-                    </div>
-                </div>
-            </div>
-            
-            <div class="modal-actions">
-                <button class="btn btn-secondary" onclick="closeTimeOffRequestModal()">Cancel</button>
-                <button class="btn btn-success" onclick="submitTimeOffRequest()">Submit Request</button>
-            </div>
-        </div>
-    </div>
-
-    <!-- Cancel Confirmation Modal -->
-    <div class="modal" id="cancelConfirmModal">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h2>Confirm Cancellation</h2>
-            </div>
-            <p style="margin-bottom: 20px; color: #4a5568;">To cancel this time-off request, please select your name to confirm:</p>
-            <div class="input-group">
-                <label>Your Name</label>
-                <select id="cancelConfirmName">
-                    <option value="">Select your name</option>
-                </select>
-            </div>
-            <div class="modal-actions">
-                <button class="btn btn-secondary" onclick="closeCancelConfirmModal()">Cancel</button>
-                <button class="btn btn-delete" onclick="confirmCancelRequest()">Confirm Cancellation</button>
-            </div>
-        </div>
-    </div>
-
-    <script>
-        // VERSION: Read-Only with Time-Off Requests
-        console.log('Schedule App Version: Read-Only with Time-Off Requests');
-        
-        let employees = [];
-        let shifts = [];
-        let closedDays = [];
-        let currentStartDate = new Date();
-        let currentEndDate = new Date();
-        let selectedEmployees = new Set();
-        let showDayOffs = true;
-
-        // Time-off request variables
-        let selectedDates = [];
-        let currentPickerMonth = new Date();
-        let cancelingShiftId = null;
-        let cancelingEmployeeName = null;
-
-        // Initialize to today and 35 days from today
-        currentStartDate.setHours(0, 0, 0, 0);
-        currentEndDate.setHours(0, 0, 0, 0);
-        currentEndDate.setDate(currentEndDate.getDate() + 34);
-
-        function showLoading() {
-            document.getElementById('loadingOverlay').classList.add('active');
-        }
-        
-        function hideLoading() {
-            document.getElementById('loadingOverlay').classList.remove('active');
-        }
-
-        // Floating modal positioning
-        let lastClickEvent = null;
-        
-        document.addEventListener('click', function(e) {
-            lastClickEvent = e;
-        }, true);
-
-        function openFloatingModal(modalId) {
-            const modal = document.getElementById(modalId);
-            const overlay = document.getElementById('modalOverlay');
-            
-            if (!modal || !lastClickEvent) return;
-            
-            // Show overlay
-            overlay.classList.add('active');
-
-            if (window.innerWidth <= 768) {
-                modal.style.left = '10px';
-                modal.style.right = '10px';
-                modal.style.top = '50%';
-                modal.classList.add('active');
-                return;
+            .date-chip {
+                gap: 8px;
+                padding: 6px 12px;
+                font-size: 13px;
             }
 
-            modal.style.right = 'auto';
-            
-            // Get click position
-            const clickX = lastClickEvent.pageX;
-            const clickY = lastClickEvent.pageY;
-            
-            // Get viewport dimensions
-            const viewportWidth = window.innerWidth;
-            const modalWidth = 500; // Match CSS width
-            
-            // Calculate horizontal position - try to center on click, but keep in bounds
-            let left = clickX - (modalWidth / 2);
-            left = Math.max(10, Math.min(left, viewportWidth - modalWidth - 10));
-            
-            // Position vertically below the click point
-            let top = clickY + 20;
-            
-            // Apply position
-            modal.style.left = left + 'px';
-            modal.style.top = top + 'px';
-            
-            // Show modal
-            modal.classList.add('active');
-        }
+            .date-chip-remove {
+                width: 20px;
+                height: 20px;
+                justify-content: center;
+                background: transparent;
+                color: white;
+                font-size: 18px;
+                line-height: 1;
+            }
 
-        function closeAllModals() {
-            document.querySelectorAll('.modal').forEach(modal => {
-                modal.classList.remove('active');
-            });
-            document.getElementById('modalOverlay').classList.remove('active');
-            
-            // Reset state variables
-            selectedDates = [];
-            cancelingShiftId = null;
-            cancelingEmployeeName = null;
-        }
-
-        // Helper function to open modal at current scroll position
-        function loadFromDatabase() {
-            console.log('Requesting schedule data from Wix...');
-            showLoading();
-            
-            window.parent.postMessage({
-                action: 'LOAD_FROM_DATABASE'
-            }, '*');
-            
-            setTimeout(() => {
-                if (employees.length === 0) {
-                    console.error('No data received after 10 seconds');
-                    hideLoading();
-                    const calendar = document.getElementById('calendar');
-                    if (calendar) {
-                        calendar.innerHTML = '<div class="empty-state" style="grid-column: 1 / -1;">Unable to load schedule. Please refresh the page.</div>';
-                    }
+            @media (max-width: 1024px) {
+                .main-content {
+                    grid-template-columns: 1fr;
                 }
-            }, 10000);
-        }
+            }
 
-        window.addEventListener('message', function(event) {
-            console.log('Received message:', event.data);
-            
-            if (event.data && event.data.action === 'LOAD_COMPLETE') {
-                console.log('Processing LOAD_COMPLETE message');
-                employees = event.data.employees || [];
-                shifts = event.data.shifts || [];
-                closedDays = normalizeClosedDays(event.data.closedDays || []);
-                
-                console.log('Loaded:', employees.length, 'employees,', shifts.length, 'shifts');
-                
-                employees.forEach(emp => {
-                    if (!emp.color) {
-                        emp.color = '#7F6C50';
-                    }
+            @media (max-width: 768px) {
+                .week-navigation,
+                .modal-actions {
+                    flex-direction: column;
+                }
+
+                .week-navigation > div,
+                .week-navigation input[type="date"],
+                .modal-actions .btn {
+                    width: 100%;
+                }
+
+                .calendar {
+                    grid-template-columns: repeat(2, 1fr);
+                }
+
+                .day-header {
+                    display: none;
+                }
+
+                .day-column .date-header {
+                    white-space: nowrap;
+                    overflow: hidden;
+                    text-overflow: ellipsis;
+                }
+
+                .modal-content {
+                    width: 300px;
+                    max-height: 60vh;
+                }
+            }
+
+            :root {
+                --clay-950: #21170f;
+                --clay-900: #352619;
+                --clay-800: #4c3725;
+                --clay-700: #6b4f36;
+                --clay-600: #846f52;
+                --clay-500: #a1825d;
+                --clay-200: #eadfce;
+                --clay-100: #f6efe4;
+                --cream: #fffaf1;
+                --paper: rgba(255, 252, 246, 0.93);
+                --ink: #2b2219;
+                --muted: #7d6f61;
+                --line: rgba(91, 65, 40, 0.14);
+                --gold: #d8a94f;
+                --green: #3f9a6b;
+                --red: #cf5448;
+                --blue: #3d7e9f;
+                --shadow-soft: 0 18px 50px rgba(58, 39, 21, 0.13);
+                --shadow-card: 0 10px 26px rgba(58, 39, 21, 0.1);
+                --radius-xl: 28px;
+                --radius-lg: 20px;
+                --radius-md: 14px;
+            }
+
+            body {
+                color: var(--ink);
+                background:
+                    radial-gradient(
+                        circle at top left,
+                        rgba(216, 169, 79, 0.26),
+                        transparent 34rem
+                    ),
+                    radial-gradient(
+                        circle at 92% 18%,
+                        rgba(132, 111, 82, 0.24),
+                        transparent 28rem
+                    ),
+                    linear-gradient(
+                        135deg,
+                        #fff9ed 0%,
+                        #f4eadb 42%,
+                        #eadfce 100%
+                    );
+                padding: 26px;
+            }
+
+            body::before {
+                content: "";
+                position: fixed;
+                inset: 0;
+                pointer-events: none;
+                background-image:
+                    linear-gradient(
+                        rgba(255, 255, 255, 0.32) 1px,
+                        transparent 1px
+                    ),
+                    linear-gradient(
+                        90deg,
+                        rgba(255, 255, 255, 0.24) 1px,
+                        transparent 1px
+                    );
+                background-size: 38px 38px;
+                mask-image: linear-gradient(
+                    to bottom,
+                    rgba(0, 0, 0, 0.55),
+                    transparent 70%
+                );
+            }
+
+            .container {
+                position: relative;
+                background: var(--paper);
+                border: 1px solid rgba(255, 255, 255, 0.72);
+                border-radius: var(--radius-xl);
+                box-shadow: var(--shadow-soft);
+                overflow: hidden;
+                backdrop-filter: blur(16px);
+            }
+
+            .header {
+                position: relative;
+                overflow: hidden;
+                background:
+                    linear-gradient(
+                        135deg,
+                        rgba(33, 23, 15, 0.94),
+                        rgba(76, 55, 37, 0.92)
+                    ),
+                    radial-gradient(
+                        circle at 22% 20%,
+                        rgba(216, 169, 79, 0.52),
+                        transparent 22rem
+                    );
+                padding: 38px 32px 32px;
+            }
+
+            .header::before {
+                content: "";
+                position: absolute;
+                inset: auto -8% -80% -8%;
+                height: 170px;
+                background: radial-gradient(
+                    ellipse at center,
+                    rgba(255, 250, 241, 0.22),
+                    transparent 68%
+                );
+            }
+
+            .header h1,
+            .header p,
+            .header button {
+                position: relative;
+            }
+
+            .header h1 {
+                font-size: clamp(28px, 4vw, 48px);
+                line-height: 1;
+                letter-spacing: -0.04em;
+                margin-bottom: 10px;
+                text-shadow: 0 8px 28px rgba(0, 0, 0, 0.28);
+            }
+
+            .header p {
+                max-width: 620px;
+                margin: 0 auto;
+                color: rgba(255, 250, 241, 0.76);
+                font-size: 15px;
+                line-height: 1.5;
+            }
+
+            .header button {
+                margin-top: 20px !important;
+                padding: 12px 22px !important;
+                background: linear-gradient(
+                    135deg,
+                    var(--gold),
+                    #f0c86d
+                ) !important;
+                color: var(--clay-950) !important;
+                border: 1px solid rgba(255, 255, 255, 0.35) !important;
+                border-radius: 999px !important;
+                box-shadow: 0 14px 28px rgba(0, 0, 0, 0.22) !important;
+                letter-spacing: -0.01em;
+                transition:
+                    transform 0.18s ease,
+                    box-shadow 0.18s ease !important;
+            }
+
+            .header button:hover {
+                transform: translateY(-2px);
+                box-shadow: 0 18px 34px rgba(0, 0, 0, 0.26) !important;
+            }
+
+            .main-content {
+                background: rgba(255, 250, 241, 0.34);
+            }
+
+            .sidebar {
+                background: linear-gradient(
+                    180deg,
+                    rgba(255, 250, 241, 0.78),
+                    rgba(246, 239, 228, 0.86)
+                );
+                border-right: 1px solid var(--line);
+                padding: 22px;
+            }
+
+            .section {
+                margin-bottom: 18px;
+            }
+
+            .drawer-header,
+            .sidebar-toggle {
+                border: 1px solid rgba(255, 255, 255, 0.65);
+                box-shadow: var(--shadow-card);
+            }
+
+            .drawer-header {
+                background: linear-gradient(
+                    135deg,
+                    var(--clay-800),
+                    var(--clay-600)
+                );
+                padding: 14px 16px;
+                border-radius: var(--radius-md);
+            }
+
+            .drawer-header:hover {
+                background: linear-gradient(
+                    135deg,
+                    var(--clay-900),
+                    var(--clay-700)
+                );
+            }
+
+            .drawer-content.open {
+                background: rgba(255, 252, 246, 0.92);
+                border: 1px solid var(--line);
+                border-top: none;
+                box-shadow: var(--shadow-card);
+                border-radius: 0 0 var(--radius-md) var(--radius-md);
+            }
+
+            .sidebar-toggle,
+            .filter-checkbox-item,
+            .selected-dates-container,
+            .input-group select {
+                background: rgba(255, 252, 246, 0.82);
+                border-color: var(--line);
+                border-radius: var(--radius-md);
+            }
+
+            .filter-checkbox-item {
+                box-shadow: 0 8px 18px rgba(58, 39, 21, 0.06);
+            }
+
+            .filter-checkbox-item:hover,
+            .sidebar-toggle:hover {
+                background: #fffaf1;
+                border-color: rgba(132, 111, 82, 0.28);
+            }
+
+            #employeeFilterList {
+                display: grid;
+                grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+                gap: 8px;
+            }
+
+            #employeeFilterList .filter-checkbox-item {
+                min-width: 0;
+                margin-bottom: 0;
+            }
+
+            #employeeFilterList .filter-checkbox-item label {
+                min-width: 0;
+                overflow: hidden;
+                text-overflow: ellipsis;
+                white-space: nowrap;
+            }
+
+            .input-group label,
+            .selected-dates-label {
+                color: var(--clay-800);
+                font-weight: 800;
+                letter-spacing: -0.01em;
+            }
+
+            .input-group select,
+            #customStartDate,
+            #customEndDate {
+                background: rgba(255, 252, 246, 0.92) !important;
+                border: 1px solid var(--line) !important;
+                border-radius: 12px !important;
+                color: var(--ink);
+                box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.78);
+                outline: none;
+            }
+
+            .input-group select:focus,
+            #customStartDate:focus,
+            #customEndDate:focus {
+                border-color: rgba(216, 169, 79, 0.78) !important;
+                box-shadow: 0 0 0 4px rgba(216, 169, 79, 0.18);
+            }
+
+            .btn,
+            .nav-button,
+            .date-picker-nav button,
+            .shift-cancel {
+                border-radius: 999px;
+                transition:
+                    transform 0.18s ease,
+                    box-shadow 0.18s ease,
+                    background 0.18s ease,
+                    border-color 0.18s ease;
+            }
+
+            .btn-primary,
+            .nav-button {
+                background: linear-gradient(
+                    135deg,
+                    var(--clay-800),
+                    var(--clay-600)
+                ) !important;
+                color: #fffaf1;
+                box-shadow: 0 12px 24px rgba(76, 55, 37, 0.2);
+            }
+
+            .btn-secondary,
+            .date-picker-nav button {
+                background: #efe4d2;
+                color: var(--clay-900);
+            }
+
+            .btn-success {
+                background: linear-gradient(135deg, #2f855f, var(--green));
+            }
+
+            .btn-delete {
+                background: linear-gradient(135deg, #b84238, var(--red));
+            }
+
+            .btn:hover,
+            .nav-button:hover,
+            .date-picker-nav button:hover,
+            .shift-cancel:hover {
+                transform: translateY(-2px);
+            }
+
+            .schedule-area {
+                padding: clamp(18px, 3vw, 34px);
+            }
+
+            .week-navigation {
+                background: rgba(255, 252, 246, 0.82);
+                border: 1px solid rgba(255, 255, 255, 0.75);
+                border-radius: var(--radius-lg);
+                padding: 16px;
+                box-shadow: var(--shadow-card);
+                margin-bottom: 22px;
+            }
+
+            .current-week {
+                color: var(--clay-900);
+                font-size: clamp(17px, 2vw, 23px);
+                font-weight: 800;
+                letter-spacing: -0.03em;
+            }
+
+            .week-navigation label {
+                color: var(--muted) !important;
+                font-weight: 700;
+            }
+
+            .calendar {
+                gap: 12px;
+                background: transparent;
+                border: none;
+                border-radius: 0;
+                overflow: visible;
+            }
+
+            .day-header {
+                background: rgba(76, 55, 37, 0.09);
+                border: 1px solid var(--line);
+                border-radius: 14px;
+                color: var(--clay-800);
+                text-transform: uppercase;
+                letter-spacing: 0.12em;
+                font-size: 11px;
+            }
+
+            .day-column {
+                min-height: 178px;
+                background: rgba(255, 252, 246, 0.86) !important;
+                border: 1px solid rgba(255, 255, 255, 0.74);
+                border-radius: var(--radius-lg);
+                box-shadow: var(--shadow-card);
+                overflow: hidden;
+            }
+
+            .day-column-gray {
+                background: rgba(246, 239, 228, 0.68) !important;
+            }
+
+            .day-column .date-header {
+                background: linear-gradient(
+                    180deg,
+                    rgba(255, 250, 241, 0.98),
+                    rgba(246, 239, 228, 0.68)
+                );
+                border-bottom: 1px solid var(--line) !important;
+                color: var(--clay-900) !important;
+                font-weight: 800 !important;
+                letter-spacing: -0.01em;
+            }
+
+            .shifts-container {
+                min-height: 128px;
+            }
+
+            .shift-card {
+                border-radius: 14px;
+                padding: 10px 11px;
+                margin-bottom: 8px;
+                border: 1px solid rgba(255, 255, 255, 0.26);
+                box-shadow: 0 10px 20px rgba(33, 23, 15, 0.18);
+                overflow: hidden;
+            }
+
+            .shift-card::before {
+                content: "";
+                position: absolute;
+                inset: 0;
+                background: linear-gradient(
+                    135deg,
+                    rgba(255, 255, 255, 0.2),
+                    transparent 42%
+                );
+                pointer-events: none;
+            }
+
+            .shift-employee,
+            .shift-time,
+            .shift-cancel {
+                position: relative;
+            }
+
+            .shift-employee {
+                font-size: 12px;
+                letter-spacing: -0.01em;
+            }
+
+            .shift-time {
+                font-size: 10px;
+                text-transform: uppercase;
+                letter-spacing: 0.06em;
+                opacity: 0.88;
+            }
+
+            .shift-card.day-off,
+            .shift-card.pending-time-off {
+                color: #24190f;
+            }
+
+            .shift-cancel {
+                background: rgba(255, 250, 241, 0.26);
+                border-color: rgba(255, 250, 241, 0.5);
+                font-size: 10px;
+            }
+
+            .modal-overlay {
+                background: rgba(33, 23, 15, 0.36);
+                backdrop-filter: blur(6px);
+            }
+
+            .modal-content,
+            .loading-content {
+                background: rgba(255, 252, 246, 0.96);
+                border: 1px solid rgba(255, 255, 255, 0.82);
+                border-radius: 24px;
+                box-shadow: 0 30px 80px rgba(33, 23, 15, 0.26);
+            }
+
+            .modal-header h2,
+            .loading-message {
+                color: var(--clay-900);
+                letter-spacing: -0.03em;
+            }
+
+            .loading-overlay {
+                background: rgba(33, 23, 15, 0.58);
+                backdrop-filter: blur(8px);
+            }
+
+            .loading-spinner {
+                border-color: rgba(132, 111, 82, 0.18);
+                border-top-color: var(--gold);
+            }
+
+            .date-picker-date {
+                border-color: var(--line);
+                border-radius: 12px;
+            }
+
+            .date-picker-date:hover:not(:disabled) {
+                background: #fff5df;
+                border-color: rgba(216, 169, 79, 0.62);
+            }
+
+            .date-picker-date.selected,
+            .date-chip {
+                background: linear-gradient(
+                    135deg,
+                    var(--clay-800),
+                    var(--clay-600)
+                );
+                color: #fffaf1;
+            }
+
+            .period-nav-btn {
+                width: 48px;
+                height: 48px;
+                padding: 0 !important;
+                border-radius: 50% !important;
+                display: inline-flex !important;
+                align-items: center;
+                justify-content: center;
+            }
+
+            .period-nav-btn svg {
+                width: 22px;
+                height: 22px;
+            }
+
+            .period-nav-btn:focus-visible {
+                outline: 3px solid rgba(216, 169, 79, 0.44);
+                outline-offset: 3px;
+            }
+
+            @media (max-width: 1024px) {
+                .sidebar {
+                    border-right: none;
+                    border-bottom: 1px solid var(--line);
+                }
+            }
+
+            @media (max-width: 768px) {
+                html,
+                body {
+                    max-width: 100%;
+                    overflow-x: hidden;
+                }
+
+                body {
+                    padding: 8px;
+                }
+
+                .container {
+                    border-radius: 22px;
+                }
+
+                .header {
+                    padding: 28px 18px 24px;
+                }
+
+                .week-navigation {
+                    padding: 14px;
+                    gap: 12px;
+                    align-items: stretch;
+                }
+
+                .week-navigation > div {
+                    min-width: 0;
+                    width: 100%;
+                }
+
+                .week-navigation > div > div:last-child {
+                    display: grid !important;
+                    grid-template-columns: auto minmax(0, 1fr);
+                    width: 100%;
+                    gap: 8px;
+                    align-items: center;
+                }
+
+                .current-week {
+                    text-align: center;
+                }
+
+                #customStartDate,
+                #customEndDate {
+                    min-width: 0;
+                    width: 100% !important;
+                    min-height: 44px;
+                }
+
+                .week-navigation .period-nav-btn {
+                    display: inline-flex !important;
+                    width: 100% !important;
+                    border-radius: 999px !important;
+                }
+
+                #employeeFilterList {
+                    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+                }
+
+                .calendar {
+                    grid-template-columns: repeat(2, minmax(0, 1fr));
+                    gap: 10px;
+                    overflow: visible;
+                }
+
+                .sidebar {
+                    padding: 14px;
+                }
+
+                .schedule-area {
+                    min-width: 0;
+                    padding: 12px;
+                }
+
+                .day-column {
+                    min-height: 168px;
+                }
+
+                .shift-card {
+                    padding: 11px;
+                    border-radius: 13px;
+                }
+
+                .modal {
+                    position: fixed;
+                    top: 50% !important;
+                    left: 10px !important;
+                    right: 10px;
+                    width: auto;
+                    transform: translateY(-50%);
+                }
+
+                .modal-content {
+                    width: 100%;
+                    max-height: calc(100dvh - 32px);
+                    padding: 18px;
+                }
+
+                .mobile-time-off-panel {
+                    padding: 22px 18px 18px;
+                }
+
+                .mobile-time-off-panel:empty {
+                    display: none;
+                }
+
+                .mobile-time-off-panel .modal.mobile-inline-modal {
+                    position: static !important;
+                    display: block;
+                    width: 100%;
+                    padding: 0;
+                    overflow: visible;
+                    pointer-events: auto;
+                    z-index: auto;
+                }
+
+                .mobile-time-off-panel .modal.mobile-inline-modal .modal-content {
+                    width: 100%;
+                    max-height: none;
+                    overflow: visible;
+                    padding: 26px 18px 18px;
+                }
+
+                .date-picker-nav {
+                    gap: 8px;
+                }
+
+                .date-picker-nav button {
+                    min-height: 44px;
+                    padding: 8px 10px;
+                }
+
+                .date-picker-grid {
+                    grid-template-columns: repeat(7, minmax(0, 1fr));
+                }
+
+                .date-picker-date {
+                    min-width: 0;
+                    min-height: 40px;
+                }
+
+                .loading-content {
+                    width: calc(100vw - 32px);
+                    min-width: 0;
+                    padding: 28px 18px;
+                }
+            }
+
+            @media (max-width: 480px) {
+                .calendar {
+                    grid-template-columns: 1fr;
+                }
+
+                .week-navigation > div > div:last-child,
+                .date-picker-nav {
+                    grid-template-columns: 1fr;
+                    flex-direction: column;
+                }
+
+                .request-month-nav {
+                    grid-template-columns: none;
+                    flex-direction: row;
+                }
+
+                .week-navigation label {
+                    text-align: left;
+                }
+
+                #employeeFilterList {
+                    grid-template-columns: 1fr;
+                }
+
+                .day-column {
+                    min-height: 140px;
+                }
+
+                .closed-day-message {
+                    min-height: 120px;
+                }
+
+                .header button {
+                    width: 100%;
+                }
+
+                .modal-actions {
+                    gap: 8px;
+                }
+            }
+        </style>
+    </head>
+    <body>
+        <!-- Loading Overlay -->
+        <div id="loadingOverlay" class="loading-overlay">
+            <div class="loading-content">
+                <div class="loading-spinner"></div>
+                <div class="loading-message" id="loadingMessage">
+                    Loading...
+                </div>
+            </div>
+        </div>
+
+        <div class="container">
+            <div class="header">
+                <h1>Mad Potter Schedule</h1>
+                <button
+                    onclick="openTimeOffRequestModal()"
+                    style="
+                        margin-top: 15px;
+                        padding: 10px 20px;
+                        background: #4299e1;
+                        color: white;
+                        border: none;
+                        border-radius: 6px;
+                        cursor: pointer;
+                        font-weight: 600;
+                        font-size: 14px;
+                    "
+                >
+                    Request Time Off
+                </button>
+            </div>
+
+            <div id="mobileTimeOffPanel" class="mobile-time-off-panel" hidden></div>
+
+            <div class="main-content">
+                <div class="sidebar">
+                    <!-- Day Off Toggle -->
+                    <div class="section">
+                        <label class="sidebar-toggle">
+                            <input
+                                type="checkbox"
+                                id="showDayOffsCheckbox"
+                                checked
+                                onchange="toggleDayOffs()"
+                                aria-label="Toggle visibility of days off on calendar"
+                            />
+                            <span class="toggle-label">Show Days Off</span>
+                        </label>
+                    </div>
+                    <!-- Employee Filter -->
+                    <div class="section">
+                        <div
+                            class="drawer-header"
+                            id="filterDrawerHeader"
+                            onclick="toggleDrawer('filterDrawer')"
+                            role="button"
+                            aria-expanded="false"
+                            aria-controls="filterDrawer"
+                        >
+                            <h2 style="margin: 0">Filter by Employee</h2>
+                            <span
+                                class="drawer-toggle"
+                                id="filterDrawerToggle"
+                                aria-hidden="true"
+                                >▼</span
+                            >
+                        </div>
+                        <div class="drawer-content" id="filterDrawer">
+                            <div
+                                style="
+                                    margin-bottom: 12px;
+                                    display: flex;
+                                    gap: 8px;
+                                "
+                            >
+                                <button
+                                    class="btn btn-secondary"
+                                    onclick="selectAllEmployees()"
+                                    style="flex: 1; padding: 8px 12px"
+                                >
+                                    Select All
+                                </button>
+                                <button
+                                    class="btn btn-secondary"
+                                    onclick="deselectAllEmployees()"
+                                    style="flex: 1; padding: 8px 12px"
+                                >
+                                    Clear All
+                                </button>
+                            </div>
+                            <div id="employeeFilterList"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="schedule-area">
+                    <div class="week-navigation">
+                        <button
+                            class="nav-button period-nav-btn"
+                            onclick="previousPeriod()"
+                            aria-label="Previous period"
+                            title="Previous period"
+                        >
+                            <svg
+                                xmlns="http://www.w3.org/2000/svg"
+                                width="24"
+                                height="24"
+                                viewBox="0 0 24 24"
+                                fill="none"
+                                stroke="currentColor"
+                                stroke-width="2"
+                                stroke-linecap="round"
+                                stroke-linejoin="round"
+                                class="lucide lucide-arrow-left-icon lucide-arrow-left"
+                                aria-hidden="true"
+                            >
+                                <path d="m12 19-7-7 7-7" />
+                                <path d="M19 12H5" />
+                            </svg>
+                        </button>
+                        <div
+                            style="
+                                display: flex;
+                                flex-direction: column;
+                                align-items: center;
+                                gap: 8px;
+                            "
+                        >
+                            <div class="current-week" id="currentWeek"></div>
+                            <div
+                                style="
+                                    display: flex;
+                                    gap: 10px;
+                                    align-items: center;
+                                "
+                            >
+                                <label style="font-size: 14px; color: #555"
+                                    >Start:</label
+                                >
+                                <input
+                                    type="date"
+                                    id="customStartDate"
+                                    style="
+                                        padding: 6px 10px;
+                                        border: 1px solid #cbd5e0;
+                                        border-radius: 6px;
+                                        font-size: 14px;
+                                    "
+                                    onchange="setCustomDates()"
+                                />
+                                <label style="font-size: 14px; color: #555"
+                                    >End:</label
+                                >
+                                <input
+                                    type="date"
+                                    id="customEndDate"
+                                    style="
+                                        padding: 6px 10px;
+                                        border: 1px solid #cbd5e0;
+                                        border-radius: 6px;
+                                        font-size: 14px;
+                                    "
+                                    onchange="setCustomDates()"
+                                />
+                            </div>
+                        </div>
+                        <button
+                            class="nav-button period-nav-btn"
+                            onclick="nextPeriod()"
+                            aria-label="Next period"
+                            title="Next period"
+                        >
+                            <svg
+                                xmlns="http://www.w3.org/2000/svg"
+                                width="24"
+                                height="24"
+                                viewBox="0 0 24 24"
+                                fill="none"
+                                stroke="currentColor"
+                                stroke-width="2"
+                                stroke-linecap="round"
+                                stroke-linejoin="round"
+                                class="lucide lucide-arrow-right-icon lucide-arrow-right"
+                                aria-hidden="true"
+                            >
+                                <path d="M5 12h14" />
+                                <path d="m12 5 7 7-7 7" />
+                            </svg>
+                        </button>
+                    </div>
+
+                    <div class="calendar" id="calendar"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Modal overlay for click-to-close -->
+        <div
+            class="modal-overlay"
+            id="modalOverlay"
+            onclick="closeAllModals()"
+        ></div>
+
+        <!-- Time-Off Request Modal -->
+        <div class="modal" id="timeOffRequestModal">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h2>Request Time Off</h2>
+                </div>
+
+                <div class="input-group">
+                    <label>Your Name</label>
+                    <select id="requestEmployeeSelect">
+                        <option value="">Select your name</option>
+                    </select>
+                </div>
+
+                <div class="input-group">
+                    <label>Select Date(s) - Click to select/deselect</label>
+
+                    <div class="date-picker-nav request-month-nav">
+                        <button
+                            type="button"
+                            class="date-picker-nav-icon"
+                            onclick="previousMonth()"
+                            aria-label="Previous month"
+                            title="Previous month"
+                        >
+                            <svg
+                                xmlns="http://www.w3.org/2000/svg"
+                                width="24"
+                                height="24"
+                                viewBox="0 0 24 24"
+                                fill="none"
+                                stroke="currentColor"
+                                stroke-width="2"
+                                stroke-linecap="round"
+                                stroke-linejoin="round"
+                                class="lucide lucide-arrow-left-icon lucide-arrow-left"
+                                aria-hidden="true"
+                            >
+                                <path d="m12 19-7-7 7-7" />
+                                <path d="M19 12H5" />
+                            </svg>
+                        </button>
+                        <span
+                            id="currentMonthLabel"
+                            class="request-month-label"
+                        ></span>
+                        <button
+                            type="button"
+                            class="date-picker-nav-icon"
+                            onclick="nextMonth()"
+                            aria-label="Next month"
+                            title="Next month"
+                        >
+                            <svg
+                                xmlns="http://www.w3.org/2000/svg"
+                                width="24"
+                                height="24"
+                                viewBox="0 0 24 24"
+                                fill="none"
+                                stroke="currentColor"
+                                stroke-width="2"
+                                stroke-linecap="round"
+                                stroke-linejoin="round"
+                                class="lucide lucide-arrow-right-icon lucide-arrow-right"
+                                aria-hidden="true"
+                            >
+                                <path d="M5 12h14" />
+                                <path d="m12 5 7 7-7 7" />
+                            </svg>
+                        </button>
+                    </div>
+
+                    <div class="date-picker-grid" id="datePickerGrid"></div>
+
+                    <div class="selected-dates-container">
+                        <div class="selected-dates-label">Selected Dates:</div>
+                        <div
+                            class="selected-dates-chips"
+                            id="selectedDatesChips"
+                        >
+                            <span style="color: #718096; font-size: 13px"
+                                >No dates selected</span
+                            >
+                        </div>
+                    </div>
+                </div>
+
+                <div class="modal-actions">
+                    <button
+                        class="btn btn-secondary"
+                        onclick="closeTimeOffRequestModal()"
+                    >
+                        Cancel
+                    </button>
+                    <button
+                        class="btn btn-primary"
+                        onclick="submitTimeOffRequest()"
+                    >
+                        Submit Request
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Cancel Confirmation Modal -->
+        <div class="modal" id="cancelConfirmModal">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h2>Confirm Cancellation</h2>
+                </div>
+                <p style="margin-bottom: 20px; color: #4a5568">
+                    To cancel this time-off request, please select your name to
+                    confirm:
+                </p>
+                <div class="input-group">
+                    <label>Your Name</label>
+                    <select id="cancelConfirmName">
+                        <option value="">Select your name</option>
+                    </select>
+                </div>
+                <div class="modal-actions">
+                    <button
+                        class="btn btn-secondary"
+                        onclick="closeCancelConfirmModal()"
+                    >
+                        Cancel
+                    </button>
+                    <button
+                        class="btn btn-delete"
+                        onclick="confirmCancelRequest()"
+                    >
+                        Confirm Cancellation
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <script>
+            // VERSION: Read-Only with Time-Off Requests
+            console.log(
+                "Schedule App Version: Read-Only with Time-Off Requests",
+            );
+
+            let employees = [];
+            let shifts = [];
+            let closedDays = [];
+            let currentStartDate = new Date();
+            let currentEndDate = new Date();
+            let selectedEmployees = new Set();
+            let showDayOffs = true;
+
+            // Time-off request variables
+            let selectedDates = [];
+            let currentPickerMonth = new Date();
+            let cancelingShiftId = null;
+            let cancelingEmployeeName = null;
+
+            // Initialize to today and 35 days from today
+            currentStartDate.setHours(0, 0, 0, 0);
+            currentEndDate.setHours(0, 0, 0, 0);
+            currentEndDate.setDate(currentEndDate.getDate() + 34);
+
+            function showLoading() {
+                document
+                    .getElementById("loadingOverlay")
+                    .classList.add("active");
+            }
+
+            function hideLoading() {
+                document
+                    .getElementById("loadingOverlay")
+                    .classList.remove("active");
+            }
+
+            // Floating modal positioning
+            let lastClickEvent = null;
+            let timeOffRequestModalHome = null;
+            let timeOffRequestModalNextSibling = null;
+
+            document.addEventListener(
+                "click",
+                function (e) {
+                    lastClickEvent = e;
+                },
+                true,
+            );
+
+            function isMobileLayout() {
+                return window.innerWidth <= 768;
+            }
+
+            function rememberTimeOffRequestModalHome(modal) {
+                if (timeOffRequestModalHome) return;
+                timeOffRequestModalHome = modal.parentNode;
+                timeOffRequestModalNextSibling = modal.nextSibling;
+            }
+
+            function openMobileTimeOffRequestPanel() {
+                const modal = document.getElementById("timeOffRequestModal");
+                const mount = document.getElementById("mobileTimeOffPanel");
+                const overlay = document.getElementById("modalOverlay");
+
+                if (!modal || !mount) return false;
+
+                rememberTimeOffRequestModalHome(modal);
+                overlay.classList.remove("active");
+                mount.hidden = false;
+                mount.appendChild(modal);
+
+                modal.classList.add("mobile-inline-modal", "active");
+                modal.style.left = "";
+                modal.style.right = "";
+                modal.style.top = "";
+                modal.style.bottom = "";
+                modal.style.width = "";
+                modal.style.transform = "";
+
+                const content = modal.querySelector(".modal-content");
+                if (content) content.scrollTop = 0;
+
+                return true;
+            }
+
+            function restoreMobileTimeOffRequestModal() {
+                const modal = document.getElementById("timeOffRequestModal");
+                const mount = document.getElementById("mobileTimeOffPanel");
+
+                if (!modal) return;
+
+                modal.classList.remove("mobile-inline-modal");
+                if (
+                    timeOffRequestModalHome &&
+                    modal.parentNode !== timeOffRequestModalHome
+                ) {
+                    timeOffRequestModalHome.insertBefore(
+                        modal,
+                        timeOffRequestModalNextSibling,
+                    );
+                }
+
+                if (mount) mount.hidden = true;
+            }
+
+            function openFloatingModal(modalId) {
+                const modal = document.getElementById(modalId);
+                const overlay = document.getElementById("modalOverlay");
+
+                if (!modal || !lastClickEvent) return;
+
+                // Show overlay
+                overlay.classList.add("active");
+
+                const content = modal.querySelector(".modal-content");
+                if (content) content.scrollTop = 0;
+
+                if (isMobileLayout()) {
+                    modal.style.left = "";
+                    modal.style.right = "";
+                    modal.style.top = "";
+                    modal.style.bottom = "";
+                    modal.style.width = "";
+                    modal.style.transform = "";
+                    modal.classList.add("active");
+                    return;
+                }
+
+                modal.style.right = "auto";
+
+                // Get click position
+                const clickX = lastClickEvent.pageX;
+                const clickY = lastClickEvent.pageY;
+
+                // Get viewport dimensions
+                const viewportWidth = window.innerWidth;
+                const modalWidth = 500; // Match CSS width
+
+                // Calculate horizontal position - try to center on click, but keep in bounds
+                let left = clickX - modalWidth / 2;
+                left = Math.max(
+                    10,
+                    Math.min(left, viewportWidth - modalWidth - 10),
+                );
+
+                // Position vertically below the click point
+                let top = clickY + 20;
+
+                // Apply position
+                modal.style.left = left + "px";
+                modal.style.top = top + "px";
+
+                // Show modal
+                modal.classList.add("active");
+            }
+
+            function closeAllModals() {
+                document.querySelectorAll(".modal").forEach((modal) => {
+                    modal.classList.remove("active");
                 });
-                
-                selectedEmployees = new Set(employees.map(e => e.id));
-                
-                renderEmployeeFilter();
-                renderCalendar();
-                updateDateInputs();
-                
-                hideLoading();
-                console.log('Rendering complete');
-            } else if (event.data && event.data.action === 'TIME_OFF_REQUEST_SUBMITTED') {
-                const submittedDates = event.data.submittedDates || [];
-                const skippedDates = event.data.skippedDates || [];
-                const skippedText = formatDateList(skippedDates);
+                document
+                    .getElementById("modalOverlay")
+                    .classList.remove("active");
+                restoreMobileTimeOffRequestModal();
 
-                if (submittedDates.length > 0 && skippedDates.length > 0) {
-                    alert(`Time-off request submitted. Skipped dates that are closed or already had a pending or approved request: ${skippedText}`);
-                } else if (submittedDates.length > 0) {
-                    alert('Time-off request submitted! Your manager will review it shortly.');
-                } else if (skippedDates.length > 0) {
-                    alert(`No new requests were submitted. These dates are closed or already had pending or approved requests: ${skippedText}`);
+                // Reset state variables
+                selectedDates = [];
+                cancelingShiftId = null;
+                cancelingEmployeeName = null;
+            }
+
+            // Helper function to open modal at current scroll position
+            function loadFromDatabase() {
+                console.log("Requesting schedule data from Wix...");
+                showLoading();
+
+                window.parent.postMessage(
+                    {
+                        action: "LOAD_FROM_DATABASE",
+                    },
+                    "*",
+                );
+
+                setTimeout(() => {
+                    if (employees.length === 0) {
+                        console.error("No data received after 10 seconds");
+                        hideLoading();
+                        const calendar = document.getElementById("calendar");
+                        if (calendar) {
+                            calendar.innerHTML =
+                                '<div class="empty-state" style="grid-column: 1 / -1;">Unable to load schedule. Please refresh the page.</div>';
+                        }
+                    }
+                }, 10000);
+            }
+
+            window.addEventListener("message", function (event) {
+                console.log("Received message:", event.data);
+
+                if (event.data && event.data.action === "LOAD_COMPLETE") {
+                    console.log("Processing LOAD_COMPLETE message");
+                    employees = event.data.employees || [];
+                    shifts = event.data.shifts || [];
+                    closedDays = normalizeClosedDays(
+                        event.data.closedDays || [],
+                    );
+
+                    console.log(
+                        "Loaded:",
+                        employees.length,
+                        "employees,",
+                        shifts.length,
+                        "shifts",
+                    );
+
+                    employees.forEach((emp) => {
+                        if (!emp.color) {
+                            emp.color = "#7F6C50";
+                        }
+                    });
+
+                    selectedEmployees = new Set(employees.map((e) => e.id));
+
+                    renderEmployeeFilter();
+                    renderCalendar();
+                    updateDateInputs();
+
+                    hideLoading();
+                    console.log("Rendering complete");
+                } else if (
+                    event.data &&
+                    event.data.action === "TIME_OFF_REQUEST_SUBMITTED"
+                ) {
+                    const submittedDates = event.data.submittedDates || [];
+                    const skippedDates = event.data.skippedDates || [];
+                    const skippedText = formatDateList(skippedDates);
+
+                    if (submittedDates.length > 0 && skippedDates.length > 0) {
+                        alert(
+                            `Time-off request submitted. Skipped dates that are closed or already had a pending or approved request: ${skippedText}`,
+                        );
+                    } else if (submittedDates.length > 0) {
+                        alert(
+                            "Time-off request submitted! Your manager will review it shortly.",
+                        );
+                    } else if (skippedDates.length > 0) {
+                        alert(
+                            `No new requests were submitted. These dates are closed or already had pending or approved requests: ${skippedText}`,
+                        );
+                    }
+                } else if (
+                    event.data &&
+                    event.data.action === "TIME_OFF_ERROR"
+                ) {
+                    hideLoading();
+                    alert(
+                        event.data.message ||
+                            "There was an error submitting your time-off request.",
+                    );
                 }
-            } else if (event.data && event.data.action === 'TIME_OFF_ERROR') {
-                hideLoading();
-                alert(event.data.message || 'There was an error submitting your time-off request.');
-            }
-        });
+            });
 
-        function renderEmployeeFilter() {
-            const filterList = document.getElementById('employeeFilterList');
-            if (!filterList) return;
-            
-            if (employees.length === 0) {
-                filterList.innerHTML = '<div class="empty-state">No employees</div>';
-                return;
-            }
+            function renderEmployeeFilter() {
+                const filterList =
+                    document.getElementById("employeeFilterList");
+                if (!filterList) return;
 
-            filterList.innerHTML = employees.map(emp => `
+                if (employees.length === 0) {
+                    filterList.innerHTML =
+                        '<div class="empty-state">No employees</div>';
+                    return;
+                }
+
+                filterList.innerHTML = employees
+                    .map(
+                        (emp) => `
                 <div class="filter-checkbox-item" onclick="toggleEmployeeFilter(${emp.id})">
-                    <input type="checkbox" 
-                           id="filter-${emp.id}" 
-                           ${selectedEmployees.has(emp.id) ? 'checked' : ''}
+                    <input type="checkbox"
+                           id="filter-${emp.id}"
+                           ${selectedEmployees.has(emp.id) ? "checked" : ""}
                            onclick="event.stopPropagation(); toggleEmployeeFilter(${emp.id})">
                     <label for="filter-${emp.id}">${emp.name}</label>
                 </div>
-            `).join('');
-        }
-
-        function toggleEmployeeFilter(employeeId) {
-            if (selectedEmployees.has(employeeId)) {
-                selectedEmployees.delete(employeeId);
-            } else {
-                selectedEmployees.add(employeeId);
+            `,
+                    )
+                    .join("");
             }
-            renderEmployeeFilter();
-            renderCalendar();
-        }
 
-        function selectAllEmployees() {
-            employees.forEach(emp => selectedEmployees.add(emp.id));
-            renderEmployeeFilter();
-            renderCalendar();
-        }
-
-        function deselectAllEmployees() {
-            selectedEmployees.clear();
-            renderEmployeeFilter();
-            renderCalendar();
-        }
-
-        function toggleDayOffs() {
-            showDayOffs = document.getElementById('showDayOffsCheckbox').checked;
-            renderCalendar();
-        }
-
-        function toggleDrawer(drawerId) {
-            const drawer = document.getElementById(drawerId);
-            const toggle = document.getElementById(drawerId + 'Toggle');
-            const header = document.getElementById(drawerId + 'Header');
-            
-            if (drawer.classList.contains('open')) {
-                drawer.classList.remove('open');
-                toggle.classList.remove('open');
-                if (header) {
-                    header.classList.remove('drawer-open');
-                    header.setAttribute('aria-expanded', 'false');
+            function toggleEmployeeFilter(employeeId) {
+                if (selectedEmployees.has(employeeId)) {
+                    selectedEmployees.delete(employeeId);
+                } else {
+                    selectedEmployees.add(employeeId);
                 }
-            } else {
-                drawer.classList.add('open');
-                toggle.classList.add('open');
-                if (header) {
-                    header.classList.add('drawer-open');
-                    header.setAttribute('aria-expanded', 'true');
+                renderEmployeeFilter();
+                renderCalendar();
+            }
+
+            function selectAllEmployees() {
+                employees.forEach((emp) => selectedEmployees.add(emp.id));
+                renderEmployeeFilter();
+                renderCalendar();
+            }
+
+            function deselectAllEmployees() {
+                selectedEmployees.clear();
+                renderEmployeeFilter();
+                renderCalendar();
+            }
+
+            function toggleDayOffs() {
+                showDayOffs = document.getElementById(
+                    "showDayOffsCheckbox",
+                ).checked;
+                renderCalendar();
+            }
+
+            function toggleDrawer(drawerId) {
+                const drawer = document.getElementById(drawerId);
+                const toggle = document.getElementById(drawerId + "Toggle");
+                const header = document.getElementById(drawerId + "Header");
+
+                if (drawer.classList.contains("open")) {
+                    drawer.classList.remove("open");
+                    toggle.classList.remove("open");
+                    if (header) {
+                        header.classList.remove("drawer-open");
+                        header.setAttribute("aria-expanded", "false");
+                    }
+                } else {
+                    drawer.classList.add("open");
+                    toggle.classList.add("open");
+                    if (header) {
+                        header.classList.add("drawer-open");
+                        header.setAttribute("aria-expanded", "true");
+                    }
                 }
             }
-        }
 
-        function previousPeriod() {
-            const dayCount = getDayCount();
-            currentStartDate.setDate(currentStartDate.getDate() - dayCount);
-            currentEndDate.setDate(currentEndDate.getDate() - dayCount);
-            updateDateInputs();
-            renderCalendar();
-        }
+            function previousPeriod() {
+                const dayCount = getDayCount();
+                currentStartDate.setDate(currentStartDate.getDate() - dayCount);
+                currentEndDate.setDate(currentEndDate.getDate() - dayCount);
+                updateDateInputs();
+                renderCalendar();
+            }
 
-        function nextPeriod() {
-            const dayCount = getDayCount();
-            currentStartDate.setDate(currentStartDate.getDate() + dayCount);
-            currentEndDate.setDate(currentEndDate.getDate() + dayCount);
-            updateDateInputs();
-            renderCalendar();
-        }
+            function nextPeriod() {
+                const dayCount = getDayCount();
+                currentStartDate.setDate(currentStartDate.getDate() + dayCount);
+                currentEndDate.setDate(currentEndDate.getDate() + dayCount);
+                updateDateInputs();
+                renderCalendar();
+            }
 
-        function setCustomDates() {
-            const startInput = document.getElementById('customStartDate');
-            const endInput = document.getElementById('customEndDate');
-            
-            if (startInput.value && endInput.value) {
-                const newStart = new Date(startInput.value + 'T00:00:00');
-                const newEnd = new Date(endInput.value + 'T00:00:00');
-                
-                if (newEnd < newStart) {
-                    alert('End date must be after start date');
+            function setCustomDates() {
+                const startInput = document.getElementById("customStartDate");
+                const endInput = document.getElementById("customEndDate");
+
+                if (startInput.value && endInput.value) {
+                    const newStart = new Date(startInput.value + "T00:00:00");
+                    const newEnd = new Date(endInput.value + "T00:00:00");
+
+                    if (newEnd < newStart) {
+                        alert("End date must be after start date");
+                        updateDateInputs();
+                        return;
+                    }
+
+                    currentStartDate = newStart;
+                    currentEndDate = newEnd;
+                    renderCalendar();
+                } else if (startInput.value) {
+                    currentStartDate = new Date(startInput.value + "T00:00:00");
+                    currentEndDate = new Date(currentStartDate);
+                    currentEndDate.setDate(currentEndDate.getDate() + 34);
                     updateDateInputs();
-                    return;
+                    renderCalendar();
+                } else if (endInput.value) {
+                    currentEndDate = new Date(endInput.value + "T00:00:00");
+                    currentStartDate = new Date(currentEndDate);
+                    currentStartDate.setDate(currentStartDate.getDate() - 34);
+                    updateDateInputs();
+                    renderCalendar();
                 }
-                
-                currentStartDate = newStart;
-                currentEndDate = newEnd;
-                renderCalendar();
-            } else if (startInput.value) {
-                currentStartDate = new Date(startInput.value + 'T00:00:00');
-                currentEndDate = new Date(currentStartDate);
-                currentEndDate.setDate(currentEndDate.getDate() + 34);
-                updateDateInputs();
-                renderCalendar();
-            } else if (endInput.value) {
-                currentEndDate = new Date(endInput.value + 'T00:00:00');
-                currentStartDate = new Date(currentEndDate);
-                currentStartDate.setDate(currentStartDate.getDate() - 34);
-                updateDateInputs();
-                renderCalendar();
-            }
-        }
-
-        function updateDateInputs() {
-            const startInput = document.getElementById('customStartDate');
-            const endInput = document.getElementById('customEndDate');
-            
-            if (startInput && endInput) {
-                const formatDate = (date) => {
-                    const year = date.getFullYear();
-                    const month = String(date.getMonth() + 1).padStart(2, '0');
-                    const day = String(date.getDate()).padStart(2, '0');
-                    return `${year}-${month}-${day}`;
-                };
-                
-                startInput.value = formatDate(currentStartDate);
-                endInput.value = formatDate(currentEndDate);
-            }
-        }
-
-        function getDayCount() {
-            const timeDiff = currentEndDate - currentStartDate;
-            return Math.floor(timeDiff / (1000 * 60 * 60 * 24)) + 1;
-        }
-
-        function normalizeClosedDays(days) {
-            return [...new Set((days || []).map(day => {
-                if (!day) return null;
-                if (day instanceof Date) return formatDate(day);
-                const value = String(day);
-                return value.includes('T') ? value.split('T')[0] : value;
-            }).filter(Boolean))].sort();
-        }
-
-        function isClosedDate(dateStr) {
-            return closedDays.includes(dateStr);
-        }
-
-        function formatDate(date) {
-            return date.toISOString().split('T')[0];
-        }
-
-        function formatDateList(dateStrings) {
-            return dateStrings.map(dateStr => {
-                const date = new Date(dateStr + 'T00:00:00');
-                return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
-            }).join(', ');
-        }
-
-        function formatTime12Hour(time24) {
-            if (!time24) return '—';
-            const [hours, minutes] = time24.split(':');
-            const hour = parseInt(hours);
-            const ampm = hour >= 12 ? 'PM' : 'AM';
-            const hour12 = hour % 12 || 12;
-            return `${hour12}:${minutes} ${ampm}`;
-        }
-
-        function renderCalendar() {
-            const calendar = document.getElementById('calendar');
-            if (!calendar) return;
-            const dayNames = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
-            const dayNamesFull = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
-            
-            const dayCount = getDayCount();
-            
-            const currentWeekEl = document.getElementById('currentWeek');
-            if (currentWeekEl) {
-                currentWeekEl.textContent =
-                    `${currentStartDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })} - ${currentEndDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })} (${dayCount} days)`;
             }
 
-            let calendarHTML = '';
-            
-            const totalCells = Math.ceil(dayCount / 7) * 7;
-            
-            const startDayOfWeek = currentStartDate.getDay();
-            for (let i = 0; i < 7; i++) {
-                const dayIndex = (startDayOfWeek + i) % 7;
-                calendarHTML += `
+            function updateDateInputs() {
+                const startInput = document.getElementById("customStartDate");
+                const endInput = document.getElementById("customEndDate");
+
+                if (startInput && endInput) {
+                    const formatDate = (date) => {
+                        const year = date.getFullYear();
+                        const month = String(date.getMonth() + 1).padStart(
+                            2,
+                            "0",
+                        );
+                        const day = String(date.getDate()).padStart(2, "0");
+                        return `${year}-${month}-${day}`;
+                    };
+
+                    startInput.value = formatDate(currentStartDate);
+                    endInput.value = formatDate(currentEndDate);
+                }
+            }
+
+            function getDayCount() {
+                const timeDiff = currentEndDate - currentStartDate;
+                return Math.floor(timeDiff / (1000 * 60 * 60 * 24)) + 1;
+            }
+
+            function normalizeClosedDays(days) {
+                return [
+                    ...new Set(
+                        (days || [])
+                            .map((day) => {
+                                if (!day) return null;
+                                if (day instanceof Date) return formatDate(day);
+                                const value = String(day);
+                                return value.includes("T")
+                                    ? value.split("T")[0]
+                                    : value;
+                            })
+                            .filter(Boolean),
+                    ),
+                ].sort();
+            }
+
+            function isClosedDate(dateStr) {
+                return closedDays.includes(dateStr);
+            }
+
+            function formatDate(date) {
+                return date.toISOString().split("T")[0];
+            }
+
+            function formatDateList(dateStrings) {
+                return dateStrings
+                    .map((dateStr) => {
+                        const date = new Date(dateStr + "T00:00:00");
+                        return date.toLocaleDateString("en-US", {
+                            month: "short",
+                            day: "numeric",
+                            year: "numeric",
+                        });
+                    })
+                    .join(", ");
+            }
+
+            function formatTime12Hour(time24) {
+                if (!time24) return "—";
+                const [hours, minutes] = time24.split(":");
+                const hour = parseInt(hours);
+                const ampm = hour >= 12 ? "PM" : "AM";
+                const hour12 = hour % 12 || 12;
+                return `${hour12}:${minutes} ${ampm}`;
+            }
+
+            function renderCalendar() {
+                const calendar = document.getElementById("calendar");
+                if (!calendar) return;
+                const dayNames = [
+                    "Sun",
+                    "Mon",
+                    "Tue",
+                    "Wed",
+                    "Thu",
+                    "Fri",
+                    "Sat",
+                ];
+                const dayNamesFull = [
+                    "Sunday",
+                    "Monday",
+                    "Tuesday",
+                    "Wednesday",
+                    "Thursday",
+                    "Friday",
+                    "Saturday",
+                ];
+
+                const dayCount = getDayCount();
+
+                const currentWeekEl = document.getElementById("currentWeek");
+                if (currentWeekEl) {
+                    currentWeekEl.textContent = `${currentStartDate.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })} - ${currentEndDate.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })} (${dayCount} days)`;
+                }
+
+                let calendarHTML = "";
+
+                const totalCells = Math.ceil(dayCount / 7) * 7;
+
+                const startDayOfWeek = currentStartDate.getDay();
+                for (let i = 0; i < 7; i++) {
+                    const dayIndex = (startDayOfWeek + i) % 7;
+                    calendarHTML += `
                     <div class="day-header" style="min-height: auto; padding: 10px; font-weight: 700;">
                         ${dayNames[dayIndex]}
                     </div>
                 `;
-            }
+                }
 
-            const isMobile = window.innerWidth <= 768;
+                const isMobile = window.innerWidth <= 768;
 
-            for (let i = 0; i < totalCells; i++) {
-                if (i < dayCount) {
-                    const date = new Date(currentStartDate);
-                    date.setDate(date.getDate() + i);
-                    const dateStr = formatDate(date);
-                    
-                    let dateDisplay;
-                    if (isMobile) {
-                        const dayName = dayNamesFull[date.getDay()];
-                        const monthName = date.toLocaleDateString('en-US', { month: 'short' });
-                        dateDisplay = `${dayName}, ${monthName} ${date.getDate()}`;
-                    } else {
-                        dateDisplay = `${date.getDate()} ${date.toLocaleDateString('en-US', { month: 'short' })}`;
-                    }
-                    
-                    const dayIsClosed = isClosedDate(dateStr);
+                for (let i = 0; i < totalCells; i++) {
+                    if (i < dayCount) {
+                        const date = new Date(currentStartDate);
+                        date.setDate(date.getDate() + i);
+                        const dateStr = formatDate(date);
 
-                    const dayShifts = shifts.filter(s => {
-                        if (dayIsClosed) return false;
-                        if (s.date !== dateStr) return false;
-                        
-                        // Filter out denied requests
-                        if (s.requestStatus === 'denied') return false;
-                        
-                        if (!showDayOffs && s.isDayOff && !s.isTimeOffRequest) return false;
-                        if (!showDayOffs && s.isTimeOffRequest && s.requestStatus === 'pending') return false;
-                        
-                        // If no employees selected, show no shifts
-                        if (selectedEmployees.size === 0) return false;
-                        return selectedEmployees.has(s.employeeId);
-                    }).sort((a, b) => {
-                        // Pending time-off requests at top
-                        if (a.isTimeOffRequest && a.requestStatus === 'pending' && !(b.isTimeOffRequest && b.requestStatus === 'pending')) return -1;
-                        if (b.isTimeOffRequest && b.requestStatus === 'pending' && !(a.isTimeOffRequest && a.requestStatus === 'pending')) return 1;
-
-                        // Both are pending time-off requests - sort by creation time
-                        if (a.isTimeOffRequest && a.requestStatus === 'pending' && b.isTimeOffRequest && b.requestStatus === 'pending') {
-                            // Try requestDate first if available, otherwise use id
-                            if (a.requestDate && b.requestDate) {
-                                return new Date(a.requestDate) - new Date(b.requestDate); // Earlier dates first
-                            }
-                            return a.id - b.id; // Lower id = created first = appears first
+                        let dateDisplay;
+                        if (isMobile) {
+                            const dayName = dayNamesFull[date.getDay()];
+                            const monthName = date.toLocaleDateString("en-US", {
+                                month: "short",
+                            });
+                            dateDisplay = `${dayName}, ${monthName} ${date.getDate()}`;
+                        } else {
+                            dateDisplay = `${date.getDate()} ${date.toLocaleDateString("en-US", { month: "short" })}`;
                         }
 
-                        // Regular shifts in middle (by time)
-                        if (!a.isDayOff && !a.isTimeOffRequest && !b.isDayOff && !b.isTimeOffRequest) {
-                            return (a.startTime || '').localeCompare(b.startTime || '');
-                        }
+                        const dayIsClosed = isClosedDate(dateStr);
 
-                        // Day offs at bottom
-                        if (a.isDayOff && !b.isDayOff) return 1;
-                        if (!a.isDayOff && b.isDayOff) return -1;
+                        const dayShifts = shifts
+                            .filter((s) => {
+                                if (dayIsClosed) return false;
+                                if (s.date !== dateStr) return false;
 
-                        // Both are day offs - sort by creation time for approved time-off requests
-                        if (a.isDayOff && b.isDayOff) {
-                            // Try requestDate first if available, otherwise use id
-                            if (a.requestDate && b.requestDate) {
-                                return new Date(a.requestDate) - new Date(b.requestDate); // Earlier dates first
-                            }
-                            return a.id - b.id;
-                        }
+                                // Filter out denied requests
+                                if (s.requestStatus === "denied") return false;
 
-                        return 0;
-                    });
-                    
-                    const cellIndex = i + 7;
-                    const row = Math.floor(cellIndex / 2);
-                    const col = cellIndex % 2;
-                    const isGray = (row + col) % 2 === 1;
-                    const bgClass = isGray ? 'day-column-gray' : '';
-                    
-                    calendarHTML += `
+                                if (
+                                    !showDayOffs &&
+                                    s.isDayOff &&
+                                    !s.isTimeOffRequest
+                                )
+                                    return false;
+                                if (
+                                    !showDayOffs &&
+                                    s.isTimeOffRequest &&
+                                    s.requestStatus === "pending"
+                                )
+                                    return false;
+
+                                // If no employees selected, show no shifts
+                                if (selectedEmployees.size === 0) return false;
+                                return selectedEmployees.has(s.employeeId);
+                            })
+                            .sort((a, b) => {
+                                // Pending time-off requests at top
+                                if (
+                                    a.isTimeOffRequest &&
+                                    a.requestStatus === "pending" &&
+                                    !(
+                                        b.isTimeOffRequest &&
+                                        b.requestStatus === "pending"
+                                    )
+                                )
+                                    return -1;
+                                if (
+                                    b.isTimeOffRequest &&
+                                    b.requestStatus === "pending" &&
+                                    !(
+                                        a.isTimeOffRequest &&
+                                        a.requestStatus === "pending"
+                                    )
+                                )
+                                    return 1;
+
+                                // Both are pending time-off requests - sort by creation time
+                                if (
+                                    a.isTimeOffRequest &&
+                                    a.requestStatus === "pending" &&
+                                    b.isTimeOffRequest &&
+                                    b.requestStatus === "pending"
+                                ) {
+                                    // Try requestDate first if available, otherwise use id
+                                    if (a.requestDate && b.requestDate) {
+                                        return (
+                                            new Date(a.requestDate) -
+                                            new Date(b.requestDate)
+                                        ); // Earlier dates first
+                                    }
+                                    return a.id - b.id; // Lower id = created first = appears first
+                                }
+
+                                // Regular shifts in middle (by time)
+                                if (
+                                    !a.isDayOff &&
+                                    !a.isTimeOffRequest &&
+                                    !b.isDayOff &&
+                                    !b.isTimeOffRequest
+                                ) {
+                                    return (a.startTime || "").localeCompare(
+                                        b.startTime || "",
+                                    );
+                                }
+
+                                // Day offs at bottom
+                                if (a.isDayOff && !b.isDayOff) return 1;
+                                if (!a.isDayOff && b.isDayOff) return -1;
+
+                                // Both are day offs - sort by creation time for approved time-off requests
+                                if (a.isDayOff && b.isDayOff) {
+                                    // Try requestDate first if available, otherwise use id
+                                    if (a.requestDate && b.requestDate) {
+                                        return (
+                                            new Date(a.requestDate) -
+                                            new Date(b.requestDate)
+                                        ); // Earlier dates first
+                                    }
+                                    return a.id - b.id;
+                                }
+
+                                return 0;
+                            });
+
+                        const cellIndex = i + 7;
+                        const row = Math.floor(cellIndex / 2);
+                        const col = cellIndex % 2;
+                        const isGray = (row + col) % 2 === 1;
+                        const bgClass = isGray ? "day-column-gray" : "";
+
+                        calendarHTML += `
                         <div class="day-column ${bgClass}">
                             <div class="date-header">
                                 ${dateDisplay}
                             </div>
                             <div class="shifts-container" style="padding: 8px;">
-                                ${dayIsClosed ? '<div class="closed-day-message">C<br>L<br>O<br>S<br>E<br>D</div>' : dayShifts.map((shift, index) => {
-                                    const employee = employees.find(e => e.id === shift.employeeId);
-                                    let bgColor;
-                                    let shiftText;
-                                    let extraButton = '';
+                                ${
+                                    dayIsClosed
+                                        ? '<div class="closed-day-message">C<br>L<br>O<br>S<br>E<br>D</div>'
+                                        : dayShifts
+                                              .map((shift, index) => {
+                                                  const employee =
+                                                      employees.find(
+                                                          (e) =>
+                                                              e.id ===
+                                                              shift.employeeId,
+                                                      );
+                                                  let bgColor;
+                                                  let shiftText;
+                                                  let extraButton = "";
 
-                                    // Check approved FIRST (before checking pending)
-                                    if (shift.requestStatus === 'approved' || shift.isDayOff) {
-                                        bgColor = 'linear-gradient(135deg, #f56565 0%, #c53030 100%)';
-                                        shiftText = 'DAY OFF';
-                                    } else if (shift.isTimeOffRequest && shift.requestStatus === 'pending') {
-                                        // Count total pending/approved time-off requests for this day
-                                        const totalTimeOffRequests = shifts.filter(s =>
-                                            s.date === dateStr &&
-                                            s.isTimeOffRequest &&
-                                            (s.requestStatus === 'pending' || s.requestStatus === 'approved')
-                                        ).length;
+                                                  // Check approved FIRST (before checking pending)
+                                                  if (
+                                                      shift.requestStatus ===
+                                                          "approved" ||
+                                                      shift.isDayOff
+                                                  ) {
+                                                      bgColor =
+                                                          "linear-gradient(135deg, #f56565 0%, #c53030 100%)";
+                                                      shiftText = "DAY OFF";
+                                                  } else if (
+                                                      shift.isTimeOffRequest &&
+                                                      shift.requestStatus ===
+                                                          "pending"
+                                                  ) {
+                                                      // Count total pending/approved time-off requests for this day
+                                                      const totalTimeOffRequests =
+                                                          shifts.filter(
+                                                              (s) =>
+                                                                  s.date ===
+                                                                      dateStr &&
+                                                                  s.isTimeOffRequest &&
+                                                                  (s.requestStatus ===
+                                                                      "pending" ||
+                                                                      s.requestStatus ===
+                                                                          "approved"),
+                                                          ).length;
 
-                                        // Count how many pending requests come before this one in the sorted list
-                                        const pendingRequestsBefore = dayShifts.slice(0, index).filter(s =>
-                                            s.isTimeOffRequest && s.requestStatus === 'pending'
-                                        ).length;
+                                                      // Count how many pending requests come before this one in the sorted list
+                                                      const pendingRequestsBefore =
+                                                          dayShifts
+                                                              .slice(0, index)
+                                                              .filter(
+                                                                  (s) =>
+                                                                      s.isTimeOffRequest &&
+                                                                      s.requestStatus ===
+                                                                          "pending",
+                                                              ).length;
 
-                                        // If 4+ total requests and this is the 4th+ pending request, use purple
-                                        if (totalTimeOffRequests >= 4 && pendingRequestsBefore >= 3) {
-                                            bgColor = '#9333EA'; // Purple
-                                        } else {
-                                            bgColor = '#FDB913'; // Yellow
-                                        }
+                                                      // If 4+ total requests and this is the 4th+ pending request, use purple
+                                                      if (
+                                                          totalTimeOffRequests >=
+                                                              4 &&
+                                                          pendingRequestsBefore >=
+                                                              3
+                                                      ) {
+                                                          bgColor = "#9333EA"; // Purple
+                                                      } else {
+                                                          bgColor = "#FDB913"; // Yellow
+                                                      }
 
-                                        shiftText = 'PENDING TIME OFF';
-                                        extraButton = `<button class="shift-cancel" onclick="cancelTimeOffRequest(${shift.id}, '${shift.employeeName}')">Cancel Request</button>`;
-                                    } else {
-                                        bgColor = employee?.color || '#7F6C50';
-                                        shiftText = formatTime12Hour(shift.startTime) + ' - ' + formatTime12Hour(shift.endTime);
-                                    }
+                                                      shiftText =
+                                                          "PENDING TIME OFF";
+                                                      extraButton = `<button class="shift-cancel" onclick="cancelTimeOffRequest(${shift.id}, '${shift.employeeName}')">Cancel Request</button>`;
+                                                  } else {
+                                                      bgColor =
+                                                          employee?.color ||
+                                                          "#7F6C50";
+                                                      shiftText =
+                                                          formatTime12Hour(
+                                                              shift.startTime,
+                                                          ) +
+                                                          " - " +
+                                                          formatTime12Hour(
+                                                              shift.endTime,
+                                                          );
+                                                  }
 
-                                    return `
+                                                  return `
                                     <div class="shift-card" style="background: ${bgColor};">
                                         <div class="shift-employee">${shift.employeeName}</div>
                                         <div class="shift-time">${shiftText}</div>
                                         ${extraButton}
                                     </div>
-                                `}).join('')}
+                                `;
+                                              })
+                                              .join("")
+                                }
                             </div>
                         </div>
                     `;
-                } else {
-                    const cellIndex = i + 7;
-                    const row = Math.floor(cellIndex / 2);
-                    const col = cellIndex % 2;
-                    const isGray = (row + col) % 2 === 1;
-                    const bgStyle = isGray ? 'background: #f8f9fa;' : 'background: white;';
-                    calendarHTML += `<div class="day-column" style="${bgStyle}"></div>`;
+                    } else {
+                        const cellIndex = i + 7;
+                        const row = Math.floor(cellIndex / 2);
+                        const col = cellIndex % 2;
+                        const isGray = (row + col) % 2 === 1;
+                        const bgStyle = isGray
+                            ? "background: #f8f9fa;"
+                            : "background: white;";
+                        calendarHTML += `<div class="day-column" style="${bgStyle}"></div>`;
+                    }
                 }
+
+                calendar.innerHTML = calendarHTML;
             }
 
-            calendar.innerHTML = calendarHTML;
-        }
+            // Time-Off Request Functions
+            let requestEmployeeListenerAttached = false;
 
-        // Time-Off Request Functions
-        let requestEmployeeListenerAttached = false;
-        
-        function handleRequestEmployeeChange() {
-            selectedDates = []; // Clear selections when changing employee
-            renderDatePicker();
-        }
-        
-        function openTimeOffRequestModal() {
-            selectedDates = [];
-            currentPickerMonth = new Date();
-            
-            // Populate employee dropdown
-            const select = document.getElementById('requestEmployeeSelect');
-            const activeEmployees = employees.filter(emp => !emp.archived);
-            select.innerHTML = '<option value="">Select your name</option>' +
-                activeEmployees.map(emp => `<option value="${emp.id}">${emp.name}</option>`).join('');
-            
-            // Add event listener only once to avoid memory leak
-            if (!requestEmployeeListenerAttached) {
-                select.addEventListener('change', handleRequestEmployeeChange);
-                requestEmployeeListenerAttached = true;
+            function handleRequestEmployeeChange() {
+                selectedDates = []; // Clear selections when changing employee
+                renderDatePicker();
             }
-            
-            renderDatePicker();
-            openFloatingModal('timeOffRequestModal');
-        }
 
-        function closeTimeOffRequestModal() {
-            closeAllModals();
-        }
+            function openTimeOffRequestModal() {
+                selectedDates = [];
+                currentPickerMonth = new Date();
 
-        function renderDatePicker() {
-            const grid = document.getElementById('datePickerGrid');
-            const year = currentPickerMonth.getFullYear();
-            const month = currentPickerMonth.getMonth();
-            
-            document.getElementById('currentMonthLabel').textContent = 
-                currentPickerMonth.toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
-            
-            const firstDay = new Date(year, month, 1);
-            const lastDay = new Date(year, month + 1, 0);
-            const daysInMonth = lastDay.getDate();
-            const startDayOfWeek = firstDay.getDay();
-            
-            let html = '';
-            
-            const dayNames = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
-            dayNames.forEach(day => {
-                html += `<div class="date-picker-day-header">${day}</div>`;
-            });
-            
-            for (let i = 0; i < startDayOfWeek; i++) {
-                html += '<div></div>';
+                // Populate employee dropdown
+                const select = document.getElementById("requestEmployeeSelect");
+                const activeEmployees = employees.filter(
+                    (emp) => !emp.archived,
+                );
+                select.innerHTML =
+                    '<option value="">Select your name</option>' +
+                    activeEmployees
+                        .map(
+                            (emp) =>
+                                `<option value="${emp.id}">${emp.name}</option>`,
+                        )
+                        .join("");
+
+                // Add event listener only once to avoid memory leak
+                if (!requestEmployeeListenerAttached) {
+                    select.addEventListener(
+                        "change",
+                        handleRequestEmployeeChange,
+                    );
+                    requestEmployeeListenerAttached = true;
+                }
+
+                renderDatePicker();
+                if (isMobileLayout() && openMobileTimeOffRequestPanel()) {
+                    return;
+                }
+
+                restoreMobileTimeOffRequestModal();
+                openFloatingModal("timeOffRequestModal");
             }
-            
-            const today = new Date();
-            today.setHours(0, 0, 0, 0);
-            const maxDate = new Date(today);
-            maxDate.setDate(maxDate.getDate() + 365);
-            
-            for (let day = 1; day <= daysInMonth; day++) {
-                const date = new Date(year, month, day);
-                const dateStr = formatDate(date);
-                
-                const isPast = date < today;
-                const isTooFar = date > maxDate;
-                const hasConflict = checkDateConflict(dateStr);
-                const isClosed = isClosedDate(dateStr);
-                
-                const isDisabled = isPast || isTooFar || hasConflict || isClosed;
-                const isSelected = selectedDates.includes(dateStr);
-                
-                const selectedClass = isSelected ? 'selected' : '';
-                
-                html += `
+
+            function closeTimeOffRequestModal() {
+                closeAllModals();
+            }
+
+            function renderDatePicker() {
+                const grid = document.getElementById("datePickerGrid");
+                const year = currentPickerMonth.getFullYear();
+                const month = currentPickerMonth.getMonth();
+
+                document.getElementById("currentMonthLabel").textContent =
+                    currentPickerMonth.toLocaleDateString("en-US", {
+                        month: "long",
+                        year: "numeric",
+                    });
+
+                const firstDay = new Date(year, month, 1);
+                const lastDay = new Date(year, month + 1, 0);
+                const daysInMonth = lastDay.getDate();
+                const startDayOfWeek = firstDay.getDay();
+
+                let html = "";
+
+                const dayNames = [
+                    "Sun",
+                    "Mon",
+                    "Tue",
+                    "Wed",
+                    "Thu",
+                    "Fri",
+                    "Sat",
+                ];
+                dayNames.forEach((day) => {
+                    html += `<div class="date-picker-day-header">${day}</div>`;
+                });
+
+                for (let i = 0; i < startDayOfWeek; i++) {
+                    html += "<div></div>";
+                }
+
+                const today = new Date();
+                today.setHours(0, 0, 0, 0);
+                const maxDate = new Date(today);
+                maxDate.setDate(maxDate.getDate() + 365);
+
+                for (let day = 1; day <= daysInMonth; day++) {
+                    const date = new Date(year, month, day);
+                    const dateStr = formatDate(date);
+
+                    const isPast = date < today;
+                    const isTooFar = date > maxDate;
+                    const hasConflict = checkDateConflict(dateStr);
+                    const isClosed = isClosedDate(dateStr);
+
+                    const isDisabled =
+                        isPast || isTooFar || hasConflict || isClosed;
+                    const isSelected = selectedDates.includes(dateStr);
+
+                    const selectedClass = isSelected ? "selected" : "";
+
+                    html += `
                     <button class="date-picker-date ${selectedClass}"
                             onclick="toggleDateSelection('${dateStr}')"
-                            title="${isClosed ? 'Closed for business' : ''}"
-                            ${isDisabled ? 'disabled' : ''}>
+                            title="${isClosed ? "Closed for business" : ""}"
+                            ${isDisabled ? "disabled" : ""}>
                         ${day}
                     </button>
                 `;
+                }
+
+                grid.innerHTML = html;
+                renderSelectedDatesChips();
             }
-            
-            grid.innerHTML = html;
-            renderSelectedDatesChips();
-        }
 
-        function checkDateConflict(dateStr) {
-            if (isClosedDate(dateStr)) return true;
+            function checkDateConflict(dateStr) {
+                if (isClosedDate(dateStr)) return true;
 
-            const selectedEmployeeId = parseInt(document.getElementById('requestEmployeeSelect').value);
-            if (!selectedEmployeeId) return false;
-            
-            return shifts.some(s => 
-                s.date === dateStr && 
-                s.employeeId === selectedEmployeeId && 
-                s.isTimeOffRequest && 
-                (s.requestStatus === 'pending' || s.requestStatus === 'approved')
-            );
-        }
+                const selectedEmployeeId = parseInt(
+                    document.getElementById("requestEmployeeSelect").value,
+                );
+                if (!selectedEmployeeId) return false;
 
-        function toggleDateSelection(dateStr) {
-            const index = selectedDates.indexOf(dateStr);
-            if (index > -1) {
-                selectedDates.splice(index, 1);
-            } else {
-                selectedDates.push(dateStr);
+                return shifts.some(
+                    (s) =>
+                        s.date === dateStr &&
+                        s.employeeId === selectedEmployeeId &&
+                        s.isTimeOffRequest &&
+                        (s.requestStatus === "pending" ||
+                            s.requestStatus === "approved"),
+                );
             }
-            selectedDates.sort();
-            renderDatePicker();
-        }
 
-        function renderSelectedDatesChips() {
-            const container = document.getElementById('selectedDatesChips');
-            if (selectedDates.length === 0) {
-                container.innerHTML = '<span style="color: #718096; font-size: 13px;">No dates selected</span>';
-                return;
+            function toggleDateSelection(dateStr) {
+                const index = selectedDates.indexOf(dateStr);
+                if (index > -1) {
+                    selectedDates.splice(index, 1);
+                } else {
+                    selectedDates.push(dateStr);
+                }
+                selectedDates.sort();
+                renderDatePicker();
             }
-            
-            container.innerHTML = selectedDates.map(dateStr => {
-                const date = new Date(dateStr + 'T00:00:00');
-                const formatted = date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
-                return `
+
+            function renderSelectedDatesChips() {
+                const container = document.getElementById("selectedDatesChips");
+                if (selectedDates.length === 0) {
+                    container.innerHTML =
+                        '<span style="color: #718096; font-size: 13px;">No dates selected</span>';
+                    return;
+                }
+
+                container.innerHTML = selectedDates
+                    .map((dateStr) => {
+                        const date = new Date(dateStr + "T00:00:00");
+                        const formatted = date.toLocaleDateString("en-US", {
+                            month: "short",
+                            day: "numeric",
+                            year: "numeric",
+                        });
+                        return `
                     <div class="date-chip">
                         <span>${formatted}</span>
                         <button class="date-chip-remove" onclick="toggleDateSelection('${dateStr}')">×</button>
                     </div>
                 `;
-            }).join('');
-        }
+                    })
+                    .join("");
+            }
 
-        function previousMonth() {
-            currentPickerMonth.setMonth(currentPickerMonth.getMonth() - 1);
-            renderDatePicker();
-        }
-
-        function nextMonth() {
-            const today = new Date();
-            const maxMonth = new Date(today.getFullYear(), today.getMonth() + 12, 1);
-            
-            const nextMonth = new Date(currentPickerMonth.getFullYear(), currentPickerMonth.getMonth() + 1, 1);
-            if (nextMonth <= maxMonth) {
-                currentPickerMonth = nextMonth;
+            function previousMonth() {
+                currentPickerMonth.setMonth(currentPickerMonth.getMonth() - 1);
                 renderDatePicker();
             }
-        }
 
-        function submitTimeOffRequest() {
-            const employeeId = parseInt(document.getElementById('requestEmployeeSelect').value);
-            const employee = employees.find(e => e.id === employeeId);
+            function nextMonth() {
+                const today = new Date();
+                const maxMonth = new Date(
+                    today.getFullYear(),
+                    today.getMonth() + 12,
+                    1,
+                );
 
-            if (!employeeId || !employee) {
-                alert('Please select your name');
-                return;
+                const nextMonth = new Date(
+                    currentPickerMonth.getFullYear(),
+                    currentPickerMonth.getMonth() + 1,
+                    1,
+                );
+                if (nextMonth <= maxMonth) {
+                    currentPickerMonth = nextMonth;
+                    renderDatePicker();
+                }
             }
 
-            if (selectedDates.length === 0) {
-                alert('Please select at least one date');
-                return;
-            }
+            function submitTimeOffRequest() {
+                const employeeId = parseInt(
+                    document.getElementById("requestEmployeeSelect").value,
+                );
+                const employee = employees.find((e) => e.id === employeeId);
 
-            if (selectedDates.some(dateStr => isClosedDate(dateStr))) {
-                alert('Time-off requests cannot be submitted for closed business days.');
-                return;
-            }
-
-            // Check for high-volume dates (3+ pending/approved requests)
-            const highVolumeDates = selectedDates.filter(dateStr => {
-                const requestCount = shifts.filter(s =>
-                    s.date === dateStr &&
-                    s.isTimeOffRequest &&
-                    (s.requestStatus === 'pending' || s.requestStatus === 'approved')
-                ).length;
-                return requestCount >= 3;
-            });
-
-            // Show warning if any high-volume dates detected
-            if (highVolumeDates.length > 0) {
-                const formattedDates = highVolumeDates.map(dateStr => {
-                    const date = new Date(dateStr + 'T00:00:00');
-                    return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
-                }).join(', ');
-
-                const warningMessage = highVolumeDates.length === 1
-                    ? `Warning: ${formattedDates} already has 3 or more time-off requests. Your request may not be approved due to high volume.\n\nDo you want to submit anyway?`
-                    : `Warning: The following dates already have 3 or more time-off requests:\n${formattedDates}\n\nYour requests for these days may not be approved due to high volume.\n\nDo you want to submit anyway?`;
-
-                if (!confirm(warningMessage)) {
+                if (!employeeId || !employee) {
+                    alert("Please select your name");
                     return;
                 }
-            }
 
-            window.parent.postMessage({
-                action: 'SUBMIT_TIME_OFF_REQUEST',
-                data: {
-                    employeeId: employeeId,
-                    employeeName: employee.name,
-                    dates: selectedDates,
-                    requestDate: new Date().toISOString()
+                if (selectedDates.length === 0) {
+                    alert("Please select at least one date");
+                    return;
                 }
-            }, '*');
 
-            selectedDates = [];
-            closeTimeOffRequestModal();
-            showLoading();
-        }
-
-        function cancelTimeOffRequest(shiftId, employeeName) {
-            const shift = shifts.find(s => s.id === shiftId);
-            if (!shift) return;
-            
-            cancelingShiftId = shiftId;
-            cancelingEmployeeName = employeeName;
-            
-            const select = document.getElementById('cancelConfirmName');
-            const activeEmployees = employees.filter(e => !e.archived);
-            select.innerHTML = '<option value="">Select your name</option>' +
-                activeEmployees.map(e => `<option value="${e.name}">${e.name}</option>`).join('');
-            
-            openFloatingModal('cancelConfirmModal');
-        }
-
-        function closeCancelConfirmModal() {
-            closeAllModals();
-        }
-
-        function confirmCancelRequest() {
-            const selectedName = document.getElementById('cancelConfirmName').value;
-            
-            if (!selectedName) {
-                alert('Please select your name to confirm');
-                return;
-            }
-            
-            if (selectedName !== cancelingEmployeeName) {
-                alert('Name does not match. You can only cancel your own time-off requests.');
-                return;
-            }
-            
-            const shift = shifts.find(s => s.id === cancelingShiftId);
-            
-            window.parent.postMessage({
-                action: 'CANCEL_TIME_OFF_REQUEST',
-                shiftData: {
-                    employeeName: shift.employeeName,
-                    date: shift.date
+                if (selectedDates.some((dateStr) => isClosedDate(dateStr))) {
+                    alert(
+                        "Time-off requests cannot be submitted for closed business days.",
+                    );
+                    return;
                 }
-            }, '*');
-            
-            closeCancelConfirmModal();
-            
-            alert('Time-off request cancelled.');
-        }
 
-        // Initialize - Auto-load on page load
-        window.addEventListener('load', function() {
-            setTimeout(() => {
-                loadFromDatabase();
-            }, 500);
-        });
-    </script>
-</body>
+                // Check for high-volume dates (3+ pending/approved requests)
+                const highVolumeDates = selectedDates.filter((dateStr) => {
+                    const requestCount = shifts.filter(
+                        (s) =>
+                            s.date === dateStr &&
+                            s.isTimeOffRequest &&
+                            (s.requestStatus === "pending" ||
+                                s.requestStatus === "approved"),
+                    ).length;
+                    return requestCount >= 3;
+                });
+
+                // Show warning if any high-volume dates detected
+                if (highVolumeDates.length > 0) {
+                    const formattedDates = highVolumeDates
+                        .map((dateStr) => {
+                            const date = new Date(dateStr + "T00:00:00");
+                            return date.toLocaleDateString("en-US", {
+                                month: "short",
+                                day: "numeric",
+                                year: "numeric",
+                            });
+                        })
+                        .join(", ");
+
+                    const warningMessage =
+                        highVolumeDates.length === 1
+                            ? `Warning: ${formattedDates} already has 3 or more time-off requests. Your request may not be approved due to high volume.\n\nDo you want to submit anyway?`
+                            : `Warning: The following dates already have 3 or more time-off requests:\n${formattedDates}\n\nYour requests for these days may not be approved due to high volume.\n\nDo you want to submit anyway?`;
+
+                    if (!confirm(warningMessage)) {
+                        return;
+                    }
+                }
+
+                window.parent.postMessage(
+                    {
+                        action: "SUBMIT_TIME_OFF_REQUEST",
+                        data: {
+                            employeeId: employeeId,
+                            employeeName: employee.name,
+                            dates: selectedDates,
+                            requestDate: new Date().toISOString(),
+                        },
+                    },
+                    "*",
+                );
+
+                selectedDates = [];
+                closeTimeOffRequestModal();
+                showLoading();
+            }
+
+            function cancelTimeOffRequest(shiftId, employeeName) {
+                const shift = shifts.find((s) => s.id === shiftId);
+                if (!shift) return;
+
+                cancelingShiftId = shiftId;
+                cancelingEmployeeName = employeeName;
+
+                const select = document.getElementById("cancelConfirmName");
+                const activeEmployees = employees.filter((e) => !e.archived);
+                select.innerHTML =
+                    '<option value="">Select your name</option>' +
+                    activeEmployees
+                        .map(
+                            (e) =>
+                                `<option value="${e.name}">${e.name}</option>`,
+                        )
+                        .join("");
+
+                openFloatingModal("cancelConfirmModal");
+            }
+
+            function closeCancelConfirmModal() {
+                closeAllModals();
+            }
+
+            function confirmCancelRequest() {
+                const selectedName =
+                    document.getElementById("cancelConfirmName").value;
+
+                if (!selectedName) {
+                    alert("Please select your name to confirm");
+                    return;
+                }
+
+                if (selectedName !== cancelingEmployeeName) {
+                    alert(
+                        "Name does not match. You can only cancel your own time-off requests.",
+                    );
+                    return;
+                }
+
+                const shift = shifts.find((s) => s.id === cancelingShiftId);
+
+                window.parent.postMessage(
+                    {
+                        action: "CANCEL_TIME_OFF_REQUEST",
+                        shiftData: {
+                            employeeName: shift.employeeName,
+                            date: shift.date,
+                        },
+                    },
+                    "*",
+                );
+
+                closeCancelConfirmModal();
+
+                alert("Time-off request cancelled.");
+            }
+
+            // Initialize - Auto-load on page load
+            window.addEventListener("load", function () {
+                setTimeout(() => {
+                    loadFromDatabase();
+                }, 500);
+            });
+        </script>
+    </body>
 </html>
