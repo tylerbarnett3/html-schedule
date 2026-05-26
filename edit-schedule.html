@@ -1278,6 +1278,12 @@
             }
 
             @media (max-width: 768px) {
+                html,
+                body {
+                    max-width: 100%;
+                    overflow-x: hidden;
+                }
+
                 body {
                     padding: 8px;
                 }
@@ -1292,6 +1298,11 @@
 
                 .toolbar {
                     align-items: stretch;
+                    padding: 12px;
+                }
+
+                .toolbar-divider {
+                    display: none;
                 }
 
                 .toolbar-group {
@@ -1305,6 +1316,32 @@
 
                 .week-navigation {
                     padding: 14px;
+                    gap: 12px;
+                    align-items: stretch;
+                }
+
+                .week-navigation > div {
+                    min-width: 0;
+                    width: 100%;
+                }
+
+                .week-navigation > div > div:last-child {
+                    display: grid !important;
+                    grid-template-columns: auto minmax(0, 1fr);
+                    width: 100%;
+                    gap: 8px;
+                    align-items: center;
+                }
+
+                .current-week {
+                    text-align: center;
+                }
+
+                #customStartDate,
+                #customEndDate {
+                    min-width: 0;
+                    width: 100% !important;
+                    min-height: 44px;
                 }
 
                 .period-nav-btn {
@@ -1322,6 +1359,15 @@
                     overflow: visible;
                 }
 
+                .sidebar {
+                    padding: 14px;
+                }
+
+                .schedule-area {
+                    min-width: 0;
+                    padding: 12px;
+                }
+
                 .day-column {
                     min-height: 168px;
                 }
@@ -1332,14 +1378,74 @@
                 }
 
                 .modal {
+                    position: fixed;
+                    top: 50% !important;
                     left: 10px !important;
                     right: 10px;
                     width: auto;
+                    transform: translateY(-50%);
                 }
 
                 .modal-content {
-                    width: auto;
-                    max-height: 76vh;
+                    width: 100%;
+                    max-height: calc(100dvh - 32px);
+                    padding: 18px;
+                }
+
+                .date-picker-nav {
+                    gap: 8px;
+                }
+
+                .date-picker-nav button {
+                    min-height: 44px;
+                    padding: 8px 10px;
+                }
+
+                .date-picker-grid {
+                    grid-template-columns: repeat(7, minmax(0, 1fr));
+                }
+
+                .date-picker-date {
+                    min-width: 0;
+                    min-height: 40px;
+                }
+
+                .loading-content {
+                    width: calc(100vw - 32px);
+                    min-width: 0;
+                    padding: 28px 18px;
+                }
+            }
+
+            @media (max-width: 480px) {
+                .calendar {
+                    grid-template-columns: 1fr;
+                }
+
+                .week-navigation > div > div:last-child,
+                .date-picker-nav {
+                    grid-template-columns: 1fr;
+                    flex-direction: column;
+                }
+
+                .week-navigation label {
+                    text-align: left;
+                }
+
+                #employeeFilterList {
+                    grid-template-columns: 1fr;
+                }
+
+                .day-column {
+                    min-height: 140px;
+                }
+
+                .closed-day-message {
+                    min-height: 120px;
+                }
+
+                .modal-actions {
+                    gap: 8px;
                 }
             }
         </style>
@@ -2498,6 +2604,16 @@
 
                 // Show overlay
                 overlay.classList.add("active");
+
+                if (window.innerWidth <= 768) {
+                    modal.style.left = "10px";
+                    modal.style.right = "10px";
+                    modal.style.top = "50%";
+                    modal.classList.add("active");
+                    return;
+                }
+
+                modal.style.right = "auto";
 
                 // Get click position
                 const clickX = lastClickEvent.pageX;
