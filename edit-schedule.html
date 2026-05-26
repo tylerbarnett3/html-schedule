@@ -1379,16 +1379,58 @@
 
                 .modal {
                     position: fixed;
-                    top: 50% !important;
-                    left: 10px !important;
-                    right: 10px;
+                    top: 0 !important;
+                    right: 0 !important;
+                    bottom: 0 !important;
+                    left: 0 !important;
                     width: auto;
-                    transform: translateY(-50%);
+                    padding: 16px 10px;
+                    transform: none;
+                    overflow: hidden;
+                    pointer-events: none;
+                }
+
+                .modal.active {
+                    display: flex;
+                    align-items: flex-start;
+                    justify-content: center;
                 }
 
                 .modal-content {
                     width: 100%;
+                    max-width: 500px;
+                    max-height: calc(100vh - 32px);
                     max-height: calc(100dvh - 32px);
+                    padding: 18px;
+                    overflow-y: auto;
+                    -webkit-overflow-scrolling: touch;
+                    overscroll-behavior: contain;
+                    pointer-events: auto;
+                }
+
+                .mobile-shift-panel {
+                    padding: 0 0 14px;
+                }
+
+                .mobile-shift-panel:empty {
+                    display: none;
+                }
+
+                .mobile-shift-panel .modal.mobile-inline-modal {
+                    position: static !important;
+                    display: block;
+                    width: 100%;
+                    padding: 0;
+                    overflow: visible;
+                    pointer-events: auto;
+                    z-index: auto;
+                }
+
+                .mobile-shift-panel .modal.mobile-inline-modal .modal-content {
+                    width: 100%;
+                    max-width: none;
+                    max-height: none;
+                    overflow: visible;
                     padding: 18px;
                 }
 
@@ -1446,6 +1488,27 @@
 
                 .modal-actions {
                     gap: 8px;
+                }
+
+                .date-picker-nav.shift-month-nav {
+                    display: grid !important;
+                    grid-template-columns: 44px minmax(0, 1fr) 44px !important;
+                    align-items: center;
+                    gap: 8px;
+                }
+
+                .date-picker-nav.shift-month-nav button {
+                    width: 44px !important;
+                    min-width: 44px;
+                    display: inline-flex;
+                    align-items: center;
+                    justify-content: center;
+                    padding: 0 !important;
+                }
+
+                .date-picker-nav.shift-month-nav span {
+                    min-width: 0;
+                    text-align: center;
                 }
             }
         </style>
@@ -1879,6 +1942,7 @@
                         </button>
                     </div>
 
+                    <div id="mobileShiftPanel" class="mobile-shift-panel" hidden></div>
                     <div class="calendar" id="calendar"></div>
                 </div>
             </div>
@@ -2019,19 +2083,54 @@
                 </div>
                 <div class="input-group">
                     <label>Date(s) - Click to select/deselect</label>
-                    <div class="date-picker-nav">
+                    <div class="date-picker-nav shift-month-nav">
                         <button
                             type="button"
                             onclick="shiftPickerPreviousMonth()"
+                            aria-label="Previous month"
+                            title="Previous month"
                         >
-                            ← Previous
+                            <svg
+                                xmlns="http://www.w3.org/2000/svg"
+                                width="20"
+                                height="20"
+                                viewBox="0 0 24 24"
+                                fill="none"
+                                stroke="currentColor"
+                                stroke-width="2"
+                                stroke-linecap="round"
+                                stroke-linejoin="round"
+                                aria-hidden="true"
+                            >
+                                <path d="m12 19-7-7 7-7" />
+                                <path d="M19 12H5" />
+                            </svg>
                         </button>
                         <span
                             id="shiftPickerMonthLabel"
                             style="font-weight: 600; color: #2d3748"
                         ></span>
-                        <button type="button" onclick="shiftPickerNextMonth()">
-                            Next →
+                        <button
+                            type="button"
+                            onclick="shiftPickerNextMonth()"
+                            aria-label="Next month"
+                            title="Next month"
+                        >
+                            <svg
+                                xmlns="http://www.w3.org/2000/svg"
+                                width="20"
+                                height="20"
+                                viewBox="0 0 24 24"
+                                fill="none"
+                                stroke="currentColor"
+                                stroke-width="2"
+                                stroke-linecap="round"
+                                stroke-linejoin="round"
+                                aria-hidden="true"
+                            >
+                                <path d="M5 12h14" />
+                                <path d="m12 5 7 7-7 7" />
+                            </svg>
                         </button>
                     </div>
                     <div
@@ -2057,7 +2156,7 @@
                     >
                         Cancel
                     </button>
-                    <button class="btn btn-success" onclick="saveShift()">
+                    <button class="btn btn-primary" onclick="saveShift()">
                         Add Shift
                     </button>
                 </div>
@@ -2587,6 +2686,8 @@
 
             // Floating modal positioning
             let lastClickEvent = null;
+            let shiftModalHome = null;
+            let shiftModalNextSibling = null;
 
             document.addEventListener(
                 "click",
@@ -2595,6 +2696,77 @@
                 },
                 true,
             );
+
+            function isMobileLayout() {
+                return window.innerWidth <= 768;
+            }
+
+            function rememberShiftModalHome(modal) {
+                if (shiftModalHome) return;
+                shiftModalHome = modal.parentNode;
+                shiftModalNextSibling = modal.nextSibling;
+            }
+
+            function setShiftModalTitle(dateStr) {
+                const title = document.querySelector("#shiftModal .modal-header h2");
+                if (!title) return;
+
+                if (!dateStr || !isMobileLayout()) {
+                    title.textContent = "Add Shift";
+                    return;
+                }
+
+                const date = new Date(dateStr + "T00:00:00");
+                title.textContent = `Add Shift: ${date.toLocaleDateString("en-US", {
+                    weekday: "short",
+                    month: "short",
+                    day: "numeric",
+                })}`;
+            }
+
+            function openMobileShiftPanel(dateStr) {
+                const modal = document.getElementById("shiftModal");
+                const mount = document.getElementById("mobileShiftPanel");
+                const overlay = document.getElementById("modalOverlay");
+
+                if (!modal || !mount) return false;
+
+                rememberShiftModalHome(modal);
+                overlay.classList.remove("active");
+                mount.hidden = false;
+                mount.appendChild(modal);
+
+                setShiftModalTitle(dateStr);
+                modal.classList.add("mobile-inline-modal", "active");
+                modal.style.left = "";
+                modal.style.right = "";
+                modal.style.top = "";
+                modal.style.bottom = "";
+                modal.style.width = "";
+                modal.style.transform = "";
+
+                const content = modal.querySelector(".modal-content");
+                if (content) content.scrollTop = 0;
+
+                mount.scrollIntoView({ block: "start" });
+                return true;
+            }
+
+            function restoreMobileShiftModal() {
+                const modal = document.getElementById("shiftModal");
+                const mount = document.getElementById("mobileShiftPanel");
+
+                if (!modal) return;
+
+                modal.classList.remove("mobile-inline-modal");
+                setShiftModalTitle(null);
+
+                if (shiftModalHome && modal.parentNode !== shiftModalHome) {
+                    shiftModalHome.insertBefore(modal, shiftModalNextSibling);
+                }
+
+                if (mount) mount.hidden = true;
+            }
 
             function openFloatingModal(modalId) {
                 const modal = document.getElementById(modalId);
@@ -2605,10 +2777,16 @@
                 // Show overlay
                 overlay.classList.add("active");
 
-                if (window.innerWidth <= 768) {
-                    modal.style.left = "10px";
-                    modal.style.right = "10px";
-                    modal.style.top = "50%";
+                const content = modal.querySelector(".modal-content");
+                if (content) content.scrollTop = 0;
+
+                if (isMobileLayout()) {
+                    modal.style.left = "";
+                    modal.style.right = "";
+                    modal.style.top = "";
+                    modal.style.bottom = "";
+                    modal.style.width = "";
+                    modal.style.transform = "";
                     modal.classList.add("active");
                     return;
                 }
@@ -2648,6 +2826,7 @@
                 document
                     .getElementById("modalOverlay")
                     .classList.remove("active");
+                restoreMobileShiftModal();
 
                 // Reset state variables
                 selectedDay = null;
@@ -4197,6 +4376,11 @@
                     "block";
                 renderShiftEmployeeList();
                 renderShiftDatePicker();
+                if (isMobileLayout() && openMobileShiftPanel(dateStr)) {
+                    return;
+                }
+
+                restoreMobileShiftModal();
                 openFloatingModal("shiftModal");
             }
 
