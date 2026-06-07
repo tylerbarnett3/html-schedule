@@ -2724,6 +2724,9 @@
 
             // Initialize - Auto-load on page load
             window.addEventListener("load", function () {
+                updateDateInputs();
+                renderCalendar();
+
                 if (IS_MOCK_MODE) {
                     loadMockData();
                 } else {

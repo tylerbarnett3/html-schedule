@@ -6,6 +6,7 @@ const SHIFT_RETENTION_DAYS = 90;
 $w.onReady(function () {
     const iframe = $w('#html1');
     console.log(`Schedule Edit Backend Version: ${APP_VERSION}`);
+    hideQuickActionBar();
 
     iframe.onMessage(async (event) => {
         const { action, data } = event.data;
@@ -62,6 +63,14 @@ $w.onReady(function () {
         }
     });
 });
+
+function hideQuickActionBar() {
+    try {
+        $w('#quickActionBar1').hide();
+    } catch (error) {
+        console.warn('Quick action bar was not hidden:', error.message);
+    }
+}
 
 async function syncToDatabase(data) {
     validateSyncPayload(data);

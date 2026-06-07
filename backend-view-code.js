@@ -5,6 +5,7 @@ const APP_VERSION = '2026-06-04-reliability-v1';
 $w.onReady(function () {
     const iframe = $w('#html1');
     console.log(`Schedule View Backend Version: ${APP_VERSION}`);
+    hideQuickActionBar();
     
     // Set up message listener
     iframe.onMessage(async (event) => {
@@ -30,6 +31,14 @@ $w.onReady(function () {
         await loadFromDatabase();
     }, 1000);
 });
+
+function hideQuickActionBar() {
+    try {
+        $w('#quickActionBar1').hide();
+    } catch (error) {
+        console.warn('Quick action bar was not hidden:', error.message);
+    }
+}
 
 async function loadFromDatabase() {
     try {
