@@ -2655,7 +2655,7 @@
                     backendAppVersion && backendAppVersion !== APP_VERSION;
                 const versionText = hasVersionMismatch
                     ? `Version mismatch: HTML ${APP_VERSION} / Velo ${backendAppVersion}`
-                    : `Version ${APP_VERSION}`;
+                    : APP_VERSION;
 
                 statusEl.textContent = [versionText, modeText, cleanupText]
                     .filter(Boolean)
