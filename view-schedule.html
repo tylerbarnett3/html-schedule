@@ -1501,10 +1501,14 @@
         </div>
 
         <script>
-            // VERSION: Read-Only with Time-Off Requests
-            console.log(
-                "Schedule App Version: Read-Only with Time-Off Requests",
-            );
+            const APP_VERSION = "2026-06-04-reliability-v1";
+            console.log(`Schedule View App Version: ${APP_VERSION}`);
+
+            function isEmbeddedInWix() {
+                return window.parent !== window;
+            }
+
+            const IS_MOCK_MODE = !isEmbeddedInWix();
 
             let employees = [];
             let shifts = [];
@@ -1524,6 +1528,138 @@
             currentStartDate.setHours(0, 0, 0, 0);
             currentEndDate.setHours(0, 0, 0, 0);
             currentEndDate.setDate(currentEndDate.getDate() + 34);
+
+            function formatMockDate(offsetDays) {
+                const date = new Date();
+                date.setHours(0, 0, 0, 0);
+                date.setDate(date.getDate() + offsetDays);
+                return formatDate(date);
+            }
+
+            function createMockScheduleData({ includeRates = false } = {}) {
+                const names = [
+                    ["Avery Lane", "#7F6C50"],
+                    ["Jordan Price", "#2F855A"],
+                    ["Mia Chen", "#2B6CB0"],
+                    ["Sam Rivera", "#B7791F"],
+                    ["Taylor Brooks", "#9F7AEA"],
+                    ["Nora Patel", "#C05621"],
+                    ["Eli Morgan", "#319795"],
+                    ["Grace Kim", "#D53F8C"],
+                    ["Leo Bennett", "#4A5568"],
+                ];
+                const employees = names.map(([name, color], index) => ({
+                    id: 1000 + index,
+                    name,
+                    archived: false,
+                    color,
+                    displayOrder: index,
+                    rates: includeRates
+                        ? [
+                              {
+                                  rate: 15 + index * 0.5,
+                                  startDate: null,
+                                  endDate: null,
+                              },
+                          ]
+                        : [],
+                }));
+                const employeeName = (id) =>
+                    employees.find((employee) => employee.id === id)?.name || "";
+
+                return {
+                    employees,
+                    closedDays: [formatMockDate(10)],
+                    shifts: [
+                        [1000, 1, "09:00", "15:00"],
+                        [1001, 1, "12:00", "18:00"],
+                        [1002, 2, "10:00", "16:00"],
+                        [1003, 2, "13:00", "19:00"],
+                        [1004, 3, "09:30", "14:30"],
+                        [1005, 4, "11:00", "17:00"],
+                        [1006, 5, "09:00", "13:00"],
+                        [1007, 6, "14:00", "20:00"],
+                        [1008, 7, "10:00", "18:00"],
+                    ].map(([employeeId, offset, startTime, endTime], index) => ({
+                        id: 2000 + index,
+                        employeeId,
+                        employeeName: employeeName(employeeId),
+                        date: formatMockDate(offset),
+                        startTime,
+                        endTime,
+                        isDayOff: false,
+                        isTimeOffRequest: false,
+                        requestStatus: null,
+                        requestDate: null,
+                        requestedBy: null,
+                    })).concat([
+                        {
+                            id: 2100,
+                            employeeId: 1002,
+                            employeeName: employeeName(1002),
+                            date: formatMockDate(8),
+                            startTime: "00:00",
+                            endTime: "00:00",
+                            isDayOff: true,
+                            isTimeOffRequest: false,
+                            requestStatus: null,
+                            requestDate: null,
+                            requestedBy: null,
+                        },
+                        {
+                            id: 2101,
+                            employeeId: 1005,
+                            employeeName: employeeName(1005),
+                            date: formatMockDate(12),
+                            startTime: null,
+                            endTime: null,
+                            isDayOff: false,
+                            isTimeOffRequest: true,
+                            requestStatus: "pending",
+                            requestDate: new Date().toISOString(),
+                            requestedBy: employeeName(1005),
+                        },
+                        {
+                            id: 2102,
+                            employeeId: 1007,
+                            employeeName: employeeName(1007),
+                            date: formatMockDate(14),
+                            startTime: "00:00",
+                            endTime: "00:00",
+                            isDayOff: true,
+                            isTimeOffRequest: false,
+                            requestStatus: "approved",
+                            requestDate: new Date().toISOString(),
+                            requestedBy: employeeName(1007),
+                        },
+                    ]),
+                };
+            }
+
+            function applyLoadedScheduleData(data) {
+                employees = data.employees || [];
+                shifts = data.shifts || [];
+                closedDays = normalizeClosedDays(data.closedDays || []);
+
+                employees.forEach((emp) => {
+                    if (!emp.color) {
+                        emp.color = "#7F6C50";
+                    }
+                });
+
+                selectedEmployees = new Set(employees.map((e) => e.id));
+
+                renderEmployeeFilter();
+                renderCalendar();
+                updateDateInputs();
+            }
+
+            function loadMockData() {
+                applyLoadedScheduleData(
+                    createMockScheduleData({ includeRates: false }),
+                );
+                hideLoading();
+            }
 
             function showLoading() {
                 document
@@ -1674,6 +1810,11 @@
 
             // Helper function to open modal at current scroll position
             function loadFromDatabase() {
+                if (IS_MOCK_MODE) {
+                    loadMockData();
+                    return;
+                }
+
                 console.log("Requesting schedule data from Wix...");
                 showLoading();
 
@@ -1702,31 +1843,7 @@
 
                 if (event.data && event.data.action === "LOAD_COMPLETE") {
                     console.log("Processing LOAD_COMPLETE message");
-                    employees = event.data.employees || [];
-                    shifts = event.data.shifts || [];
-                    closedDays = normalizeClosedDays(
-                        event.data.closedDays || [],
-                    );
-
-                    console.log(
-                        "Loaded:",
-                        employees.length,
-                        "employees,",
-                        shifts.length,
-                        "shifts",
-                    );
-
-                    employees.forEach((emp) => {
-                        if (!emp.color) {
-                            emp.color = "#7F6C50";
-                        }
-                    });
-
-                    selectedEmployees = new Set(employees.map((e) => e.id));
-
-                    renderEmployeeFilter();
-                    renderCalendar();
-                    updateDateInputs();
+                    applyLoadedScheduleData(event.data);
 
                     hideLoading();
                     console.log("Rendering complete");
@@ -2494,6 +2611,32 @@
                     }
                 }
 
+                if (IS_MOCK_MODE) {
+                    selectedDates.forEach((dateStr) => {
+                        shifts.push({
+                            id: Date.now() + Math.random(),
+                            employeeId: employeeId,
+                            employeeName: employee.name,
+                            date: dateStr,
+                            startTime: null,
+                            endTime: null,
+                            isDayOff: false,
+                            isTimeOffRequest: true,
+                            requestStatus: "pending",
+                            requestDate: new Date().toISOString(),
+                            requestedBy: employee.name,
+                        });
+                    });
+
+                    selectedDates = [];
+                    closeTimeOffRequestModal();
+                    renderCalendar();
+                    alert(
+                        "Time-off request submitted! Your manager will review it shortly.",
+                    );
+                    return;
+                }
+
                 window.parent.postMessage(
                     {
                         action: "SUBMIT_TIME_OFF_REQUEST",
@@ -2555,6 +2698,14 @@
 
                 const shift = shifts.find((s) => s.id === cancelingShiftId);
 
+                if (IS_MOCK_MODE) {
+                    shifts = shifts.filter((s) => s.id !== cancelingShiftId);
+                    closeCancelConfirmModal();
+                    renderCalendar();
+                    alert("Time-off request cancelled.");
+                    return;
+                }
+
                 window.parent.postMessage(
                     {
                         action: "CANCEL_TIME_OFF_REQUEST",
@@ -2573,9 +2724,13 @@
 
             // Initialize - Auto-load on page load
             window.addEventListener("load", function () {
-                setTimeout(() => {
-                    loadFromDatabase();
-                }, 500);
+                if (IS_MOCK_MODE) {
+                    loadMockData();
+                } else {
+                    setTimeout(() => {
+                        loadFromDatabase();
+                    }, 500);
+                }
             });
         </script>
     </body>

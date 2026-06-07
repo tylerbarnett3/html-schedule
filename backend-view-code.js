@@ -1,7 +1,10 @@
 import wixData from 'wix-data';
 
+const APP_VERSION = '2026-06-04-reliability-v1';
+
 $w.onReady(function () {
     const iframe = $w('#html1');
+    console.log(`Schedule View Backend Version: ${APP_VERSION}`);
     
     // Set up message listener
     iframe.onMessage(async (event) => {
@@ -108,7 +111,8 @@ async function loadFromDatabase() {
             action: 'LOAD_COMPLETE',
             employees: employeesData,
             shifts: shiftsData,
-            closedDays: closedDays
+            closedDays: closedDays,
+            appVersion: APP_VERSION
         });
         
     } catch (error) {

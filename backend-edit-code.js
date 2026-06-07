@@ -1,7 +1,11 @@
 import wixData from 'wix-data';
 
+const APP_VERSION = '2026-06-04-reliability-v1';
+const SHIFT_RETENTION_DAYS = 90;
+
 $w.onReady(function () {
     const iframe = $w('#html1');
+    console.log(`Schedule Edit Backend Version: ${APP_VERSION}`);
 
     iframe.onMessage(async (event) => {
         const { action, data } = event.data;
@@ -9,7 +13,8 @@ $w.onReady(function () {
         if (action === 'SYNC_TO_DATABASE') {
             try {
                 await syncToDatabase(data);
-                iframe.postMessage({ action: 'SYNC_COMPLETE' });
+                const cleanup = await pruneOldShifts();
+                iframe.postMessage({ action: 'SYNC_COMPLETE', appVersion: APP_VERSION, cleanup });
             } catch (error) {
                 console.error('Sync failed:', error);
                 iframe.postMessage({ action: 'SYNC_ERROR', message: error.message });
@@ -31,6 +36,22 @@ $w.onReady(function () {
             } catch (error) {
                 console.error('Closed-day shift delete failed:', error);
                 iframe.postMessage({ action: 'DELETE_SHIFTS_FOR_DATES_ERROR', message: error.message });
+            }
+        } else if (action === 'DELETE_TIME_OFF_REQUESTS') {
+            try {
+                await deleteTimeOffRequestsFromDatabase(data);
+                iframe.postMessage({ action: 'DELETE_TIME_OFF_REQUESTS_COMPLETE' });
+            } catch (error) {
+                console.error('Time-off request delete failed:', error);
+                iframe.postMessage({ action: 'DELETE_TIME_OFF_REQUESTS_ERROR', message: error.message });
+            }
+        } else if (action === 'DELETE_EMPLOYEE') {
+            try {
+                await deleteEmployeeFromDatabase(data);
+                iframe.postMessage({ action: 'DELETE_EMPLOYEE_COMPLETE' });
+            } catch (error) {
+                console.error('Employee delete failed:', error);
+                iframe.postMessage({ action: 'DELETE_EMPLOYEE_ERROR', message: error.message });
             }
         } else if (action === 'TIME_OFF_REQUEST_SUBMITTED') {
             // When a request is submitted from View page, reload Edit page data
@@ -102,6 +123,8 @@ async function syncToDatabase(data) {
         // ===== SYNC RATES =====
         const existingRates = await loadAllEmployeeRates();
         const existingRatesMap = new Map(existingRates.map(r => [r._id, r]));
+        const syncedEmployeeWixIds = new Set(Object.values(employeeIdMap));
+        const desiredRateWixIds = new Set();
         
         const ratesToUpdate = [];
         const ratesToInsert = [];
@@ -114,6 +137,7 @@ async function syncToDatabase(data) {
                 for (let rate of emp.rates) {
                     if (rate.wixId) {
                         if (existingRatesMap.has(rate.wixId)) {
+                            desiredRateWixIds.add(rate.wixId);
                             ratesToUpdate.push({
                                 _id: rate.wixId,
                                 employee: wixEmpId,
@@ -144,7 +168,14 @@ async function syncToDatabase(data) {
             await wixData.bulkInsert('EmployeeRates', ratesToInsert);
         }
         
-        // Sync never deletes rates automatically. Manual database deletes are reflected on the next load.
+        const staleRateIds = existingRates
+            .filter(rate => {
+                const employeeId = rate.employee?._id || rate.employee;
+                return syncedEmployeeWixIds.has(employeeId) && !desiredRateWixIds.has(rate._id);
+            })
+            .map(rate => rate._id);
+
+        await bulkRemoveByIds('EmployeeRates', staleRateIds);
         
         // ===== SYNC SHIFTS =====
         let allExistingShifts = [];
@@ -284,10 +315,31 @@ async function deleteShiftsForDatesFromDatabase(data) {
         shiftsToDelete = shiftsToDelete.concat(shiftsResult.items);
     }
 
-    const idsToDelete = shiftsToDelete.map(shift => shift._id);
-    for (let i = 0; i < idsToDelete.length; i += 50) {
-        await wixData.bulkRemove('Shifts', idsToDelete.slice(i, i + 50));
+    await bulkRemoveByIds('Shifts', shiftsToDelete.map(shift => shift._id));
+}
+
+async function deleteTimeOffRequestsFromDatabase(data) {
+    const wixIds = Array.isArray(data?.wixIds)
+        ? data.wixIds.filter(Boolean)
+        : [];
+
+    await bulkRemoveByIds('Shifts', wixIds);
+}
+
+async function deleteEmployeeFromDatabase(data) {
+    const wixId = data?.wixId;
+    if (!wixId) {
+        return;
     }
+
+    const [shifts, rates] = await Promise.all([
+        loadAllByQuery(wixData.query('Shifts').eq('employee', wixId).limit(100)),
+        loadAllByQuery(wixData.query('EmployeeRates').eq('employee', wixId).limit(100))
+    ]);
+
+    await bulkRemoveByIds('Shifts', shifts.map(shift => shift._id));
+    await bulkRemoveByIds('EmployeeRates', rates.map(rate => rate._id));
+    await wixData.remove('Employees', wixId);
 }
 
 function normalizeClosedDays(days) {
@@ -301,6 +353,8 @@ function normalizeClosedDays(days) {
 
 async function loadFromDatabase() {
     try {
+        const cleanup = await pruneOldShifts();
+
         // Load ALL employees, then apply saved custom order when present.
         const employees = await wixData.query('Employees')
             .ascending('_createdDate')
@@ -399,7 +453,9 @@ async function loadFromDatabase() {
             action: 'LOAD_COMPLETE',
             employees: employeesData,
             shifts: shiftsData,
-            closedDays: closedDays
+            closedDays: closedDays,
+            appVersion: APP_VERSION,
+            cleanup
         });
         
     } catch (error) {
@@ -433,4 +489,45 @@ async function loadAllClosedDays() {
     }
 
     return allClosedDays;
+}
+
+async function pruneOldShifts() {
+    const cutoffDate = new Date();
+    cutoffDate.setHours(0, 0, 0, 0);
+    cutoffDate.setDate(cutoffDate.getDate() - SHIFT_RETENTION_DAYS);
+    const cutoff = cutoffDate.toISOString().split('T')[0];
+
+    const oldShifts = await loadAllByQuery(
+        wixData.query('Shifts')
+            .lt('date', cutoff)
+            .limit(100)
+    );
+
+    await bulkRemoveByIds('Shifts', oldShifts.map(shift => shift._id));
+
+    return {
+        deletedCount: oldShifts.length,
+        cutoff,
+        retentionDays: SHIFT_RETENTION_DAYS
+    };
+}
+
+async function loadAllByQuery(query) {
+    let allItems = [];
+    let result = await query.find();
+    allItems = allItems.concat(result.items);
+
+    while (result.hasNext()) {
+        result = await result.next();
+        allItems = allItems.concat(result.items);
+    }
+
+    return allItems;
+}
+
+async function bulkRemoveByIds(collectionName, ids) {
+    const cleanIds = [...new Set((ids || []).filter(Boolean))];
+    for (let i = 0; i < cleanIds.length; i += 50) {
+        await wixData.bulkRemove(collectionName, cleanIds.slice(i, i + 50));
+    }
 }
