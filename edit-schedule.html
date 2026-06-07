@@ -57,7 +57,7 @@
             }
 
             .toolbar {
-                justify-content: center;
+                justify-content: space-between;
                 flex-wrap: wrap;
             }
 
@@ -65,6 +65,14 @@
             .request-actions,
             .selected-dates-chips {
                 gap: 8px;
+            }
+
+            .toolbar-left,
+            .toolbar-right,
+            .toolbar-actions,
+            .toolbar-status {
+                display: flex;
+                align-items: center;
             }
 
             .toolbar-divider {
@@ -633,7 +641,6 @@
             @media (max-width: 768px) {
                 .toolbar,
                 .toolbar-group,
-                .week-navigation,
                 .modal-actions {
                     flex-direction: column;
                 }
@@ -641,8 +648,6 @@
                 .toolbar-group,
                 .toolbar-btn,
                 .save-status,
-                .week-navigation > div,
-                .week-navigation button,
                 .week-navigation input[type="date"],
                 .modal-actions .btn {
                     width: 100%;
@@ -650,7 +655,6 @@
 
                 .btn,
                 .toolbar-btn,
-                .week-navigation button,
                 .week-navigation input[type="date"] {
                     min-height: 48px;
                 }
@@ -825,8 +829,8 @@
                 background: rgba(53, 38, 25, 0.94);
                 border-top: 1px solid rgba(255, 255, 255, 0.08);
                 border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-                padding: 14px 22px;
-                gap: 10px;
+                padding: 12px 22px;
+                gap: 12px 18px;
             }
 
             .toolbar-btn,
@@ -868,13 +872,90 @@
                 border: 1px solid rgba(255, 255, 255, 0.14);
                 border-radius: 999px;
                 padding: 7px 12px;
+                color: #48bb78;
+            }
+
+            .save-status:hover:not(:disabled) {
+                background: rgba(255, 250, 241, 0.18);
+            }
+
+            .toolbar-left {
+                flex-wrap: wrap;
+                gap: 8px 12px;
+                min-width: 0;
+            }
+
+            .toolbar-right {
+                gap: 10px;
+                margin-left: auto;
+                position: relative;
+            }
+
+            .toolbar-actions,
+            .toolbar-status {
+                gap: 8px;
             }
 
             .maintenance-status {
-                color: rgba(255, 250, 241, 0.78);
-                font-size: 12px;
+                color: rgba(255, 250, 241, 0.64);
+                font-size: 11px;
+                font-weight: 600;
+                letter-spacing: 0;
                 line-height: 1.35;
+                max-width: min(62vw, 680px);
+                overflow: hidden;
+                text-overflow: ellipsis;
                 white-space: nowrap;
+            }
+
+            .tools-menu-wrap {
+                position: relative;
+            }
+
+            .tools-menu {
+                position: absolute;
+                top: calc(100% + 8px);
+                right: 0;
+                z-index: 30;
+                display: none;
+                min-width: 190px;
+                padding: 6px;
+                background: rgba(255, 252, 246, 0.98);
+                border: 1px solid rgba(68, 51, 34, 0.14);
+                border-radius: var(--radius-md);
+                box-shadow: var(--shadow-modal);
+            }
+
+            .tools-menu.open {
+                display: grid;
+                gap: 4px;
+            }
+
+            .tools-menu-item {
+                width: 100%;
+                display: flex;
+                align-items: center;
+                gap: 10px;
+                padding: 10px 12px;
+                background: transparent;
+                border: none;
+                border-radius: 8px;
+                color: var(--clay-900);
+                cursor: pointer;
+                font: inherit;
+                font-size: 14px;
+                font-weight: 700;
+                text-align: left;
+            }
+
+            .tools-menu-item:hover {
+                background: rgba(127, 108, 80, 0.12);
+            }
+
+            .tools-menu-item svg {
+                width: 18px;
+                height: 18px;
+                flex: 0 0 18px;
             }
 
             .main-content {
@@ -1000,6 +1081,18 @@
                 box-shadow: 0 0 0 4px rgba(216, 169, 79, 0.18);
             }
 
+            #shiftModal .input-group input:not([type="checkbox"]):not([type="color"]),
+            #shiftModal .input-group select {
+                min-height: 48px;
+                padding: 12px 16px;
+                line-height: 1.2;
+            }
+
+            #shiftModal .input-group input[type="time"]:not([type="checkbox"]):not([type="color"]),
+            #shiftModal .input-group input[type="date"]:not([type="checkbox"]):not([type="color"]) {
+                padding: 12px 42px 12px 16px;
+            }
+
             .btn-primary,
             .week-navigation button {
                 background: linear-gradient(
@@ -1031,6 +1124,10 @@
             }
 
             .week-navigation {
+                display: grid;
+                grid-template-columns: 52px minmax(0, 1fr) 52px;
+                align-items: start;
+                gap: 14px;
                 background: rgba(255, 252, 246, 0.82);
                 border: 1px solid rgba(255, 255, 255, 0.75);
                 border-radius: var(--radius-lg);
@@ -1044,11 +1141,28 @@
                 font-size: clamp(17px, 2vw, 23px);
                 font-weight: 800;
                 letter-spacing: -0.03em;
+                text-align: center;
             }
 
             .week-navigation label {
                 color: var(--muted) !important;
                 font-weight: 700;
+            }
+
+            .period-date-info {
+                display: flex;
+                flex-direction: column;
+                align-items: center;
+                gap: 8px;
+                min-width: 0;
+            }
+
+            .period-date-fields {
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                gap: 10px;
+                min-width: 0;
             }
 
             .calendar {
@@ -1215,6 +1329,8 @@
             .period-nav-btn {
                 width: 48px;
                 height: 48px;
+                align-self: start;
+                margin-top: 2px;
                 padding: 0 !important;
                 border-radius: 50% !important;
                 display: inline-flex;
@@ -1241,6 +1357,10 @@
                 flex-direction: row;
                 align-items: center;
                 gap: 8px;
+                min-width: 0;
+            }
+
+            .toolbar-status {
                 min-width: 0;
             }
 
@@ -1321,23 +1441,58 @@
                     flex-direction: column;
                 }
 
+                .toolbar-left,
+                .toolbar-right,
+                .toolbar-actions,
+                .toolbar-status {
+                    width: 100%;
+                    align-items: stretch;
+                }
+
+                .toolbar-left,
+                .toolbar-actions,
+                .toolbar-status {
+                    flex-direction: column;
+                }
+
+                .toolbar-right {
+                    margin-left: 0;
+                }
+
                 .toolbar-btn,
                 .save-status {
                     width: 100%;
                 }
 
-                .week-navigation {
-                    padding: 14px;
-                    gap: 12px;
-                    align-items: stretch;
+                .maintenance-status {
+                    max-width: none;
+                    white-space: normal;
+                    text-align: center;
                 }
 
-                .week-navigation > div {
+                .tools-menu-wrap,
+                .tools-menu {
+                    width: 100%;
+                }
+
+                .tools-menu {
+                    position: static;
+                    margin-top: 8px;
+                }
+
+                .week-navigation {
+                    grid-template-columns: 44px minmax(0, 1fr) 44px;
+                    padding: 14px;
+                    gap: 12px;
+                    align-items: start;
+                }
+
+                .period-date-info {
                     min-width: 0;
                     width: 100%;
                 }
 
-                .week-navigation > div > div:last-child {
+                .period-date-fields {
                     display: grid !important;
                     grid-template-columns: auto minmax(0, 1fr);
                     width: 100%;
@@ -1357,8 +1512,11 @@
                 }
 
                 .period-nav-btn {
-                    width: 100% !important;
-                    border-radius: 999px !important;
+                    width: 44px !important;
+                    height: 44px !important;
+                    min-height: 44px;
+                    margin-top: 3px;
+                    border-radius: 50% !important;
                 }
 
                 #employeeFilterList {
@@ -1540,113 +1698,156 @@
                 <h1>Mad Potter Schedule</h1>
             </div>
             <div class="toolbar">
-                <div class="toolbar-group">
-                    <button
-                        onclick="undo()"
-                        id="undoButton"
-                        class="toolbar-btn toolbar-btn-secondary"
-                        disabled
-                    >
-                        <svg
-                            xmlns="http://www.w3.org/2000/svg"
-                            fill="none"
-                            viewBox="0 0 24 24"
-                            stroke-width="2"
-                            stroke="currentColor"
+                <div class="toolbar-left">
+                    <div class="toolbar-actions">
+                        <button
+                            onclick="undo()"
+                            id="undoButton"
+                            class="toolbar-btn toolbar-btn-secondary"
+                            disabled
                         >
-                            <path
-                                stroke-linecap="round"
-                                stroke-linejoin="round"
-                                d="M9 15 3 9m0 0 6-6M3 9h12a6 6 0 0 1 0 12h-3"
-                            />
-                        </svg>
-                        Undo
-                    </button>
-                    <button
-                        onclick="syncToDatabase()"
-                        class="toolbar-btn toolbar-btn-secondary"
-                    >
-                        <svg
-                            xmlns="http://www.w3.org/2000/svg"
-                            fill="none"
-                            viewBox="0 0 24 24"
-                            stroke-width="2"
-                            stroke="currentColor"
-                        >
-                            <path
-                                stroke-linecap="round"
-                                stroke-linejoin="round"
-                                d="M12 16.5V9.75m0 0 3 3m-3-3-3 3M6.75 19.5a4.5 4.5 0 0 1-1.41-8.775 5.25 5.25 0 0 1 10.233-2.33 3 3 0 0 1 3.758 3.848A3.752 3.752 0 0 1 18 19.5H6.75Z"
-                            />
-                        </svg>
-                        Force Save
-                    </button>
-                    <div id="saveStatus" class="save-status">
-                        <span style="color: #48bb78">●</span> Saved
+                            <svg
+                                xmlns="http://www.w3.org/2000/svg"
+                                fill="none"
+                                viewBox="0 0 24 24"
+                                stroke-width="2"
+                                stroke="currentColor"
+                            >
+                                <path
+                                    stroke-linecap="round"
+                                    stroke-linejoin="round"
+                                    d="M9 15 3 9m0 0 6-6M3 9h12a6 6 0 0 1 0 12h-3"
+                                />
+                            </svg>
+                            Undo
+                        </button>
                     </div>
-                    <div id="maintenanceStatus" class="maintenance-status">
-                        Version loading...
+                    <div class="toolbar-status">
+                        <button
+                            onclick="syncToDatabase()"
+                            id="saveStatus"
+                            class="toolbar-btn toolbar-btn-secondary save-status"
+                            type="button"
+                            title="Save now"
+                        >
+                            <svg
+                                xmlns="http://www.w3.org/2000/svg"
+                                fill="none"
+                                viewBox="0 0 24 24"
+                                stroke-width="2"
+                                stroke="currentColor"
+                            >
+                                <path
+                                    stroke-linecap="round"
+                                    stroke-linejoin="round"
+                                    d="M12 16.5V9.75m0 0 3 3m-3-3-3 3M6.75 19.5a4.5 4.5 0 0 1-1.41-8.775 5.25 5.25 0 0 1 10.233-2.33 3 3 0 0 1 3.758 3.848A3.752 3.752 0 0 1 18 19.5H6.75Z"
+                                />
+                            </svg>
+                            <span class="save-dot" style="color: #48bb78"
+                                >●</span
+                            >
+                            <span class="save-label">Saved</span>
+                        </button>
+                        <div id="maintenanceStatus" class="maintenance-status">
+                            Version loading...
+                        </div>
                     </div>
                 </div>
-                <div class="toolbar-divider"></div>
-                <div class="toolbar-group">
-                    <button
-                        onclick="exportToPDF()"
-                        class="toolbar-btn toolbar-btn-primary"
-                    >
-                        <svg
-                            xmlns="http://www.w3.org/2000/svg"
-                            fill="none"
-                            viewBox="0 0 24 24"
-                            stroke-width="2"
-                            stroke="currentColor"
+                <div class="toolbar-right">
+                    <div class="tools-menu-wrap">
+                        <button
+                            onclick="toggleToolsMenu(event)"
+                            id="toolsMenuButton"
+                            class="toolbar-btn toolbar-btn-primary"
+                            aria-haspopup="true"
+                            aria-expanded="false"
                         >
-                            <path
-                                stroke-linecap="round"
-                                stroke-linejoin="round"
-                                d="M19.5 14.25v-2.625a3.375 3.375 0 0 0-3.375-3.375h-1.5A1.125 1.125 0 0 1 13.5 7.125v-1.5a3.375 3.375 0 0 0-3.375-3.375H8.25m0 12.75h7.5m-7.5 3H12M10.5 2.25H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 0 0-9-9Z"
-                            />
-                        </svg>
-                        PDF
-                    </button>
-                    <button
-                        onclick="exportData()"
-                        class="toolbar-btn toolbar-btn-primary"
-                    >
-                        <svg
-                            xmlns="http://www.w3.org/2000/svg"
-                            fill="none"
-                            viewBox="0 0 24 24"
-                            stroke-width="2"
-                            stroke="currentColor"
+                            <svg
+                                xmlns="http://www.w3.org/2000/svg"
+                                fill="none"
+                                viewBox="0 0 24 24"
+                                stroke-width="2"
+                                stroke="currentColor"
+                            >
+                                <path
+                                    stroke-linecap="round"
+                                    stroke-linejoin="round"
+                                    d="M11.42 15.17 17.25 21A2.652 2.652 0 0 0 21 17.25l-5.877-5.877m-3.703 3.797-2.12 2.12a3 3 0 0 1-4.242 0l-.707-.707a3 3 0 0 1 0-4.243l2.12-2.12m5.656-5.657.707.707a3 3 0 0 1 0 4.243l-1.06 1.06"
+                                />
+                            </svg>
+                            Tools
+                        </button>
+                        <div
+                            id="toolsMenu"
+                            class="tools-menu"
+                            role="menu"
+                            aria-labelledby="toolsMenuButton"
                         >
-                            <path
-                                stroke-linecap="round"
-                                stroke-linejoin="round"
-                                d="M3 16.5v2.25A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75V16.5M16.5 12 12 16.5m0 0L7.5 12m4.5 4.5V3"
-                            />
-                        </svg>
-                        Export
-                    </button>
-                    <button
-                        onclick="importData()"
-                        class="toolbar-btn toolbar-btn-primary"
-                    >
-                        <svg
-                            xmlns="http://www.w3.org/2000/svg"
-                            fill="none"
-                            viewBox="0 0 24 24"
-                            stroke-width="2"
-                            stroke="currentColor"
-                        >
-                            <path
-                                stroke-linecap="round"
-                                stroke-linejoin="round"
-                                d="M3 16.5v2.25A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75V16.5m-13.5-9L12 3m0 0 4.5 4.5M12 3v13.5"
-                            />
-                        </svg>
-                        Import
-                    </button>
+                            <button
+                                type="button"
+                                class="tools-menu-item"
+                                onclick="runToolAction(exportToPDF)"
+                                role="menuitem"
+                            >
+                                <svg
+                                    xmlns="http://www.w3.org/2000/svg"
+                                    fill="none"
+                                    viewBox="0 0 24 24"
+                                    stroke-width="2"
+                                    stroke="currentColor"
+                                >
+                                    <path
+                                        stroke-linecap="round"
+                                        stroke-linejoin="round"
+                                        d="M19.5 14.25v-2.625a3.375 3.375 0 0 0-3.375-3.375h-1.5A1.125 1.125 0 0 1 13.5 7.125v-1.5a3.375 3.375 0 0 0-3.375-3.375H8.25m0 12.75h7.5m-7.5 3H12M10.5 2.25H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 0 0-9-9Z"
+                                    />
+                                </svg>
+                                Download PDF
+                            </button>
+                            <button
+                                type="button"
+                                class="tools-menu-item"
+                                onclick="runToolAction(exportData)"
+                                role="menuitem"
+                            >
+                                <svg
+                                    xmlns="http://www.w3.org/2000/svg"
+                                    fill="none"
+                                    viewBox="0 0 24 24"
+                                    stroke-width="2"
+                                    stroke="currentColor"
+                                >
+                                    <path
+                                        stroke-linecap="round"
+                                        stroke-linejoin="round"
+                                        d="M3 16.5v2.25A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75V16.5M16.5 12 12 16.5m0 0L7.5 12m4.5 4.5V3"
+                                    />
+                                </svg>
+                                Export Backup
+                            </button>
+                            <button
+                                type="button"
+                                class="tools-menu-item"
+                                onclick="runToolAction(importData)"
+                                role="menuitem"
+                            >
+                                <svg
+                                    xmlns="http://www.w3.org/2000/svg"
+                                    fill="none"
+                                    viewBox="0 0 24 24"
+                                    stroke-width="2"
+                                    stroke="currentColor"
+                                >
+                                    <path
+                                        stroke-linecap="round"
+                                        stroke-linejoin="round"
+                                        d="M3 16.5v2.25A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75V16.5m-13.5-9L12 3m0 0 4.5 4.5M12 3v13.5"
+                                    />
+                                </svg>
+                                Import Backup
+                            </button>
+                        </div>
+                    </div>
                 </div>
             </div>
 
@@ -1886,22 +2087,9 @@
                                 <path d="M19 12H5" />
                             </svg>
                         </button>
-                        <div
-                            style="
-                                display: flex;
-                                flex-direction: column;
-                                align-items: center;
-                                gap: 8px;
-                            "
-                        >
+                        <div class="period-date-info">
                             <div class="current-week" id="currentWeek"></div>
-                            <div
-                                style="
-                                    display: flex;
-                                    gap: 10px;
-                                    align-items: center;
-                                "
-                            >
+                            <div class="period-date-fields">
                                 <label style="font-size: 14px; color: #555"
                                     >Start:</label
                                 >
@@ -2420,7 +2608,7 @@
         </div>
 
         <script>
-            const APP_VERSION = "2026-06-04-reliability-v1";
+            const APP_VERSION = "v2.1";
             console.log(`Schedule Edit App Version: ${APP_VERSION}`);
 
             function isEmbeddedInWix() {
@@ -2461,17 +2649,44 @@
                 const deletedCount = cleanup ? cleanup.deletedCount || 0 : 0;
                 const cleanupText = cleanup
                     ? `Last cleanup: ${deletedCount} old shift${deletedCount === 1 ? "" : "s"}`
-                    : "Cleanup: ready";
-                const versionText = backendAppVersion
-                    ? `HTML v${APP_VERSION} / Velo v${backendAppVersion}`
-                    : `HTML v${APP_VERSION}`;
-                const mismatchText =
-                    backendAppVersion && backendAppVersion !== APP_VERSION
-                        ? " - Version mismatch"
-                        : "";
-                const modeText = IS_MOCK_MODE ? " - Mock mode" : "";
+                    : "Cleanup ready";
+                const modeText = IS_MOCK_MODE ? "Mock mode" : "";
+                const hasVersionMismatch =
+                    backendAppVersion && backendAppVersion !== APP_VERSION;
+                const versionText = hasVersionMismatch
+                    ? `Version mismatch: HTML ${APP_VERSION} / Velo ${backendAppVersion}`
+                    : `Version ${APP_VERSION}`;
 
-                statusEl.textContent = `${versionText}${mismatchText}${modeText} - ${cleanupText}`;
+                statusEl.textContent = [versionText, modeText, cleanupText]
+                    .filter(Boolean)
+                    .join(" | ");
+                statusEl.title = hasVersionMismatch
+                    ? `HTML ${APP_VERSION} / Velo ${backendAppVersion}`
+                    : statusEl.textContent;
+            }
+
+            function setToolsMenuOpen(isOpen) {
+                const menu = document.getElementById("toolsMenu");
+                const button = document.getElementById("toolsMenuButton");
+                if (!menu || !button) return;
+
+                menu.classList.toggle("open", isOpen);
+                button.setAttribute("aria-expanded", String(isOpen));
+            }
+
+            function toggleToolsMenu(event) {
+                event.stopPropagation();
+                const menu = document.getElementById("toolsMenu");
+                setToolsMenuOpen(!menu?.classList.contains("open"));
+            }
+
+            function closeToolsMenu() {
+                setToolsMenuOpen(false);
+            }
+
+            function runToolAction(action) {
+                closeToolsMenu();
+                action();
             }
 
             // Toast notification system
@@ -2715,6 +2930,46 @@
             function updateSaveStatus(status) {
                 const statusEl = document.getElementById("saveStatus");
                 if (!statusEl) return;
+
+                const dotEl = statusEl.querySelector(".save-dot");
+                const labelEl = statusEl.querySelector(".save-label");
+                const states = {
+                    pending: {
+                        color: "#A0AEC0",
+                        label: "Unsaved",
+                        title: "Save unsaved changes",
+                        disabled: false,
+                    },
+                    saving: {
+                        color: "#ECC94B",
+                        label: "Saving...",
+                        title: "Saving changes",
+                        disabled: true,
+                    },
+                    saved: {
+                        color: "#48BB78",
+                        label: "Saved",
+                        title: "Save now",
+                        disabled: false,
+                    },
+                    error: {
+                        color: "#F56565",
+                        label: "Save failed",
+                        title: "Retry save",
+                        disabled: false,
+                    },
+                };
+                const currentState = states[status];
+                if (!currentState) return;
+
+                if (dotEl && labelEl) {
+                    dotEl.style.color = currentState.color;
+                    labelEl.textContent = currentState.label;
+                    statusEl.style.color = currentState.color;
+                    statusEl.title = currentState.title;
+                    statusEl.disabled = currentState.disabled;
+                    return;
+                }
 
                 switch (status) {
                     case "pending":
@@ -5294,6 +5549,13 @@
                     }, 500);
                 }
                 renderTimeOffDrawer();
+            });
+
+            document.addEventListener("click", closeToolsMenu);
+            document.addEventListener("keydown", function (event) {
+                if (event.key === "Escape") {
+                    closeToolsMenu();
+                }
             });
 
             // Re-render calendar on resize/orientation change for mobile responsiveness
