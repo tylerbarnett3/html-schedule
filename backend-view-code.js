@@ -153,9 +153,24 @@ function normalizeClosedDays(days) {
     }).filter(Boolean))].sort();
 }
 
+function normalizeTimeOffPeriod(period) {
+    return ['full-day', 'morning', 'evening'].includes(period) ? period : 'full-day';
+}
+
+function timeOffPeriodsConflict(requestedPeriod, existingPeriod) {
+    const requested = normalizeTimeOffPeriod(requestedPeriod);
+    const existing = normalizeTimeOffPeriod(existingPeriod);
+
+    return (
+        requested === 'full-day' ||
+        existing === 'full-day' ||
+        requested === existing
+    );
+}
+
 async function handleTimeOffRequest(requestData) {
     const { employeeId, employeeName, dates, requestDate } = requestData;
-    const timeOffPeriod = requestData.timeOffPeriod || 'full-day';
+    const timeOffPeriod = normalizeTimeOffPeriod(requestData.timeOffPeriod);
     
     try {
         // FIRST: Find the Wix database ID for this employee
@@ -191,17 +206,11 @@ async function handleTimeOffRequest(requestData) {
             const existingRequest = await wixData.query('Shifts')
                 .eq('employee', wixEmployeeId)
                 .eq('date', date)
-                .eq('isTimeOffRequest', true)
                 .hasSome('requestStatus', ['pending', 'approved'])
                 .find();
 
             const hasMatchingRequest = existingRequest.items.some(shift => {
-                const existingPeriod = shift.timeOffPeriod || 'full-day';
-                return (
-                    timeOffPeriod === 'full-day' ||
-                    existingPeriod === 'full-day' ||
-                    existingPeriod === timeOffPeriod
-                );
+                return timeOffPeriodsConflict(timeOffPeriod, shift.timeOffPeriod);
             });
 
             if (hasMatchingRequest) {

@@ -1880,14 +1880,19 @@
                     const skippedText = formatDateList(skippedDates);
 
                     if (submittedDates.length > 0 && skippedDates.length > 0) {
+                        selectedDates = [];
+                        closeTimeOffRequestModal();
                         alert(
                             `Time-off request submitted. Skipped dates that are closed or already had a pending or approved request: ${skippedText}`,
                         );
                     } else if (submittedDates.length > 0) {
+                        selectedDates = [];
+                        closeTimeOffRequestModal();
                         alert(
                             "Time-off request submitted! Your manager will review it shortly.",
                         );
                     } else if (skippedDates.length > 0) {
+                        hideLoading();
                         alert(
                             `No new requests were submitted. These dates are closed or already had pending or approved requests: ${skippedText}`,
                         );
@@ -2094,6 +2099,17 @@
 
             function normalizeTimeOffPeriod(period) {
                 return TIME_OFF_PERIOD_LABELS[period] ? period : "full-day";
+            }
+
+            function timeOffPeriodsConflict(requestedPeriod, existingPeriod) {
+                const requested = normalizeTimeOffPeriod(requestedPeriod);
+                const existing = normalizeTimeOffPeriod(existingPeriod);
+
+                return (
+                    requested === "full-day" ||
+                    existing === "full-day" ||
+                    requested === existing
+                );
             }
 
             function formatTimeOffPeriod(period) {
@@ -2532,7 +2548,6 @@
                         if (
                             s.date !== dateStr ||
                             s.employeeId !== selectedEmployeeId ||
-                            !s.isTimeOffRequest ||
                             (s.requestStatus !== "pending" &&
                                 s.requestStatus !== "approved")
                         ) {
@@ -2546,10 +2561,9 @@
                         const existingPeriod = normalizeTimeOffPeriod(
                             s.timeOffPeriod,
                         );
-                        return (
-                            selectedPeriod === "full-day" ||
-                            existingPeriod === "full-day" ||
-                            selectedPeriod === existingPeriod
+                        return timeOffPeriodsConflict(
+                            selectedPeriod,
+                            existingPeriod,
                         );
                     },
                 );
@@ -2725,8 +2739,6 @@
                     "*",
                 );
 
-                selectedDates = [];
-                closeTimeOffRequestModal();
                 showLoading();
             }
 
