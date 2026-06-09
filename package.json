@@ -4,7 +4,7 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "dev": "node scripts/prepare-pages.mjs && vite .vite-pages --host 127.0.0.1 --port 5173",
+    "dev": "node scripts/dev-server.mjs",
     "build": "node scripts/prepare-pages.mjs && vite build",
     "preview": "vite preview --host 127.0.0.1 --port 4173"
   },

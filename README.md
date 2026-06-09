@@ -15,6 +15,7 @@ Both embeds communicate with Wix Velo page code through `postMessage`, and the V
 - `view-schedule.html` - employee source HTML. The build publishes it as `view.html`.
 - `backend-edit-code.js` - Wix Velo page code for the edit page.
 - `backend-view-code.js` - Wix Velo page code for the view page.
+- `scripts/dev-server.mjs` - local Vite dev server that refreshes `edit.html` and `view.html` when source HTML files are saved.
 - `scripts/prepare-pages.mjs` - copies the source HTML files into the Vite Pages build root.
 - `.github/workflows/deploy-pages.yml` - builds and deploys the app to GitHub Pages.
 
