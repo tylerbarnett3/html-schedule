@@ -86,6 +86,8 @@
             .btn,
             .week-navigation button,
             .date-picker-nav button,
+            .add-item-type-btn,
+            .day-off-period-btn,
             .add-shift-btn,
             .request-tab,
             .date-picker-date,
@@ -1093,6 +1095,121 @@
                 padding: 12px 42px 12px 16px;
             }
 
+            .add-item-type-group,
+            .day-off-period-group {
+                display: grid;
+                grid-template-columns: repeat(3, minmax(0, 1fr));
+                gap: 6px;
+                padding: 5px;
+                background: #efe4d2;
+                border: 1px solid rgba(91, 65, 40, 0.12);
+                border-radius: 14px;
+                margin-bottom: 16px;
+            }
+
+            .add-item-type-btn,
+            .day-off-period-btn {
+                min-width: 0;
+                min-height: 44px;
+                padding: 10px 8px;
+                border-radius: 10px;
+                background: transparent;
+                color: var(--clay-800);
+                font: inherit;
+                font-size: 13px;
+                font-weight: 800;
+                letter-spacing: 0;
+                transition:
+                    background 0.2s,
+                    box-shadow 0.2s,
+                    color 0.2s;
+            }
+
+            .add-item-type-btn.active,
+            .day-off-period-btn.active {
+                background: rgba(255, 252, 246, 0.96);
+                color: var(--clay-950);
+                box-shadow: 0 8px 18px rgba(58, 39, 21, 0.12);
+            }
+
+            .add-item-type-btn:hover,
+            .day-off-period-btn:hover {
+                background: rgba(255, 252, 246, 0.7);
+            }
+
+            .shift-field-grid {
+                display: grid;
+                grid-template-columns: repeat(2, minmax(0, 1fr));
+                gap: 12px;
+            }
+
+            .shift-employee-picker {
+                border: 1px solid var(--line);
+                border-radius: 14px;
+                padding: 8px;
+                background: rgba(255, 252, 246, 0.7);
+                max-height: 220px;
+                overflow-y: auto;
+            }
+
+            #shiftEmployeeList {
+                display: grid;
+                grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+                gap: 8px;
+            }
+
+            .shift-employee-option {
+                display: flex;
+                align-items: center;
+                gap: 10px;
+                min-width: 0;
+                min-height: 44px;
+                padding: 9px 10px;
+                border: 1px solid rgba(91, 65, 40, 0.1);
+                border-radius: 12px;
+                background: rgba(255, 250, 241, 0.72);
+                cursor: pointer;
+                transition:
+                    background 0.2s,
+                    border-color 0.2s,
+                    box-shadow 0.2s;
+            }
+
+            .shift-employee-option:hover,
+            .shift-employee-option:has(input:checked) {
+                background: #fffaf1;
+                border-color: rgba(216, 169, 79, 0.48);
+                box-shadow: 0 8px 16px rgba(58, 39, 21, 0.08);
+            }
+
+            .shift-employee-option input {
+                width: 18px;
+                height: 18px;
+                margin: 0;
+                flex: 0 0 18px;
+                accent-color: var(--clay-700);
+                cursor: pointer;
+            }
+
+            .shift-employee-option span {
+                min-width: 0;
+                overflow: hidden;
+                text-overflow: ellipsis;
+                white-space: nowrap;
+                color: var(--ink);
+                font-size: 14px;
+                font-weight: 700;
+            }
+
+            .shift-empty-state {
+                grid-column: 1 / -1;
+                padding: 18px 12px;
+                color: var(--muted);
+                font-size: 13px;
+                font-style: italic;
+                text-align: center;
+            }
+
             .btn-primary,
             .week-navigation button {
                 background: linear-gradient(
@@ -1622,6 +1739,11 @@
                     min-height: 40px;
                 }
 
+                .shift-field-grid {
+                    grid-template-columns: 1fr;
+                    gap: 0;
+                }
+
                 .loading-content {
                     width: calc(100vw - 32px);
                     min-width: 0;
@@ -1679,6 +1801,15 @@
                 .date-picker-nav.shift-month-nav span {
                     min-width: 0;
                     text-align: center;
+                }
+
+                .add-item-type-group,
+                .day-off-period-group {
+                    grid-template-columns: 1fr;
+                }
+
+                #shiftEmployeeList {
+                    grid-template-columns: 1fr;
                 }
             }
         </style>
@@ -2163,118 +2294,88 @@
                 <div class="modal-header">
                     <h2>Add Shift</h2>
                 </div>
+                <div
+                    class="add-item-type-group"
+                    role="radiogroup"
+                    aria-label="Schedule item type"
+                >
+                    <button
+                        type="button"
+                        class="add-item-type-btn active"
+                        data-item-type="shift"
+                        role="radio"
+                        aria-checked="true"
+                        onclick="setAddItemType('shift')"
+                    >
+                        Shift
+                    </button>
+                    <button
+                        type="button"
+                        class="add-item-type-btn"
+                        data-item-type="day-off"
+                        role="radio"
+                        aria-checked="false"
+                        onclick="setAddItemType('day-off')"
+                    >
+                        Day Off
+                    </button>
+                    <button
+                        type="button"
+                        class="add-item-type-btn"
+                        data-item-type="closed"
+                        role="radio"
+                        aria-checked="false"
+                        onclick="setAddItemType('closed')"
+                    >
+                        Closed
+                    </button>
+                </div>
                 <div class="input-group" id="shiftEmployeeGroup">
                     <label>Employee(s)</label>
-                    <div
-                        style="
-                            border: 1px solid #ddd;
-                            border-radius: 6px;
-                            padding: 10px;
-                        "
-                    >
+                    <div class="shift-employee-picker">
                         <div id="shiftEmployeeList"></div>
                     </div>
                 </div>
-                <div
-                    id="dayOffToggleContainer"
-                    style="
-                        display: flex;
-                        align-items: center;
-                        padding: 10px 12px;
-                        cursor: pointer;
-                        border-radius: 6px;
-                        border: 1px solid #e2e8f0;
-                        background: #f7fafc;
-                        transition: background 0.2s;
-                        margin-bottom: 12px;
-                    "
-                    onclick="document.getElementById('isDayOff').click()"
-                    onmouseenter="this.style.background = '#edf2f7'"
-                    onmouseleave="this.style.background = '#f7fafc'"
-                >
+                <div class="input-group" id="dayOffPeriodGroup">
+                    <label>Day Off Type</label>
                     <div
-                        style="
-                            display: flex;
-                            flex-direction: row;
-                            align-items: center;
-                            gap: 10px;
-                        "
+                        class="day-off-period-group"
+                        role="radiogroup"
+                        aria-label="Day off type"
                     >
-                        <input
-                            type="checkbox"
-                            id="isDayOff"
-                            onchange="toggleDayOffMode()"
-                            onclick="event.stopPropagation()"
-                            style="
-                                width: 18px;
-                                height: 18px;
-                                margin: 0;
-                                padding: 0;
-                                cursor: pointer;
-                                vertical-align: middle;
-                            "
-                        />
-                        <span
-                            style="
-                                font-size: 14px;
-                                font-weight: 500;
-                                line-height: 1;
-                                vertical-align: middle;
-                            "
-                        >Day Off</span
+                        <button
+                            type="button"
+                            class="day-off-period-btn active"
+                            data-period="full-day"
+                            role="radio"
+                            aria-checked="true"
+                            onclick="setAddDayOffPeriod('full-day')"
                         >
+                            Full Day
+                        </button>
+                        <button
+                            type="button"
+                            class="day-off-period-btn"
+                            data-period="morning"
+                            role="radio"
+                            aria-checked="false"
+                            onclick="setAddDayOffPeriod('morning')"
+                        >
+                            Morning
+                        </button>
+                        <button
+                            type="button"
+                            class="day-off-period-btn"
+                            data-period="evening"
+                            role="radio"
+                            aria-checked="false"
+                            onclick="setAddDayOffPeriod('evening')"
+                        >
+                            Evening
+                        </button>
                     </div>
                 </div>
-                <div
-                    style="
-                        display: flex;
-                        align-items: center;
-                        padding: 10px 12px;
-                        cursor: pointer;
-                        border-radius: 6px;
-                        border: 1px solid #e2e8f0;
-                        background: #f7fafc;
-                        transition: background 0.2s;
-                        margin-bottom: 12px;
-                    "
-                    onclick="document.getElementById('isClosedForBusiness').click()"
-                    onmouseenter="this.style.background = '#edf2f7'"
-                    onmouseleave="this.style.background = '#f7fafc'"
-                >
-                    <div
-                        style="
-                            display: flex;
-                            flex-direction: row;
-                            align-items: center;
-                            gap: 10px;
-                        "
-                    >
-                        <input
-                            type="checkbox"
-                            id="isClosedForBusiness"
-                            onchange="toggleClosedForBusinessMode()"
-                            onclick="event.stopPropagation()"
-                            style="
-                                width: 18px;
-                                height: 18px;
-                                margin: 0;
-                                padding: 0;
-                                cursor: pointer;
-                                vertical-align: middle;
-                            "
-                        />
-                        <span
-                            style="
-                                font-size: 14px;
-                                font-weight: 500;
-                                line-height: 1;
-                                vertical-align: middle;
-                            "
-                            >Closed for Business</span
-                        >
-                    </div>
-                </div>
-                <div id="shiftTimeFields">
+                <div class="shift-field-grid" id="shiftTimeFields">
                     <div class="input-group">
                         <label>Start Time</label>
                         <input type="time" id="shiftStart" value="09:00" />
@@ -2359,7 +2460,11 @@
                     >
                         Cancel
                     </button>
-                    <button class="btn btn-primary" onclick="saveShift()">
+                    <button
+                        class="btn btn-primary"
+                        id="saveShiftButton"
+                        onclick="saveShift()"
+                    >
                         Add Shift
                     </button>
                 </div>
@@ -2746,6 +2851,8 @@
             // Multi-date picker for Add Shift modal
             let selectedShiftDates = [];
             let shiftPickerMonth = new Date();
+            let selectedAddItemType = "shift";
+            let selectedAddDayOffPeriod = "full-day";
 
             // Initialize to today and 35 days from today
             currentStartDate.setHours(0, 0, 0, 0);
@@ -3200,13 +3307,19 @@
                 const title = document.querySelector("#shiftModal .modal-header h2");
                 if (!title) return;
 
+                const itemTitle = {
+                    shift: "Add Shift",
+                    "day-off": "Add Day Off",
+                    closed: "Add Closed Day",
+                }[selectedAddItemType] || "Add Shift";
+
                 if (!dateStr || !isMobileLayout()) {
-                    title.textContent = "Add Shift";
+                    title.textContent = itemTitle;
                     return;
                 }
 
                 const date = new Date(dateStr + "T00:00:00");
-                title.textContent = `Add Shift: ${date.toLocaleDateString("en-US", {
+                title.textContent = `${itemTitle}: ${date.toLocaleDateString("en-US", {
                     weekday: "short",
                     month: "short",
                     day: "numeric",
@@ -4446,6 +4559,17 @@
                 return TIME_OFF_PERIOD_LABELS[normalizeTimeOffPeriod(period)];
             }
 
+            function timeOffPeriodsConflict(requestedPeriod, existingPeriod) {
+                const requested = normalizeTimeOffPeriod(requestedPeriod);
+                const existing = normalizeTimeOffPeriod(existingPeriod);
+
+                return (
+                    requested === "full-day" ||
+                    existing === "full-day" ||
+                    requested === existing
+                );
+            }
+
             function getTimeMinutes(time) {
                 if (!time) return null;
                 const [hours, minutes] = time.split(":").map(Number);
@@ -4753,8 +4877,14 @@
                 return `Approving this time off will DELETE existing shifts that conflict:\n\n${lines.join("\n\n")}\n\nContinue?`;
             }
 
-            function getDayOffConflicts(employeeIds, dates, ignoreShiftId = null) {
+            function getDayOffConflicts(
+                employeeIds,
+                dates,
+                period = "full-day",
+                ignoreShiftId = null,
+            ) {
                 const conflicts = [];
+                const timeOffPeriod = normalizeTimeOffPeriod(period);
 
                 dates.forEach((date) => {
                     employeeIds.forEach((employeeId) => {
@@ -4764,7 +4894,7 @@
                             employeeId,
                             employeeName: employee?.name || "Unknown",
                             date,
-                            timeOffPeriod: "full-day",
+                            timeOffPeriod,
                         };
 
                         getShiftsConflictingWithTimeOffRequest(request).forEach(
@@ -4795,6 +4925,54 @@
                 }
 
                 return `Adding this day off will DELETE existing shifts that conflict:\n\n${lines.join("\n\n")}\n\nContinue?`;
+            }
+
+            function getDuplicateDayOffConflicts(
+                employeeIds,
+                dates,
+                period,
+                ignoreShiftId = null,
+            ) {
+                const requestedPeriod = normalizeTimeOffPeriod(period);
+                const employeeIdSet = new Set(employeeIds);
+                const dateSet = new Set(dates);
+
+                return shifts.filter((shift) => {
+                    if (
+                        shift.id === ignoreShiftId ||
+                        !employeeIdSet.has(shift.employeeId) ||
+                        !dateSet.has(shift.date) ||
+                        shift.requestStatus === "denied"
+                    ) {
+                        return false;
+                    }
+
+                    const isExistingDayOff =
+                        shift.isDayOff || shift.requestStatus === "approved";
+                    if (!isExistingDayOff) return false;
+
+                    return timeOffPeriodsConflict(
+                        requestedPeriod,
+                        shift.timeOffPeriod,
+                    );
+                });
+            }
+
+            function buildDuplicateDayOffMessage(conflicts, requestedPeriod) {
+                const requestedLabel = formatTimeOffPeriod(requestedPeriod);
+                const lines = conflicts.slice(0, 8).map((shift) => {
+                    return `${shift.employeeName} already has ${formatTimeOffPeriod(
+                        shift.timeOffPeriod,
+                    )} off on ${formatDateLong(shift.date)}.`;
+                });
+
+                if (conflicts.length > lines.length) {
+                    lines.push(
+                        `${conflicts.length - lines.length} more duplicate${conflicts.length - lines.length === 1 ? "" : "s"} not shown.`,
+                    );
+                }
+
+                return `This ${requestedLabel} day off cannot be added because it overlaps existing day off:\n\n${lines.join("\n")}`;
             }
 
             function deleteConflictingShifts(conflicts) {
@@ -5171,8 +5349,31 @@
                     }
                 }
 
+                const duplicateDayOffConflicts = isDayOff
+                    ? getDuplicateDayOffConflicts(
+                          [employeeId],
+                          [date],
+                          "full-day",
+                          editingShiftId,
+                      )
+                    : [];
+                if (duplicateDayOffConflicts.length > 0) {
+                    alert(
+                        buildDuplicateDayOffMessage(
+                            duplicateDayOffConflicts,
+                            "full-day",
+                        ),
+                    );
+                    return;
+                }
+
                 const dayOffConflicts = isDayOff
-                    ? getDayOffConflicts([employeeId], [date], editingShiftId)
+                    ? getDayOffConflicts(
+                          [employeeId],
+                          [date],
+                          "full-day",
+                          editingShiftId,
+                      )
                     : [];
                 if (
                     dayOffConflicts.length > 0 &&
@@ -5213,33 +5414,87 @@
                 }
             }
 
-            function toggleDayOffMode() {
-                const isDayOff = document.getElementById("isDayOff").checked;
+            function setAddItemType(itemType) {
+                selectedAddItemType = ["shift", "day-off", "closed"].includes(
+                    itemType,
+                )
+                    ? itemType
+                    : "shift";
+                if (selectedAddItemType !== "closed") {
+                    selectedShiftDates = selectedShiftDates.filter(
+                        (dateStr) => !isClosedDate(dateStr),
+                    );
+                }
+                renderAddItemModalState();
+            }
+
+            function setAddDayOffPeriod(period) {
+                selectedAddDayOffPeriod = normalizeTimeOffPeriod(period);
+                renderAddItemModalState();
+            }
+
+            function renderSegmentedControlState({
+                selector,
+                activeAttribute,
+                activeValue,
+            }) {
+                document.querySelectorAll(selector).forEach((button) => {
+                    const isActive =
+                        button.getAttribute(activeAttribute) === activeValue;
+                    button.classList.toggle("active", isActive);
+                    button.setAttribute("aria-checked", String(isActive));
+                });
+            }
+
+            function renderAddItemModalState() {
+                const isShift = selectedAddItemType === "shift";
+                const isDayOff = selectedAddItemType === "day-off";
+                const isClosed = selectedAddItemType === "closed";
+                const employeeGroup = document.getElementById("shiftEmployeeGroup");
+                const periodGroup = document.getElementById("dayOffPeriodGroup");
                 const timeFields = document.getElementById("shiftTimeFields");
-                timeFields.style.display = isDayOff ? "none" : "block";
+                const title = document.querySelector("#shiftModal .modal-header h2");
+                const saveButton = document.getElementById("saveShiftButton");
+
+                if (employeeGroup) {
+                    employeeGroup.style.display = isClosed ? "none" : "block";
+                }
+                if (periodGroup) {
+                    periodGroup.style.display = isDayOff ? "block" : "none";
+                }
+                if (timeFields) {
+                    timeFields.style.display = isShift ? "grid" : "none";
+                }
+                if (title) {
+                    setShiftModalTitle(selectedShiftDates[0] || null);
+                }
+                if (saveButton) {
+                    saveButton.textContent = {
+                        shift: "Add Shift",
+                        "day-off": "Add Day Off",
+                        closed: "Mark Closed",
+                    }[selectedAddItemType];
+                }
+
+                renderSegmentedControlState({
+                    selector: ".add-item-type-btn",
+                    activeAttribute: "data-item-type",
+                    activeValue: selectedAddItemType,
+                });
+                renderSegmentedControlState({
+                    selector: ".day-off-period-btn",
+                    activeAttribute: "data-period",
+                    activeValue: selectedAddDayOffPeriod,
+                });
+                renderShiftDatePicker();
+            }
+
+            function toggleDayOffMode() {
+                setAddItemType("day-off");
             }
 
             function toggleClosedForBusinessMode() {
-                const isClosed = document.getElementById(
-                    "isClosedForBusiness",
-                ).checked;
-                const employeeGroup = document.getElementById("shiftEmployeeGroup");
-                const dayOffContainer = document.getElementById(
-                    "dayOffToggleContainer",
-                );
-                const timeFields = document.getElementById("shiftTimeFields");
-
-                employeeGroup.style.display = isClosed ? "none" : "block";
-                dayOffContainer.style.display = isClosed ? "none" : "flex";
-
-                if (isClosed) {
-                    document.getElementById("isDayOff").checked = false;
-                    timeFields.style.display = "none";
-                } else {
-                    toggleDayOffMode();
-                }
-
-                renderShiftDatePicker();
+                setAddItemType("closed");
             }
 
             function renderShiftEmployeeList() {
@@ -5250,33 +5505,20 @@
 
                 if (activeEmployees.length === 0) {
                     list.innerHTML =
-                        '<div style="color: #999;">No active employees available</div>';
+                        '<div class="shift-empty-state">No active employees available</div>';
                     return;
                 }
 
                 list.innerHTML = activeEmployees
                     .map(
                         (emp) => `
-                <label style="display: flex; align-items: center; padding: 8px; cursor: pointer; border-radius: 4px; transition: background 0.2s;">
-                    <input type="checkbox" class="shift-employee-checkbox" value="${emp.id}" style="width: 18px; height: 18px; margin: 0; margin-right: 10px; cursor: pointer;">
-                    <span style="flex: 1; font-size: 14px;">${emp.name}</span>
+                <label class="shift-employee-option">
+                    <input type="checkbox" class="shift-employee-checkbox" value="${emp.id}">
+                    <span>${emp.name}</span>
                 </label>
             `,
                     )
                     .join("");
-
-                // Add hover effect
-                const labels = list.querySelectorAll("label");
-                labels.forEach((label) => {
-                    label.addEventListener(
-                        "mouseenter",
-                        () => (label.style.background = "#f7fafc"),
-                    );
-                    label.addEventListener(
-                        "mouseleave",
-                        () => (label.style.background = "transparent"),
-                    );
-                });
             }
 
             function openShiftModal(dateStr) {
@@ -5296,16 +5538,10 @@
                     1,
                 );
 
-                document.getElementById("isDayOff").checked = false;
-                document.getElementById("isClosedForBusiness").checked = false;
-                document.getElementById("shiftEmployeeGroup").style.display =
-                    "block";
-                document.getElementById("dayOffToggleContainer").style.display =
-                    "flex";
-                document.getElementById("shiftTimeFields").style.display =
-                    "block";
+                selectedAddItemType = "shift";
+                selectedAddDayOffPeriod = "full-day";
                 renderShiftEmployeeList();
-                renderShiftDatePicker();
+                renderAddItemModalState();
                 if (isMobileLayout() && openMobileShiftPanel(dateStr)) {
                     return;
                 }
@@ -5363,9 +5599,7 @@
                     const dateStr = formatDate(date);
                     const isSelected = selectedShiftDates.includes(dateStr);
                     const isClosed = isClosedDate(dateStr);
-                    const isClosedMode = document.getElementById(
-                        "isClosedForBusiness",
-                    ).checked;
+                    const isClosedMode = selectedAddItemType === "closed";
                     const isDisabled = isClosed && !isClosedMode;
                     const selectedClass = isSelected ? "selected" : "";
 
@@ -5384,9 +5618,7 @@
             }
 
             function toggleShiftDateSelection(dateStr) {
-                const isClosedMode = document.getElementById(
-                    "isClosedForBusiness",
-                ).checked;
+                const isClosedMode = selectedAddItemType === "closed";
                 if (isClosedDate(dateStr) && !isClosedMode) return;
 
                 const index = selectedShiftDates.indexOf(dateStr);
@@ -5438,10 +5670,11 @@
             }
 
             function saveShift() {
-                const isDayOff = document.getElementById("isDayOff").checked;
-                const isClosedForBusiness = document.getElementById(
-                    "isClosedForBusiness",
-                ).checked;
+                const isDayOff = selectedAddItemType === "day-off";
+                const isClosedForBusiness = selectedAddItemType === "closed";
+                const timeOffPeriod = normalizeTimeOffPeriod(
+                    selectedAddDayOffPeriod,
+                );
                 const selectedEmployeeCheckboxes = document.querySelectorAll(
                     ".shift-employee-checkbox:checked",
                 );
@@ -5521,8 +5754,29 @@
                     }
                 }
 
+                const duplicateDayOffConflicts = isDayOff
+                    ? getDuplicateDayOffConflicts(
+                          selectedEmployeeIds,
+                          selectedShiftDates,
+                          timeOffPeriod,
+                      )
+                    : [];
+                if (duplicateDayOffConflicts.length > 0) {
+                    alert(
+                        buildDuplicateDayOffMessage(
+                            duplicateDayOffConflicts,
+                            timeOffPeriod,
+                        ),
+                    );
+                    return;
+                }
+
                 const dayOffConflicts = isDayOff
-                    ? getDayOffConflicts(selectedEmployeeIds, selectedShiftDates)
+                    ? getDayOffConflicts(
+                          selectedEmployeeIds,
+                          selectedShiftDates,
+                          timeOffPeriod,
+                      )
                     : [];
                 if (
                     dayOffConflicts.length > 0 &&
@@ -5554,6 +5808,7 @@
                             startTime: startTime,
                             endTime: endTime,
                             isDayOff: isDayOff,
+                            timeOffPeriod: isDayOff ? timeOffPeriod : "full-day",
                         });
                     });
                 });
