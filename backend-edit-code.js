@@ -218,7 +218,8 @@ async function syncToDatabase(data) {
                 isTimeOffRequest: shift.isTimeOffRequest || false,
                 requestStatus: shift.requestStatus || null,
                 requestDate: shift.requestDate || null,
-                requestedBy: shift.requestedBy || null
+                requestedBy: shift.requestedBy || null,
+                timeOffPeriod: shift.timeOffPeriod || 'full-day'
             };
             
             if (shift.wixId) {
@@ -454,7 +455,8 @@ async function loadFromDatabase() {
                 isTimeOffRequest: shift.isTimeOffRequest || false,
                 requestStatus: shift.requestStatus || null,
                 requestDate: shift.requestDate || null,
-                requestedBy: shift.requestedBy || null
+                requestedBy: shift.requestedBy || null,
+                timeOffPeriod: shift.timeOffPeriod || 'full-day'
             };
         }).filter(shift => shift.employeeId !== undefined); // Filter out shifts with no valid employee
         

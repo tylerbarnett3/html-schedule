@@ -42,6 +42,7 @@ The current code expects these Wix collections:
   - `requestStatus`
   - `requestDate`
   - `requestedBy`
+  - `timeOffPeriod` (`full-day`, `morning`, or `evening`)
 - `ClosedDays`
   - `date`
 

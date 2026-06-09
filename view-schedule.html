@@ -1378,6 +1378,15 @@
                 </div>
 
                 <div class="input-group">
+                    <label>Time Off Needed</label>
+                    <select id="requestTimeOffPeriod">
+                        <option value="full-day">Full Day</option>
+                        <option value="morning">Morning (Open - 5pm)</option>
+                        <option value="evening">Evening (5pm - Close)</option>
+                    </select>
+                </div>
+
+                <div class="input-group">
                     <label>Select Date(s) - Click to select/deselect</label>
 
                     <div class="date-picker-nav request-month-nav">
@@ -1523,6 +1532,11 @@
             let currentPickerMonth = new Date();
             let cancelingShiftId = null;
             let cancelingEmployeeName = null;
+            const TIME_OFF_PERIOD_LABELS = {
+                "full-day": "Full Day",
+                morning: "Morning",
+                evening: "Evening",
+            };
 
             // Initialize to today and 35 days from today
             currentStartDate.setHours(0, 0, 0, 0);
@@ -1618,6 +1632,7 @@
                             requestStatus: "pending",
                             requestDate: new Date().toISOString(),
                             requestedBy: employeeName(1005),
+                            timeOffPeriod: "morning",
                         },
                         {
                             id: 2102,
@@ -1631,6 +1646,7 @@
                             requestStatus: "approved",
                             requestDate: new Date().toISOString(),
                             requestedBy: employeeName(1007),
+                            timeOffPeriod: "evening",
                         },
                     ]),
                 };
@@ -1638,7 +1654,10 @@
 
             function applyLoadedScheduleData(data) {
                 employees = data.employees || [];
-                shifts = data.shifts || [];
+                shifts = (data.shifts || []).map((shift) => ({
+                    ...shift,
+                    timeOffPeriod: normalizeTimeOffPeriod(shift.timeOffPeriod),
+                }));
                 closedDays = normalizeClosedDays(data.closedDays || []);
 
                 employees.forEach((emp) => {
@@ -1806,6 +1825,11 @@
                 selectedDates = [];
                 cancelingShiftId = null;
                 cancelingEmployeeName = null;
+                const periodSelect =
+                    document.getElementById("requestTimeOffPeriod");
+                if (periodSelect) {
+                    periodSelect.value = "full-day";
+                }
             }
 
             // Helper function to open modal at current scroll position
@@ -2068,6 +2092,14 @@
                     .join(", ");
             }
 
+            function normalizeTimeOffPeriod(period) {
+                return TIME_OFF_PERIOD_LABELS[period] ? period : "full-day";
+            }
+
+            function formatTimeOffPeriod(period) {
+                return TIME_OFF_PERIOD_LABELS[normalizeTimeOffPeriod(period)];
+            }
+
             function formatTime12Hour(time24) {
                 if (!time24) return "—";
                 const [hours, minutes] = time24.split(":");
@@ -2270,7 +2302,15 @@
                                                   ) {
                                                       bgColor =
                                                           "linear-gradient(135deg, #f56565 0%, #c53030 100%)";
-                                                      shiftText = "DAY OFF";
+                                                      const periodLabel =
+                                                          formatTimeOffPeriod(
+                                                              shift.timeOffPeriod,
+                                                          );
+                                                      shiftText =
+                                                          periodLabel ===
+                                                          "Full Day"
+                                                              ? "DAY OFF"
+                                                              : `${periodLabel.toUpperCase()} OFF`;
                                                   } else if (
                                                       shift.isTimeOffRequest &&
                                                       shift.requestStatus ===
@@ -2312,8 +2352,9 @@
                                                           bgColor = "#FDB913"; // Yellow
                                                       }
 
-                                                      shiftText =
-                                                          "PENDING TIME OFF";
+                                                      shiftText = `PENDING TIME OFF - ${formatTimeOffPeriod(
+                                                          shift.timeOffPeriod,
+                                                      ).toUpperCase()}`;
                                                       extraButton = `<button class="shift-cancel" onclick="cancelTimeOffRequest(${shift.id}, '${shift.employeeName}')">Cancel Request</button>`;
                                                   } else {
                                                       bgColor =
@@ -2361,13 +2402,14 @@
             let requestEmployeeListenerAttached = false;
 
             function handleRequestEmployeeChange() {
-                selectedDates = []; // Clear selections when changing employee
                 renderDatePicker();
             }
 
             function openTimeOffRequestModal() {
                 selectedDates = [];
                 currentPickerMonth = new Date();
+                document.getElementById("requestTimeOffPeriod").value =
+                    "full-day";
 
                 // Populate employee dropdown
                 const select = document.getElementById("requestEmployeeSelect");
@@ -2389,6 +2431,9 @@
                         "change",
                         handleRequestEmployeeChange,
                     );
+                    document
+                        .getElementById("requestTimeOffPeriod")
+                        .addEventListener("change", renderDatePicker);
                     requestEmployeeListenerAttached = true;
                 }
 
@@ -2483,12 +2528,30 @@
                 if (!selectedEmployeeId) return false;
 
                 return shifts.some(
-                    (s) =>
-                        s.date === dateStr &&
-                        s.employeeId === selectedEmployeeId &&
-                        s.isTimeOffRequest &&
-                        (s.requestStatus === "pending" ||
-                            s.requestStatus === "approved"),
+                    (s) => {
+                        if (
+                            s.date !== dateStr ||
+                            s.employeeId !== selectedEmployeeId ||
+                            !s.isTimeOffRequest ||
+                            (s.requestStatus !== "pending" &&
+                                s.requestStatus !== "approved")
+                        ) {
+                            return false;
+                        }
+
+                        const selectedPeriod = normalizeTimeOffPeriod(
+                            document.getElementById("requestTimeOffPeriod")
+                                .value,
+                        );
+                        const existingPeriod = normalizeTimeOffPeriod(
+                            s.timeOffPeriod,
+                        );
+                        return (
+                            selectedPeriod === "full-day" ||
+                            existingPeriod === "full-day" ||
+                            selectedPeriod === existingPeriod
+                        );
+                    },
                 );
             }
 
@@ -2558,6 +2621,9 @@
                     document.getElementById("requestEmployeeSelect").value,
                 );
                 const employee = employees.find((e) => e.id === employeeId);
+                const timeOffPeriod = normalizeTimeOffPeriod(
+                    document.getElementById("requestTimeOffPeriod").value,
+                );
 
                 if (!employeeId || !employee) {
                     alert("Please select your name");
@@ -2566,6 +2632,13 @@
 
                 if (selectedDates.length === 0) {
                     alert("Please select at least one date");
+                    return;
+                }
+
+                if (selectedDates.some((dateStr) => checkDateConflict(dateStr))) {
+                    alert(
+                        "One or more selected dates already has a conflicting time-off request for that part of the day.",
+                    );
                     return;
                 }
 
@@ -2625,6 +2698,7 @@
                             requestStatus: "pending",
                             requestDate: new Date().toISOString(),
                             requestedBy: employee.name,
+                            timeOffPeriod,
                         });
                     });
 
@@ -2645,6 +2719,7 @@
                             employeeName: employee.name,
                             dates: selectedDates,
                             requestDate: new Date().toISOString(),
+                            timeOffPeriod,
                         },
                     },
                     "*",
@@ -2712,6 +2787,7 @@
                         shiftData: {
                             employeeName: shift.employeeName,
                             date: shift.date,
+                            timeOffPeriod: shift.timeOffPeriod,
                         },
                     },
                     "*",

@@ -112,7 +112,8 @@ async function loadFromDatabase() {
                 isTimeOffRequest: shift.isTimeOffRequest || false,
                 requestStatus: shift.requestStatus || null,
                 requestDate: shift.requestDate || null,
-                requestedBy: shift.requestedBy || null
+                requestedBy: shift.requestedBy || null,
+                timeOffPeriod: shift.timeOffPeriod || 'full-day'
             };
         }).filter(shift => shift.employeeId !== undefined);
         
@@ -154,6 +155,7 @@ function normalizeClosedDays(days) {
 
 async function handleTimeOffRequest(requestData) {
     const { employeeId, employeeName, dates, requestDate } = requestData;
+    const timeOffPeriod = requestData.timeOffPeriod || 'full-day';
     
     try {
         // FIRST: Find the Wix database ID for this employee
@@ -193,7 +195,16 @@ async function handleTimeOffRequest(requestData) {
                 .hasSome('requestStatus', ['pending', 'approved'])
                 .find();
 
-            if (existingRequest.items.length > 0) {
+            const hasMatchingRequest = existingRequest.items.some(shift => {
+                const existingPeriod = shift.timeOffPeriod || 'full-day';
+                return (
+                    timeOffPeriod === 'full-day' ||
+                    existingPeriod === 'full-day' ||
+                    existingPeriod === timeOffPeriod
+                );
+            });
+
+            if (hasMatchingRequest) {
                 skippedDates.push(date);
                 continue;
             }
@@ -207,7 +218,8 @@ async function handleTimeOffRequest(requestData) {
                 isTimeOffRequest: true,
                 requestStatus: 'pending',
                 requestDate: requestDate,
-                requestedBy: employeeName
+                requestedBy: employeeName,
+                timeOffPeriod: timeOffPeriod
             });
             submittedDates.push(date);
         }
@@ -234,6 +246,7 @@ async function handleTimeOffRequest(requestData) {
 async function handleCancelRequest(shiftData) {
     try {
         const { employeeName, date } = shiftData;
+        const timeOffPeriod = shiftData.timeOffPeriod || 'full-day';
         
         // Query to find the exact shift using employee reference
         // First find the employee's Wix ID
@@ -260,8 +273,12 @@ async function handleCancelRequest(shiftData) {
             .eq('requestStatus', 'pending')
             .find();
         
-        if (shiftsResult.items.length > 0) {
-            const shiftIds = shiftsResult.items.map(shift => shift._id);
+        const matchingShifts = shiftsResult.items.filter(
+            shift => (shift.timeOffPeriod || 'full-day') === timeOffPeriod
+        );
+        
+        if (matchingShifts.length > 0) {
+            const shiftIds = matchingShifts.map(shift => shift._id);
             await wixData.bulkRemove('Shifts', shiftIds);
             
             // Notify iframe of success

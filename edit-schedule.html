@@ -2393,6 +2393,7 @@
                             id="timeOffEmployeeName"
                         ></div>
                         <div style="font-size: 15px" id="timeOffDate"></div>
+                        <div style="font-size: 15px" id="timeOffPeriod"></div>
                     </div>
                 </div>
                 <div
@@ -2736,6 +2737,11 @@
             let undoStack = [];
             let maxUndoSteps = 20;
             let showDayOffs = true; // Track whether to show days off
+            const TIME_OFF_PERIOD_LABELS = {
+                "full-day": "Full Day",
+                morning: "Morning",
+                evening: "Evening",
+            };
 
             // Multi-date picker for Add Shift modal
             let selectedShiftDates = [];
@@ -2846,6 +2852,7 @@
                             requestStatus: "pending",
                             requestDate: new Date().toISOString(),
                             requestedBy: employeeName(1005),
+                            timeOffPeriod: "morning",
                         },
                         {
                             id: 2102,
@@ -2860,6 +2867,7 @@
                             requestStatus: "approved",
                             requestDate: new Date().toISOString(),
                             requestedBy: employeeName(1007),
+                            timeOffPeriod: "evening",
                         },
                     ]),
                 };
@@ -3128,7 +3136,10 @@
 
             function applyLoadedScheduleData(data, { showLoadedToast = false } = {}) {
                 employees = data.employees || [];
-                shifts = data.shifts || [];
+                shifts = (data.shifts || []).map((shift) => ({
+                    ...shift,
+                    timeOffPeriod: normalizeTimeOffPeriod(shift.timeOffPeriod),
+                }));
                 closedDays = normalizeClosedDays(data.closedDays || []);
 
                 employees.forEach((emp) => {
@@ -4412,6 +4423,14 @@
                 return date.toISOString().split("T")[0];
             }
 
+            function normalizeTimeOffPeriod(period) {
+                return TIME_OFF_PERIOD_LABELS[period] ? period : "full-day";
+            }
+
+            function formatTimeOffPeriod(period) {
+                return TIME_OFF_PERIOD_LABELS[normalizeTimeOffPeriod(period)];
+            }
+
             function openEditEmployeeModal(employeeId) {
                 const employee = employees.find((e) => e.id === employeeId);
                 if (!employee) return;
@@ -4681,6 +4700,8 @@
                         employee ? employee.name : "Unknown Employee";
                     document.getElementById("timeOffDate").textContent =
                         formattedDate;
+                    document.getElementById("timeOffPeriod").textContent =
+                        formatTimeOffPeriod(shift.timeOffPeriod);
                     detailsSection.style.display = "block";
                 } else {
                     detailsSection.style.display = "none";
@@ -5303,7 +5324,14 @@
                                         ) {
                                             bgColor =
                                                 "linear-gradient(135deg, #f56565 0%, #c53030 100%)";
-                                            shiftText = "DAY OFF";
+                                            const periodLabel =
+                                                formatTimeOffPeriod(
+                                                    shift.timeOffPeriod,
+                                                );
+                                            shiftText =
+                                                periodLabel === "Full Day"
+                                                    ? "DAY OFF"
+                                                    : `${periodLabel.toUpperCase()} OFF`;
                                         } else if (
                                             shift.isTimeOffRequest &&
                                             shift.requestStatus === "pending"
@@ -5341,7 +5369,9 @@
                                                 bgColor = "#FDB913"; // Yellow
                                             }
 
-                                            shiftText = "PENDING TIME OFF";
+                                            shiftText = `PENDING TIME OFF - ${formatTimeOffPeriod(
+                                                shift.timeOffPeriod,
+                                            ).toUpperCase()}`;
                                         } else {
                                             bgColor =
                                                 employee?.color || "#7F6C50";
@@ -5610,6 +5640,7 @@
                         requestDate: shift.requestDate,
                         status: shift.requestStatus,
                         date: shift.date,
+                        timeOffPeriod: shift.timeOffPeriod,
                     }))
                     .sort((a, b) => {
                         // Sort by date first, then by employee name
@@ -5658,7 +5689,7 @@
                             <span class="request-date">Requested: ${formattedRequestDate}</span>
                         </div>
                         <div class="request-dates" style="font-weight: 600; font-size: 14px;">
-                            ${formattedDate}
+                            ${formattedDate} - ${formatTimeOffPeriod(req.timeOffPeriod)}
                         </div>
                         ${
                             showActions
