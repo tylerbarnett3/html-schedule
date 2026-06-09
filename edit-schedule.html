@@ -3894,6 +3894,21 @@
 
                     const shift = shifts.find((s) => s.id === draggedShiftId);
                     if (shift) {
+                        if (!shift.isDayOff && !shift.isTimeOffRequest) {
+                            const conflicts = getShiftSubmissionConflicts({
+                                employeeIds: [shift.employeeId],
+                                dates: [newDate],
+                                startTime: shift.startTime,
+                                endTime: shift.endTime,
+                                ignoreShiftId: shift.id,
+                            });
+
+                            if (conflicts.length > 0) {
+                                alert(buildShiftConflictMessage(conflicts));
+                                return false;
+                            }
+                        }
+
                         saveState(); // Save state before drag
                         shift.date = newDate;
                         saveData();
@@ -4431,6 +4446,376 @@
                 return TIME_OFF_PERIOD_LABELS[normalizeTimeOffPeriod(period)];
             }
 
+            function getTimeMinutes(time) {
+                if (!time) return null;
+                const [hours, minutes] = time.split(":").map(Number);
+                if (Number.isNaN(hours) || Number.isNaN(minutes)) return null;
+                return hours * 60 + minutes;
+            }
+
+            function getShiftInterval(startTime, endTime) {
+                const start = getTimeMinutes(startTime);
+                let end = getTimeMinutes(endTime);
+                if (start === null || end === null) return null;
+                if (end <= start) {
+                    end += 24 * 60;
+                }
+                return { start, end };
+            }
+
+            function doShiftIntervalsOverlap(first, second) {
+                if (!first || !second) return false;
+                return first.start < second.end && second.start < first.end;
+            }
+
+            function getApprovedTimeOffShiftConflict(shift, startTime) {
+                const period = normalizeTimeOffPeriod(shift.timeOffPeriod);
+                if (period === "full-day") {
+                    return "approved full-day time off";
+                }
+
+                const start = getTimeMinutes(startTime);
+                if (start === null) return null;
+
+                if (period === "morning" && start < 17 * 60) {
+                    return "approved morning time off";
+                }
+
+                if (period === "evening" && start >= 17 * 60) {
+                    return "approved evening time off";
+                }
+
+                return null;
+            }
+
+            function timeOffPeriodConflictsWithShiftStart(period, startTime) {
+                const normalizedPeriod = normalizeTimeOffPeriod(period);
+                if (normalizedPeriod === "full-day") return true;
+
+                const start = getTimeMinutes(startTime);
+                if (start === null) return false;
+
+                if (normalizedPeriod === "morning") {
+                    return start < 17 * 60;
+                }
+
+                if (normalizedPeriod === "evening") {
+                    return start >= 17 * 60;
+                }
+
+                return false;
+            }
+
+            function findShiftConflict({
+                employeeId,
+                date,
+                startTime,
+                endTime,
+                ignoreShiftId = null,
+            }) {
+                const requestedInterval = getShiftInterval(startTime, endTime);
+
+                for (const shift of shifts) {
+                    if (
+                        shift.id === ignoreShiftId ||
+                        shift.employeeId !== employeeId ||
+                        shift.date !== date
+                    ) {
+                        continue;
+                    }
+
+                    if (shift.requestStatus === "approved") {
+                        const reason = getApprovedTimeOffShiftConflict(
+                            shift,
+                            startTime,
+                        );
+                        if (reason) {
+                            return { type: "time-off", shift, reason };
+                        }
+                        continue;
+                    }
+
+                    if (shift.isDayOff || shift.isTimeOffRequest) {
+                        continue;
+                    }
+
+                    if (
+                        doShiftIntervalsOverlap(
+                            requestedInterval,
+                            getShiftInterval(shift.startTime, shift.endTime),
+                        )
+                    ) {
+                        return { type: "shift", shift };
+                    }
+                }
+
+                return null;
+            }
+
+            function formatDateLong(dateStr) {
+                const date = new Date(dateStr + "T00:00:00");
+                return date.toLocaleDateString("en-US", {
+                    month: "short",
+                    day: "numeric",
+                    year: "numeric",
+                });
+            }
+
+            function groupConflictsByDateEmployee(conflicts, getShift) {
+                const dateGroups = [];
+                const dateMap = new Map();
+
+                conflicts.forEach((conflict) => {
+                    const shift = getShift(conflict);
+                    const employeeName =
+                        conflict.employeeName ||
+                        conflict.request?.employeeName ||
+                        "Unknown";
+                    const date = conflict.date || conflict.request?.date;
+
+                    if (!dateMap.has(date)) {
+                        const dateGroup = {
+                            date,
+                            employeeGroups: [],
+                            employeeMap: new Map(),
+                        };
+                        dateMap.set(date, dateGroup);
+                        dateGroups.push(dateGroup);
+                    }
+
+                    const dateGroup = dateMap.get(date);
+                    if (!dateGroup.employeeMap.has(employeeName)) {
+                        const employeeGroup = {
+                            employeeName,
+                            shifts: [],
+                        };
+                        dateGroup.employeeMap.set(employeeName, employeeGroup);
+                        dateGroup.employeeGroups.push(employeeGroup);
+                    }
+
+                    dateGroup.employeeMap.get(employeeName).shifts.push(shift);
+                });
+
+                return dateGroups;
+            }
+
+            function formatShiftTimeRange(shift) {
+                return `${formatTime12Hour(shift.startTime)} - ${formatTime12Hour(shift.endTime)}`;
+            }
+
+            function buildDateEmployeeShiftLines(dateGroups) {
+                return dateGroups.map((dateGroup) => {
+                    const employeeLines = dateGroup.employeeGroups.flatMap(
+                        (employeeGroup) =>
+                            employeeGroup.shifts.map(
+                                (shift) =>
+                                    `  - ${employeeGroup.employeeName}: ${formatShiftTimeRange(shift)}`,
+                            ),
+                    );
+
+                    return `${formatDateLong(dateGroup.date)}\n${employeeLines.join("\n")}`;
+                });
+            }
+
+            function buildGroupedShiftLines(conflicts) {
+                const dateGroups = groupConflictsByDateEmployee(
+                    conflicts,
+                    (conflict) => conflict.conflict.shift,
+                );
+
+                return buildDateEmployeeShiftLines(dateGroups);
+            }
+
+            function getHiddenShiftCount(dateGroups, visibleGroupCount) {
+                return dateGroups.slice(visibleGroupCount).reduce(
+                    (count, dateGroup) =>
+                        count +
+                        dateGroup.employeeGroups.reduce(
+                            (employeeCount, employeeGroup) =>
+                                employeeCount + employeeGroup.shifts.length,
+                            0,
+                        ),
+                    0,
+                );
+            }
+
+            function getGroupedReplacementLines(conflicts) {
+                const groups = groupConflictsByDateEmployee(
+                    conflicts,
+                    ({ shift }) => shift,
+                );
+
+                const lines = buildDateEmployeeShiftLines(groups);
+
+                return { groups, lines };
+            }
+
+            function buildShiftConflictMessage(conflicts) {
+                const shiftConflicts = conflicts.filter(
+                    (conflict) => conflict.conflict.type === "shift",
+                );
+                const timeOffConflicts = conflicts.filter(
+                    (conflict) => conflict.conflict.type !== "shift",
+                );
+                const allLines = buildGroupedShiftLines(shiftConflicts).concat(
+                    timeOffConflicts.map((conflict) => {
+                        return `${conflict.employeeName} already has ${conflict.conflict.reason} on ${formatDateLong(conflict.date)}.`;
+                    }),
+                );
+                const lines = allLines.slice(0, 8);
+
+                if (allLines.length > lines.length) {
+                    lines.push(
+                        `${allLines.length - lines.length} more conflict${allLines.length - lines.length === 1 ? "" : "s"} not shown.`,
+                    );
+                }
+
+                return `This shift cannot be saved because it conflicts with existing schedule items:\n\n${lines.join("\n\n")}`;
+            }
+
+            function getShiftSubmissionConflicts({
+                employeeIds,
+                dates,
+                startTime,
+                endTime,
+                ignoreShiftId = null,
+            }) {
+                const conflicts = [];
+
+                dates.forEach((date) => {
+                    employeeIds.forEach((employeeId) => {
+                        const conflict = findShiftConflict({
+                            employeeId,
+                            date,
+                            startTime,
+                            endTime,
+                            ignoreShiftId,
+                        });
+
+                        if (conflict) {
+                            const employee = employees.find(
+                                (e) => e.id === employeeId,
+                            );
+                            conflicts.push({
+                                employeeId,
+                                employeeName: employee?.name || "Unknown",
+                                date,
+                                startTime,
+                                endTime,
+                                conflict,
+                            });
+                        }
+                    });
+                });
+
+                return conflicts;
+            }
+
+            function getShiftsConflictingWithTimeOffRequest(request) {
+                if (!request) return [];
+                const period = normalizeTimeOffPeriod(request.timeOffPeriod);
+
+                return shifts.filter((shift) => {
+                    if (
+                        shift.id === request.id ||
+                        shift.employeeId !== request.employeeId ||
+                        shift.date !== request.date ||
+                        shift.isDayOff ||
+                        shift.isTimeOffRequest ||
+                        !shift.startTime
+                    ) {
+                        return false;
+                    }
+
+                    return timeOffPeriodConflictsWithShiftStart(
+                        period,
+                        shift.startTime,
+                    );
+                });
+            }
+
+            function buildTimeOffApprovalConflictMessage(conflicts) {
+                const { groups, lines: allLines } = getGroupedReplacementLines(
+                    conflicts,
+                );
+                const lines = allLines.slice(0, 8);
+                const hiddenShiftCount = getHiddenShiftCount(
+                    groups,
+                    lines.length,
+                );
+
+                if (hiddenShiftCount > 0) {
+                    lines.push(
+                        `${hiddenShiftCount} more conflicting shift${hiddenShiftCount === 1 ? "" : "s"} not shown.`,
+                    );
+                }
+
+                return `Approving this time off will DELETE existing shifts that conflict:\n\n${lines.join("\n\n")}\n\nContinue?`;
+            }
+
+            function getDayOffConflicts(employeeIds, dates, ignoreShiftId = null) {
+                const conflicts = [];
+
+                dates.forEach((date) => {
+                    employeeIds.forEach((employeeId) => {
+                        const employee = employees.find((e) => e.id === employeeId);
+                        const request = {
+                            id: ignoreShiftId,
+                            employeeId,
+                            employeeName: employee?.name || "Unknown",
+                            date,
+                            timeOffPeriod: "full-day",
+                        };
+
+                        getShiftsConflictingWithTimeOffRequest(request).forEach(
+                            (shift) => {
+                                conflicts.push({ request, shift });
+                            },
+                        );
+                    });
+                });
+
+                return conflicts;
+            }
+
+            function buildDayOffConflictMessage(conflicts) {
+                const { groups, lines: allLines } = getGroupedReplacementLines(
+                    conflicts,
+                );
+                const lines = allLines.slice(0, 8);
+                const hiddenShiftCount = getHiddenShiftCount(
+                    groups,
+                    lines.length,
+                );
+
+                if (hiddenShiftCount > 0) {
+                    lines.push(
+                        `${hiddenShiftCount} more conflicting shift${hiddenShiftCount === 1 ? "" : "s"} not shown.`,
+                    );
+                }
+
+                return `Adding this day off will DELETE existing shifts that conflict:\n\n${lines.join("\n\n")}\n\nContinue?`;
+            }
+
+            function deleteConflictingShifts(conflicts) {
+                const conflictingShiftIds = [
+                    ...new Set(conflicts.map(({ shift }) => shift.id)),
+                ];
+                const conflictingShifts = shifts.filter((shift) =>
+                    conflictingShiftIds.includes(shift.id),
+                );
+
+                conflictingShifts.forEach((shift) => {
+                    deleteShiftFromWix(shift);
+                });
+
+                shifts = shifts.filter(
+                    (shift) => !conflictingShiftIds.includes(shift.id),
+                );
+
+                return conflictingShiftIds.length;
+            }
+
             function openEditEmployeeModal(employeeId) {
                 const employee = employees.find((e) => e.id === employeeId);
                 if (!employee) return;
@@ -4732,8 +5117,9 @@
 
             function approveFromModal() {
                 if (!editingShiftId) return;
-                approveTimeOffRequest(editingShiftId);
-                closeEditShiftModal();
+                if (approveTimeOffRequest(editingShiftId)) {
+                    closeEditShiftModal();
+                }
             }
 
             function denyFromModal() {
@@ -4770,7 +5156,37 @@
                     endTime = "00:00";
                 }
 
+                if (!isDayOff) {
+                    const conflicts = getShiftSubmissionConflicts({
+                        employeeIds: [employeeId],
+                        dates: [date],
+                        startTime,
+                        endTime,
+                        ignoreShiftId: editingShiftId,
+                    });
+
+                    if (conflicts.length > 0) {
+                        alert(buildShiftConflictMessage(conflicts));
+                        return;
+                    }
+                }
+
+                const dayOffConflicts = isDayOff
+                    ? getDayOffConflicts([employeeId], [date], editingShiftId)
+                    : [];
+                if (
+                    dayOffConflicts.length > 0 &&
+                    !confirm(buildDayOffConflictMessage(dayOffConflicts))
+                ) {
+                    return;
+                }
+
                 saveState(); // Save state before update
+
+                const removedConflictCount =
+                    dayOffConflicts.length > 0
+                        ? deleteConflictingShifts(dayOffConflicts)
+                        : 0;
 
                 const employee = employees.find((e) => e.id === employeeId);
                 const shift = shifts.find((s) => s.id === editingShiftId);
@@ -4788,6 +5204,13 @@
                 saveData();
                 renderCalendar();
                 renderEmployees();
+                if (removedConflictCount > 0) {
+                    showToast(
+                        "Day Off Updated",
+                        `${removedConflictCount} conflicting shift${removedConflictCount === 1 ? "" : "s"} removed`,
+                        "success",
+                    );
+                }
             }
 
             function toggleDayOffMode() {
@@ -5084,7 +5507,36 @@
                     endTime = "00:00";
                 }
 
+                if (!isDayOff) {
+                    const conflicts = getShiftSubmissionConflicts({
+                        employeeIds: selectedEmployeeIds,
+                        dates: selectedShiftDates,
+                        startTime,
+                        endTime,
+                    });
+
+                    if (conflicts.length > 0) {
+                        alert(buildShiftConflictMessage(conflicts));
+                        return;
+                    }
+                }
+
+                const dayOffConflicts = isDayOff
+                    ? getDayOffConflicts(selectedEmployeeIds, selectedShiftDates)
+                    : [];
+                if (
+                    dayOffConflicts.length > 0 &&
+                    !confirm(buildDayOffConflictMessage(dayOffConflicts))
+                ) {
+                    return;
+                }
+
                 saveState(); // Save state before adding shifts
+
+                const removedConflictCount =
+                    dayOffConflicts.length > 0
+                        ? deleteConflictingShifts(dayOffConflicts)
+                        : 0;
 
                 // Create a shift for each selected employee on each selected date
                 selectedShiftDates.forEach((dateStr) => {
@@ -5110,6 +5562,13 @@
                 saveData();
                 renderCalendar();
                 renderEmployees();
+                if (removedConflictCount > 0) {
+                    showToast(
+                        "Day Off Added",
+                        `${removedConflictCount} conflicting shift${removedConflictCount === 1 ? "" : "s"} removed`,
+                        "success",
+                    );
+                }
             }
 
             function deleteShift(id) {
@@ -5735,17 +6194,39 @@
             function approveTimeOffRequest(shiftIds) {
                 if (!Array.isArray(shiftIds)) shiftIds = [shiftIds];
 
+                const requestsToApprove = shifts.filter((shift) =>
+                    shiftIds.includes(shift.id),
+                );
+                const conflicts = [];
+
+                requestsToApprove.forEach((request) => {
+                    getShiftsConflictingWithTimeOffRequest(request).forEach(
+                        (shift) => {
+                            conflicts.push({ request, shift });
+                        },
+                    );
+                });
+
+                if (
+                    conflicts.length > 0 &&
+                    !confirm(buildTimeOffApprovalConflictMessage(conflicts))
+                ) {
+                    return false;
+                }
+
                 saveState();
 
                 let employeeName = "";
-                shiftIds.forEach((id) => {
-                    const shift = shifts.find((s) => s.id === id);
-                    if (shift) {
-                        employeeName = shift.employeeName;
-                        shift.requestStatus = "approved";
-                        shift.isTimeOffRequest = false;
-                        shift.isDayOff = true;
-                    }
+                const removedConflictCount = deleteConflictingShifts(conflicts);
+
+                requestsToApprove.forEach((request) => {
+                    const shift = shifts.find((s) => s.id === request.id);
+                    if (!shift) return;
+
+                    employeeName = shift.employeeName;
+                    shift.requestStatus = "approved";
+                    shift.isTimeOffRequest = false;
+                    shift.isDayOff = true;
                 });
 
                 saveData();
@@ -5757,7 +6238,12 @@
                     shiftIds.length === 1
                         ? `Day off approved for ${employeeName}`
                         : `${shiftIds.length} days approved`;
-                showToast("Time Off Approved", message, "success");
+                const removalMessage =
+                    removedConflictCount > 0
+                        ? `${message}; ${removedConflictCount} conflicting shift${removedConflictCount === 1 ? "" : "s"} removed`
+                        : message;
+                showToast("Time Off Approved", removalMessage, "success");
+                return true;
             }
 
             function denyTimeOffRequest(shiftIds) {
