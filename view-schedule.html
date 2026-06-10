@@ -1101,21 +1101,31 @@
 
                 .modal {
                     position: fixed;
-                    top: 50% !important;
+                    top: max(12px, env(safe-area-inset-top)) !important;
                     left: 10px !important;
                     right: 10px;
+                    bottom: max(12px, env(safe-area-inset-bottom));
                     width: auto;
-                    transform: translateY(-50%);
+                    transform: none;
+                    overflow: hidden;
+                }
+
+                .modal.active {
+                    display: flex;
+                    align-items: flex-start;
+                    justify-content: center;
                 }
 
                 .modal-content {
                     width: 100%;
-                    max-height: calc(100dvh - 32px);
+                    max-height: calc(100dvh - 24px);
                     padding: 18px;
+                    overflow-y: auto;
+                    -webkit-overflow-scrolling: touch;
                 }
 
                 .mobile-time-off-panel {
-                    padding: 22px 18px 18px;
+                    padding: 12px 10px 18px;
                 }
 
                 .mobile-time-off-panel:empty {
@@ -1136,7 +1146,7 @@
                     width: 100%;
                     max-height: none;
                     overflow: visible;
-                    padding: 26px 18px 18px;
+                    padding: 22px 18px 18px;
                 }
 
                 .date-picker-nav {
@@ -1793,6 +1803,9 @@
 
                 const content = modal.querySelector(".modal-content");
                 if (content) content.scrollTop = 0;
+                requestAnimationFrame(() => {
+                    mount.scrollIntoView({ block: "start" });
+                });
 
                 return true;
             }
