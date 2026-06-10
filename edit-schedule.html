@@ -278,12 +278,47 @@
             }
 
             .sidebar-toggle input[type="checkbox"],
-            .filter-checkbox-item input[type="checkbox"] {
+            .filter-checkbox-item input[type="checkbox"],
+            #editIsDayOff {
+                appearance: none;
+                -webkit-appearance: none;
+                display: grid;
+                place-content: center;
                 width: 18px;
                 height: 18px;
+                flex: 0 0 18px;
                 margin: 0 10px 0 0;
+                padding: 0;
+                border: 2px solid rgba(91, 65, 40, 0.38) !important;
+                border-radius: 3px !important;
+                background: rgba(255, 252, 246, 0.96) !important;
+                box-shadow: none;
                 cursor: pointer;
-                accent-color: #6b5a42;
+            }
+
+            .sidebar-toggle input[type="checkbox"]::before,
+            .filter-checkbox-item input[type="checkbox"]::before,
+            #editIsDayOff::before {
+                content: "";
+                width: 10px;
+                height: 10px;
+                border-radius: 2px;
+                background: var(--clay-700, #6b5a42);
+                transform: scale(0);
+                transition: transform 0.12s ease-in-out;
+            }
+
+            .sidebar-toggle input[type="checkbox"]:checked::before,
+            .filter-checkbox-item input[type="checkbox"]:checked::before,
+            #editIsDayOff:checked::before {
+                transform: scale(1);
+            }
+
+            .sidebar-toggle input[type="checkbox"]:focus-visible,
+            .filter-checkbox-item input[type="checkbox"]:focus-visible,
+            #editIsDayOff:focus-visible {
+                outline: 2px solid rgba(216, 169, 79, 0.72);
+                outline-offset: 2px;
             }
 
             .sidebar-toggle .toggle-label,
@@ -1088,15 +1123,23 @@
                 box-shadow: 0 0 0 4px rgba(216, 169, 79, 0.18);
             }
 
-            #shiftModal .input-group input:not([type="checkbox"]):not([type="color"]),
-            #shiftModal .input-group select {
+            .modal-field {
+                margin-bottom: 18px;
+            }
+
+            .modal-field > label {
+                padding-bottom: 8px;
+            }
+
+            .modal-field input:not([type="checkbox"]):not([type="color"]),
+            .modal-field select {
                 min-height: 48px;
                 padding: 12px 16px;
                 line-height: 1.2;
             }
 
-            #shiftModal .input-group input[type="time"]:not([type="checkbox"]):not([type="color"]),
-            #shiftModal .input-group input[type="date"]:not([type="checkbox"]):not([type="color"]) {
+            .modal-field input[type="time"]:not([type="checkbox"]):not([type="color"]),
+            .modal-field input[type="date"]:not([type="checkbox"]):not([type="color"]) {
                 padding: 12px 42px 12px 16px;
             }
 
@@ -1173,7 +1216,7 @@
                 gap: 8px;
             }
 
-            .shift-employee-option {
+            .input-group label.shift-employee-option {
                 display: flex;
                 align-items: center;
                 gap: 10px;
@@ -1197,16 +1240,43 @@
                 box-shadow: 0 8px 16px rgba(58, 39, 21, 0.08);
             }
 
-            .shift-employee-option input {
+            .input-group label.shift-employee-option input {
+                appearance: none;
+                -webkit-appearance: none;
+                display: grid;
+                place-content: center;
                 width: 18px;
                 height: 18px;
                 margin: 0;
                 flex: 0 0 18px;
-                accent-color: var(--clay-700);
+                align-self: center;
+                border: 2px solid rgba(91, 65, 40, 0.38) !important;
+                border-radius: 3px !important;
+                background: rgba(255, 252, 246, 0.96) !important;
+                box-shadow: none;
                 cursor: pointer;
             }
 
-            .shift-employee-option span {
+            .input-group label.shift-employee-option input::before {
+                content: "";
+                width: 10px;
+                height: 10px;
+                border-radius: 2px;
+                background: var(--clay-700);
+                transform: scale(0);
+                transition: transform 0.12s ease-in-out;
+            }
+
+            .input-group label.shift-employee-option input:checked::before {
+                transform: scale(1);
+            }
+
+            .input-group label.shift-employee-option input:focus-visible {
+                outline: 2px solid rgba(216, 169, 79, 0.72);
+                outline-offset: 2px;
+            }
+
+            .input-group label.shift-employee-option span {
                 min-width: 0;
                 overflow: hidden;
                 text-overflow: ellipsis;
@@ -1287,14 +1357,32 @@
                 align-items: center;
                 gap: 8px;
                 min-width: 0;
+                width: 100%;
             }
 
             .period-date-fields {
-                display: flex;
+                display: grid;
+                grid-template-columns: auto minmax(190px, 220px) auto minmax(190px, 220px);
                 align-items: center;
                 justify-content: center;
                 gap: 10px;
-                min-width: 0;
+                width: 100%;
+            }
+
+            .period-date-fields label {
+                flex: 0 0 auto;
+                font-size: 14px;
+            }
+
+            #customStartDate,
+            #customEndDate {
+                box-sizing: border-box;
+                width: 100%;
+                min-width: 0 !important;
+                min-height: 48px;
+                padding: 10px 12px !important;
+                font-size: 16px !important;
+                line-height: 1.2;
             }
 
             .calendar {
@@ -1614,33 +1702,40 @@
 
                 .week-navigation {
                     grid-template-columns: 44px minmax(0, 1fr) 44px;
+                    grid-template-areas:
+                        "prev title next"
+                        "fields fields fields";
                     padding: 14px;
                     gap: 12px;
                     align-items: start;
                 }
 
                 .period-date-info {
-                    min-width: 0;
-                    width: 100%;
+                    display: contents;
                 }
 
                 .period-date-fields {
-                    display: grid !important;
-                    grid-template-columns: auto minmax(0, 1fr);
+                    grid-area: fields;
+                    grid-template-columns: minmax(0, 1fr);
                     width: 100%;
                     gap: 8px;
+                    justify-items: stretch;
                     align-items: center;
                 }
 
+                .period-date-fields label {
+                    text-align: left;
+                }
+
                 .current-week {
+                    grid-area: title;
                     text-align: center;
+                    align-self: center;
                 }
 
                 #customStartDate,
                 #customEndDate {
-                    min-width: 0;
                     width: 100% !important;
-                    min-height: 44px;
                 }
 
                 .period-nav-btn {
@@ -1649,6 +1744,14 @@
                     min-height: 44px;
                     margin-top: 3px;
                     border-radius: 50% !important;
+                }
+
+                .week-navigation .period-nav-btn:first-child {
+                    grid-area: prev;
+                }
+
+                .week-navigation .period-nav-btn:last-child {
+                    grid-area: next;
                 }
 
                 #employeeFilterList {
@@ -1968,12 +2071,16 @@
                                 viewBox="0 0 24 24"
                                 stroke-width="2"
                                 stroke="currentColor"
+                                stroke-linecap="round"
+                                stroke-linejoin="round"
+                                class="lucide lucide-wrench"
+                                aria-hidden="true"
                             >
+                                <g transform="translate(24 0) scale(-1 1)">
                                 <path
-                                    stroke-linecap="round"
-                                    stroke-linejoin="round"
-                                    d="M11.42 15.17 17.25 21A2.652 2.652 0 0 0 21 17.25l-5.877-5.877m-3.703 3.797-2.12 2.12a3 3 0 0 1-4.242 0l-.707-.707a3 3 0 0 1 0-4.243l2.12-2.12m5.656-5.657.707.707a3 3 0 0 1 0 4.243l-1.06 1.06"
+                                    d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.8-3.8a6 6 0 0 1-7.9 7.9l-6.9 6.9a2.1 2.1 0 0 1-3-3l6.9-6.9a6 6 0 0 1 7.9-7.9l-3.8 3.8Z"
                                 />
+                                </g>
                             </svg>
                             Tools
                         </button>
@@ -2290,32 +2397,16 @@
                         <div class="period-date-info">
                             <div class="current-week" id="currentWeek"></div>
                             <div class="period-date-fields">
-                                <label style="font-size: 14px; color: #555"
-                                    >Start:</label
-                                >
+                                <label>Start:</label>
                                 <input
                                     type="date"
                                     id="customStartDate"
-                                    style="
-                                        padding: 6px 10px;
-                                        border: 1px solid #cbd5e0;
-                                        border-radius: 6px;
-                                        font-size: 14px;
-                                    "
                                     onchange="setCustomDates()"
                                 />
-                                <label style="font-size: 14px; color: #555"
-                                    >End:</label
-                                >
+                                <label>End:</label>
                                 <input
                                     type="date"
                                     id="customEndDate"
-                                    style="
-                                        padding: 6px 10px;
-                                        border: 1px solid #cbd5e0;
-                                        border-radius: 6px;
-                                        font-size: 14px;
-                                    "
                                     onchange="setCustomDates()"
                                 />
                             </div>
@@ -2399,13 +2490,13 @@
                         Closed
                     </button>
                 </div>
-                <div class="input-group" id="shiftEmployeeGroup">
+                <div class="input-group modal-field" id="shiftEmployeeGroup">
                     <label>Employee(s)</label>
                     <div class="shift-employee-picker">
                         <div id="shiftEmployeeList"></div>
                     </div>
                 </div>
-                <div class="input-group" id="dayOffPeriodGroup">
+                <div class="input-group modal-field" id="dayOffPeriodGroup">
                     <label>Day Off Type</label>
                     <div
                         class="day-off-period-group"
@@ -2445,17 +2536,16 @@
                     </div>
                 </div>
                 <div class="shift-field-grid" id="shiftTimeFields">
-                    <div class="input-group">
+                    <div class="input-group modal-field">
                         <label>Start Time</label>
                         <input type="time" id="shiftStart" value="09:00" />
                     </div>
-                    <div class="input-group">
+                    <div class="input-group modal-field">
                         <label>End Time</label>
                         <input type="time" id="shiftEnd" value="17:00" />
                     </div>
                 </div>
                 <div class="input-group">
-                    <label>Date(s) - Click to select/deselect</label>
                     <div class="date-picker-nav shift-month-nav">
                         <button
                             type="button"
@@ -2620,22 +2710,22 @@
                         >
                     </div>
                 </div>
-                <div class="input-group">
+                <div class="input-group modal-field">
                     <label>Employee</label>
                     <select id="editShiftEmployee">
                         <option value="">Select employee</option>
                     </select>
                 </div>
-                <div class="input-group">
+                <div class="input-group modal-field">
                     <label>Date</label>
                     <input type="date" id="editShiftDate" />
                 </div>
                 <div id="editShiftTimeFields">
-                    <div class="input-group">
+                    <div class="input-group modal-field">
                         <label>Start Time</label>
                         <input type="time" id="editShiftStart" />
                     </div>
-                    <div class="input-group">
+                    <div class="input-group modal-field">
                         <label>End Time</label>
                         <input type="time" id="editShiftEnd" />
                     </div>
@@ -3372,27 +3462,15 @@
                 shiftModalNextSibling = modal.nextSibling;
             }
 
-            function setShiftModalTitle(dateStr) {
+            function setShiftModalTitle() {
                 const title = document.querySelector("#shiftModal .modal-header h2");
                 if (!title) return;
 
-                const itemTitle = {
+                title.textContent = {
                     shift: "Add Shift",
                     "day-off": "Add Day Off",
                     closed: "Add Closed Day",
                 }[selectedAddItemType] || "Add Shift";
-
-                if (!dateStr || !isMobileLayout()) {
-                    title.textContent = itemTitle;
-                    return;
-                }
-
-                const date = new Date(dateStr + "T00:00:00");
-                title.textContent = `${itemTitle}: ${date.toLocaleDateString("en-US", {
-                    weekday: "short",
-                    month: "short",
-                    day: "numeric",
-                })}`;
             }
 
             function openMobileShiftPanel(dateStr) {
@@ -3407,7 +3485,7 @@
                 mount.hidden = false;
                 mount.appendChild(modal);
 
-                setShiftModalTitle(dateStr);
+                setShiftModalTitle();
                 modal.classList.add("mobile-inline-modal", "active");
                 modal.style.left = "";
                 modal.style.right = "";
@@ -3430,7 +3508,7 @@
                 if (!modal) return;
 
                 modal.classList.remove("mobile-inline-modal");
-                setShiftModalTitle(null);
+                setShiftModalTitle();
 
                 if (shiftModalHome && modal.parentNode !== shiftModalHome) {
                     shiftModalHome.insertBefore(modal, shiftModalNextSibling);
@@ -4014,6 +4092,7 @@
             function updateDateInputs() {
                 const startInput = document.getElementById("customStartDate");
                 const endInput = document.getElementById("customEndDate");
+                if (!startInput || !endInput) return;
 
                 const formatDate = (date) => {
                     const year = date.getFullYear();
@@ -5535,7 +5614,7 @@
                     timeFields.style.display = isShift ? "grid" : "none";
                 }
                 if (title) {
-                    setShiftModalTitle(selectedShiftDates[0] || null);
+                    setShiftModalTitle();
                 }
                 if (saveButton) {
                     saveButton.textContent = {
@@ -5939,6 +6018,7 @@
                 ];
 
                 const dayCount = getDayCount();
+                updateDateInputs();
 
                 const currentWeekEl = document.getElementById("currentWeek");
                 if (currentWeekEl) {

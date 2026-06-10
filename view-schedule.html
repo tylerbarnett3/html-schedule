@@ -102,11 +102,42 @@
 
             .sidebar-toggle input[type="checkbox"],
             .filter-checkbox-item input[type="checkbox"] {
+                appearance: none;
+                -webkit-appearance: none;
+                display: grid;
+                place-content: center;
                 width: 18px;
                 height: 18px;
+                flex: 0 0 18px;
                 margin: 0 10px 0 0;
+                padding: 0;
+                border: 2px solid rgba(91, 65, 40, 0.38) !important;
+                border-radius: 3px !important;
+                background: rgba(255, 252, 246, 0.96) !important;
+                box-shadow: none;
                 cursor: pointer;
-                accent-color: #6b5a42;
+            }
+
+            .sidebar-toggle input[type="checkbox"]::before,
+            .filter-checkbox-item input[type="checkbox"]::before {
+                content: "";
+                width: 10px;
+                height: 10px;
+                border-radius: 2px;
+                background: var(--clay-700, #6b5a42);
+                transform: scale(0);
+                transition: transform 0.12s ease-in-out;
+            }
+
+            .sidebar-toggle input[type="checkbox"]:checked::before,
+            .filter-checkbox-item input[type="checkbox"]:checked::before {
+                transform: scale(1);
+            }
+
+            .sidebar-toggle input[type="checkbox"]:focus-visible,
+            .filter-checkbox-item input[type="checkbox"]:focus-visible {
+                outline: 2px solid rgba(216, 169, 79, 0.72);
+                outline-offset: 2px;
             }
 
             .sidebar-toggle .toggle-label,
@@ -797,6 +828,40 @@
                 font-weight: 700;
             }
 
+            .period-date-info {
+                display: flex;
+                flex-direction: column;
+                align-items: center;
+                gap: 8px;
+                min-width: 0;
+                width: 100%;
+            }
+
+            .period-date-fields {
+                display: grid;
+                grid-template-columns: auto minmax(190px, 220px) auto minmax(190px, 220px);
+                align-items: center;
+                justify-content: center;
+                gap: 10px;
+                width: 100%;
+            }
+
+            .period-date-fields label {
+                flex: 0 0 auto;
+                font-size: 14px;
+            }
+
+            #customStartDate,
+            #customEndDate {
+                box-sizing: border-box;
+                width: 100%;
+                min-width: 0 !important;
+                min-height: 48px;
+                padding: 10px 12px !important;
+                font-size: 16px !important;
+                line-height: 1.2;
+            }
+
             .calendar {
                 gap: 12px;
                 background: transparent;
@@ -992,33 +1057,40 @@
                 .week-navigation {
                     display: grid;
                     grid-template-columns: 44px minmax(0, 1fr) 44px;
+                    grid-template-areas:
+                        "prev title next"
+                        "fields fields fields";
                     padding: 14px;
                     gap: 12px;
                     align-items: start;
                 }
 
-                .week-navigation > div {
-                    min-width: 0;
-                    width: 100%;
+                .period-date-info {
+                    display: contents;
                 }
 
-                .week-navigation > div > div:last-child {
-                    display: grid !important;
-                    grid-template-columns: auto minmax(0, 1fr);
+                .period-date-fields {
+                    grid-area: fields;
+                    grid-template-columns: minmax(0, 1fr);
                     width: 100%;
                     gap: 8px;
+                    justify-items: stretch;
                     align-items: center;
                 }
 
+                .period-date-fields label {
+                    text-align: left;
+                }
+
                 .current-week {
+                    grid-area: title;
                     text-align: center;
+                    align-self: center;
                 }
 
                 #customStartDate,
                 #customEndDate {
-                    min-width: 0;
                     width: 100% !important;
-                    min-height: 44px;
                 }
 
                 .week-navigation .period-nav-btn {
@@ -1028,6 +1100,14 @@
                     min-height: 44px;
                     margin-top: 3px;
                     border-radius: 50% !important;
+                }
+
+                .week-navigation .period-nav-btn:first-child {
+                    grid-area: prev;
+                }
+
+                .week-navigation .period-nav-btn:last-child {
+                    grid-area: next;
                 }
 
                 #employeeFilterList {
@@ -1346,48 +1426,19 @@
                                 <path d="M19 12H5" />
                             </svg>
                         </button>
-                        <div
-                            style="
-                                display: flex;
-                                flex-direction: column;
-                                align-items: center;
-                                gap: 8px;
-                            "
-                        >
+                        <div class="period-date-info">
                             <div class="current-week" id="currentWeek"></div>
-                            <div
-                                style="
-                                    display: flex;
-                                    gap: 10px;
-                                    align-items: center;
-                                "
-                            >
-                                <label style="font-size: 14px; color: #555"
-                                    >Start:</label
-                                >
+                            <div class="period-date-fields">
+                                <label>Start:</label>
                                 <input
                                     type="date"
                                     id="customStartDate"
-                                    style="
-                                        padding: 6px 10px;
-                                        border: 1px solid #cbd5e0;
-                                        border-radius: 6px;
-                                        font-size: 14px;
-                                    "
                                     onchange="setCustomDates()"
                                 />
-                                <label style="font-size: 14px; color: #555"
-                                    >End:</label
-                                >
+                                <label>End:</label>
                                 <input
                                     type="date"
                                     id="customEndDate"
-                                    style="
-                                        padding: 6px 10px;
-                                        border: 1px solid #cbd5e0;
-                                        border-radius: 6px;
-                                        font-size: 14px;
-                                    "
                                     onchange="setCustomDates()"
                                 />
                             </div>
@@ -1453,8 +1504,6 @@
                 </div>
 
                 <div class="input-group">
-                    <label>Select Date(s) - Click to select/deselect</label>
-
                     <div class="date-picker-nav request-month-nav">
                         <button
                             type="button"
@@ -2217,6 +2266,7 @@
                 ];
 
                 const dayCount = getDayCount();
+                updateDateInputs();
 
                 const currentWeekEl = document.getElementById("currentWeek");
                 if (currentWeekEl) {
