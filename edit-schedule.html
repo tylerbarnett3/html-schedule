@@ -5932,7 +5932,15 @@
 
                 const currentWeekEl = document.getElementById("currentWeek");
                 if (currentWeekEl) {
-                    currentWeekEl.textContent = `${currentStartDate.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })} - ${currentEndDate.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })} (${dayCount} days)`;
+                    const startLabel = currentStartDate.toLocaleDateString(
+                        "en-US",
+                        { month: "short", day: "numeric" },
+                    );
+                    const endLabel = currentEndDate.toLocaleDateString(
+                        "en-US",
+                        { month: "short", day: "numeric" },
+                    );
+                    currentWeekEl.innerHTML = `${startLabel} - ${endLabel}<br>(${dayCount} days)`;
                 }
 
                 let calendarHTML = "";
