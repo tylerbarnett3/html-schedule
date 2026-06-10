@@ -990,9 +990,11 @@
                 }
 
                 .week-navigation {
+                    display: grid;
+                    grid-template-columns: 44px minmax(0, 1fr) 44px;
                     padding: 14px;
                     gap: 12px;
-                    align-items: stretch;
+                    align-items: start;
                 }
 
                 .week-navigation > div {
@@ -1021,8 +1023,11 @@
 
                 .week-navigation .period-nav-btn {
                     display: inline-flex !important;
-                    width: 100% !important;
-                    border-radius: 999px !important;
+                    width: 44px !important;
+                    height: 44px !important;
+                    min-height: 44px;
+                    margin-top: 3px;
+                    border-radius: 50% !important;
                 }
 
                 #employeeFilterList {
@@ -1169,6 +1174,7 @@
                 }
 
                 .week-navigation {
+                    grid-template-columns: 42px minmax(0, 1fr) 42px;
                     margin-bottom: 14px;
                     border-radius: 16px;
                 }
