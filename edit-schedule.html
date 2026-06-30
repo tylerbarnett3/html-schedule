@@ -2195,6 +2195,27 @@
                                 </svg>
                                 Import Backup
                             </button>
+                            <button
+                                type="button"
+                                class="tools-menu-item"
+                                onclick="runToolAction(deduplicateShifts)"
+                                role="menuitem"
+                            >
+                                <svg
+                                    xmlns="http://www.w3.org/2000/svg"
+                                    fill="none"
+                                    viewBox="0 0 24 24"
+                                    stroke-width="2"
+                                    stroke="currentColor"
+                                >
+                                    <path
+                                        stroke-linecap="round"
+                                        stroke-linejoin="round"
+                                        d="m9 12.75 2.25 2.25L15 9.75M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z"
+                                    />
+                                </svg>
+                                Remove Duplicates
+                            </button>
                         </div>
                     </div>
                 </div>
@@ -2941,7 +2962,7 @@
         </div>
 
         <script>
-            const APP_VERSION = "v2.1";
+            const APP_VERSION = "v2.2";
             console.log(`Schedule Edit App Version: ${APP_VERSION}`);
 
             function isEmbeddedInWix() {
@@ -3473,6 +3494,47 @@
 
             function saveData() {
                 autoSave();
+            }
+
+            function getRateClientKey(employeeId, rate) {
+                return [
+                    employeeId,
+                    rate?.rate ?? "",
+                    rate?.startDate ?? "",
+                    rate?.endDate ?? "",
+                ]
+                    .map((value) => String(value).trim())
+                    .join("|");
+            }
+
+            function applySyncResult(syncResult) {
+                if (!syncResult) return;
+
+                const employeeIds = syncResult.employees || {};
+                employees.forEach((employee) => {
+                    const wixId = employeeIds[employee.id];
+                    if (wixId) {
+                        employee.wixId = wixId;
+                    }
+                });
+
+                const rateIds = syncResult.rates || {};
+                employees.forEach((employee) => {
+                    (employee.rates || []).forEach((rate) => {
+                        const wixId = rateIds[getRateClientKey(employee.id, rate)];
+                        if (wixId) {
+                            rate.wixId = wixId;
+                        }
+                    });
+                });
+
+                const shiftIds = syncResult.shifts || {};
+                shifts.forEach((shift) => {
+                    const wixId = shiftIds[shift.id];
+                    if (wixId) {
+                        shift.wixId = wixId;
+                    }
+                });
             }
 
             function applyLoadedScheduleData(data, { showLoadedToast = false } = {}) {
@@ -6398,6 +6460,33 @@
                 renderTimeOffDrawer();
             }
 
+            function deduplicateShifts() {
+                if (IS_MOCK_MODE) {
+                    showToast(
+                        "Mock Mode",
+                        "Duplicate cleanup only runs against the Wix database",
+                        "info",
+                    );
+                    return;
+                }
+
+                if (
+                    !confirm(
+                        "Remove exact duplicate schedule records from the database? This keeps one copy of each matching shift, day off, or request.",
+                    )
+                ) {
+                    return;
+                }
+
+                showLoading("Removing duplicates...");
+                window.parent.postMessage(
+                    {
+                        action: "DEDUPLICATE_SHIFTS",
+                    },
+                    "*",
+                );
+            }
+
             function loadFromDatabase() {
                 if (IS_MOCK_MODE) {
                     loadMockData();
@@ -6423,6 +6512,7 @@
                             .getElementById("loadingOverlay")
                             .classList.contains("active");
 
+                        applySyncResult(event.data.syncResult);
                         isSaving = false;
                         updateSaveStatus("saved");
                         updateMaintenanceStatus(
@@ -6468,6 +6558,28 @@
                             "Delete Failed",
                             event.data.message ||
                                 "There was an error deleting this employee",
+                            "error",
+                        );
+                    } else if (
+                        event.data.action === "DEDUPLICATE_SHIFTS_COMPLETE"
+                    ) {
+                        const deletedCount =
+                            event.data.result?.deletedCount || 0;
+                        hideLoading();
+                        showToast(
+                            "Duplicate Cleanup Complete",
+                            `${deletedCount} duplicate shift${deletedCount === 1 ? "" : "s"} removed`,
+                            "success",
+                        );
+                        loadFromDatabase();
+                    } else if (
+                        event.data.action === "DEDUPLICATE_SHIFTS_ERROR"
+                    ) {
+                        hideLoading();
+                        showToast(
+                            "Cleanup Failed",
+                            event.data.message ||
+                                "There was an error removing duplicate shifts",
                             "error",
                         );
                     } else if (event.data.action === "LOAD_COMPLETE") {
