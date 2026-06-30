@@ -1,6 +1,6 @@
 import wixData from 'wix-data';
 
-const APP_VERSION = 'v2.1';
+const APP_VERSION = 'v2.2';
 const SHIFT_RETENTION_DAYS = 90;
 
 $w.onReady(function () {
@@ -13,9 +13,9 @@ $w.onReady(function () {
         
         if (action === 'SYNC_TO_DATABASE') {
             try {
-                await syncToDatabase(data);
+                const syncResult = await syncToDatabase(data);
                 const cleanup = await pruneOldShifts();
-                iframe.postMessage({ action: 'SYNC_COMPLETE', appVersion: APP_VERSION, cleanup });
+                iframe.postMessage({ action: 'SYNC_COMPLETE', appVersion: APP_VERSION, cleanup, syncResult });
             } catch (error) {
                 console.error('Sync failed:', error);
                 iframe.postMessage({ action: 'SYNC_ERROR', message: error.message });
@@ -54,6 +54,14 @@ $w.onReady(function () {
                 console.error('Employee delete failed:', error);
                 iframe.postMessage({ action: 'DELETE_EMPLOYEE_ERROR', message: error.message });
             }
+        } else if (action === 'DEDUPLICATE_SHIFTS') {
+            try {
+                const result = await deduplicateShifts();
+                iframe.postMessage({ action: 'DEDUPLICATE_SHIFTS_COMPLETE', result });
+            } catch (error) {
+                console.error('Shift dedupe failed:', error);
+                iframe.postMessage({ action: 'DEDUPLICATE_SHIFTS_ERROR', message: error.message });
+            }
         } else if (action === 'TIME_OFF_REQUEST_SUBMITTED') {
             // When a request is submitted from View page, reload Edit page data
             await loadFromDatabase();
@@ -76,9 +84,16 @@ async function syncToDatabase(data) {
     validateSyncPayload(data);
 
     try {
+        const syncResult = {
+            employees: {},
+            rates: {},
+            shifts: {}
+        };
+
         // ===== SYNC EMPLOYEES =====
         const existingEmployees = await wixData.query('Employees').limit(1000).find();
         const existingEmpMap = new Map(existingEmployees.items.map(e => [e._id, e]));
+        const existingEmpByName = new Map(existingEmployees.items.map(e => [normalizeKeyValue(e.name), e]));
         const employeeIdMap = {}; // Maps local IDs to Wix IDs
         
         const employeesToUpdate = [];
@@ -100,15 +115,26 @@ async function syncToDatabase(data) {
                     console.warn('Skipping employee with missing Wix ID:', emp.wixId);
                 }
             } else {
-                employeesToInsert.push({
-                    localId: emp.id,
-                    data: {
-                        name: emp.name,
-                        archived: emp.archived || false,
-                        color: emp.color || '#7F6C50',
-                        displayOrder: typeof emp.displayOrder === 'number' ? emp.displayOrder : 0
-                    }
-                });
+                const employeeData = {
+                    name: emp.name,
+                    archived: emp.archived || false,
+                    color: emp.color || '#7F6C50',
+                    displayOrder: typeof emp.displayOrder === 'number' ? emp.displayOrder : 0
+                };
+                const existingEmployee = existingEmpByName.get(normalizeKeyValue(emp.name));
+                if (existingEmployee) {
+                    employeesToUpdate.push({
+                        _id: existingEmployee._id,
+                        ...employeeData
+                    });
+                    employeeIdMap[emp.id] = existingEmployee._id;
+                    syncResult.employees[emp.id] = existingEmployee._id;
+                } else {
+                    employeesToInsert.push({
+                        localId: emp.id,
+                        data: employeeData
+                    });
+                }
             }
         }
         
@@ -123,7 +149,9 @@ async function syncToDatabase(data) {
             const results = await wixData.bulkInsert('Employees', insertData);
             // Map the results back to local IDs
             results.insertedItemIds.forEach((wixId, index) => {
-                employeeIdMap[employeesToInsert[index].localId] = wixId;
+                const localId = employeesToInsert[index].localId;
+                employeeIdMap[localId] = wixId;
+                syncResult.employees[localId] = wixId;
             });
         }
         
@@ -132,6 +160,13 @@ async function syncToDatabase(data) {
         // ===== SYNC RATES =====
         const existingRates = await loadAllEmployeeRates();
         const existingRatesMap = new Map(existingRates.map(r => [r._id, r]));
+        const existingRatesByKey = new Map();
+        existingRates.forEach(rate => {
+            const key = getRateDedupeKey(rate);
+            if (!existingRatesByKey.has(key)) {
+                existingRatesByKey.set(key, rate);
+            }
+        });
         const syncedEmployeeWixIds = new Set(Object.values(employeeIdMap));
         const desiredRateWixIds = new Set();
         
@@ -158,12 +193,26 @@ async function syncToDatabase(data) {
                             console.warn('Skipping rate with missing Wix ID:', rate.wixId);
                         }
                     } else {
-                        ratesToInsert.push({
+                        const rateData = {
                             employee: wixEmpId,
                             rate: rate.rate,
                             startDate: rate.startDate || null,
                             endDate: rate.endDate || null
-                        });
+                        };
+                        const existingRate = existingRatesByKey.get(getRateDedupeKey(rateData));
+                        if (existingRate) {
+                            desiredRateWixIds.add(existingRate._id);
+                            syncResult.rates[getRateClientKey(emp.id, rate)] = existingRate._id;
+                            ratesToUpdate.push({
+                                _id: existingRate._id,
+                                ...rateData
+                            });
+                        } else {
+                            ratesToInsert.push({
+                                clientKey: getRateClientKey(emp.id, rate),
+                                data: rateData
+                            });
+                        }
                     }
                 }
             }
@@ -174,7 +223,10 @@ async function syncToDatabase(data) {
         }
         
         if (ratesToInsert.length > 0) {
-            await wixData.bulkInsert('EmployeeRates', ratesToInsert);
+            const results = await wixData.bulkInsert('EmployeeRates', ratesToInsert.map(rate => rate.data));
+            results.insertedItemIds.forEach((wixId, index) => {
+                syncResult.rates[ratesToInsert[index].clientKey] = wixId;
+            });
         }
         
         const staleRateIds = existingRates
@@ -198,6 +250,8 @@ async function syncToDatabase(data) {
         }
         
         const existingShiftsMap = new Map(allExistingShifts.map(s => [s._id, s]));
+        const existingShiftsByKey = buildShiftDedupeMap(allExistingShifts);
+        const pendingShiftInsertsByKey = new Map();
         
         const shiftsToUpdate = [];
         const shiftsToInsert = [];
@@ -228,11 +282,33 @@ async function syncToDatabase(data) {
                         _id: shift.wixId,
                         ...shiftData
                     });
+                    syncResult.shifts[shift.id] = shift.wixId;
                 } else {
                     console.warn('Skipping shift with missing Wix ID:', shift.wixId);
                 }
             } else {
-                shiftsToInsert.push(shiftData);
+                const shiftKey = getShiftDedupeKey(shiftData);
+                const existingShift = existingShiftsByKey.get(shiftKey);
+                if (existingShift) {
+                    shiftsToUpdate.push({
+                        _id: existingShift._id,
+                        ...shiftData
+                    });
+                    syncResult.shifts[shift.id] = existingShift._id;
+                } else {
+                    const pendingShift = pendingShiftInsertsByKey.get(shiftKey);
+                    if (pendingShift) {
+                        pendingShift.localIds.push(shift.id);
+                    } else {
+                        const shiftToInsert = {
+                            localIds: [shift.id],
+                            data: shiftData,
+                            dedupeKey: shiftKey
+                        };
+                        shiftsToInsert.push(shiftToInsert);
+                        pendingShiftInsertsByKey.set(shiftKey, shiftToInsert);
+                    }
+                }
             }
         }
         
@@ -250,7 +326,17 @@ async function syncToDatabase(data) {
             // Split into batches of 50 for safety
             for (let i = 0; i < shiftsToInsert.length; i += 50) {
                 const batch = shiftsToInsert.slice(i, i + 50);
-                await wixData.bulkInsert('Shifts', batch);
+                const results = await wixData.bulkInsert('Shifts', batch.map(shift => shift.data));
+                results.insertedItemIds.forEach((wixId, index) => {
+                    const shift = batch[index];
+                    shift.localIds.forEach(localId => {
+                        syncResult.shifts[localId] = wixId;
+                    });
+                    existingShiftsByKey.set(shift.dedupeKey, {
+                        _id: wixId,
+                        ...shift.data
+                    });
+                });
             }
         }
         
@@ -278,6 +364,8 @@ async function syncToDatabase(data) {
         if (closedDayIdsToRemove.length > 0) {
             await wixData.bulkRemove('ClosedDays', closedDayIdsToRemove);
         }
+
+        return syncResult;
     } catch (error) {
         console.error('Sync error:', error);
         throw error;
@@ -296,6 +384,90 @@ function validateSyncPayload(data) {
     if (data.employees.length === 0 && data.shifts.length === 0 && (!data.closedDays || data.closedDays.length === 0)) {
         throw new Error('Refusing to sync empty schedule data. Reload from the database and try again.');
     }
+}
+
+function normalizeKeyValue(value) {
+    if (value === undefined || value === null) return '';
+    return String(value).trim();
+}
+
+function normalizeBoolean(value) {
+    return value ? '1' : '0';
+}
+
+function getReferenceId(value) {
+    return value?._id || value || '';
+}
+
+function getRateClientKey(employeeLocalId, rate) {
+    return [
+        employeeLocalId,
+        normalizeKeyValue(rate.rate),
+        normalizeKeyValue(rate.startDate),
+        normalizeKeyValue(rate.endDate)
+    ].join('|');
+}
+
+function getRateDedupeKey(rate) {
+    return [
+        getReferenceId(rate.employee),
+        normalizeKeyValue(rate.rate),
+        normalizeKeyValue(rate.startDate),
+        normalizeKeyValue(rate.endDate)
+    ].join('|');
+}
+
+function getShiftDedupeKey(shift) {
+    return [
+        getReferenceId(shift.employee),
+        normalizeKeyValue(shift.date),
+        normalizeKeyValue(shift.startTime),
+        normalizeKeyValue(shift.endTime),
+        normalizeBoolean(shift.isDayOff),
+        normalizeBoolean(shift.isTimeOffRequest),
+        normalizeKeyValue(shift.requestStatus),
+        normalizeKeyValue(shift.requestDate),
+        normalizeKeyValue(shift.requestedBy),
+        normalizeKeyValue(shift.timeOffPeriod || 'full-day')
+    ].join('|');
+}
+
+function buildShiftDedupeMap(shifts) {
+    const shiftsByKey = new Map();
+    for (const shift of shifts) {
+        const key = getShiftDedupeKey(shift);
+        if (!shiftsByKey.has(key) || shouldPreferShift(shift, shiftsByKey.get(key))) {
+            shiftsByKey.set(key, shift);
+        }
+    }
+    return shiftsByKey;
+}
+
+function shouldPreferShift(candidate, current) {
+    if (!current) return true;
+
+    const candidateScore = getShiftCompletenessScore(candidate);
+    const currentScore = getShiftCompletenessScore(current);
+    if (candidateScore !== currentScore) {
+        return candidateScore > currentScore;
+    }
+
+    const candidateCreated = new Date(candidate._createdDate || 0).getTime();
+    const currentCreated = new Date(current._createdDate || 0).getTime();
+    return candidateCreated < currentCreated;
+}
+
+function getShiftCompletenessScore(shift) {
+    return [
+        shift.employee,
+        shift.date,
+        shift.startTime,
+        shift.endTime,
+        shift.requestStatus,
+        shift.requestDate,
+        shift.requestedBy,
+        shift.timeOffPeriod
+    ].filter(value => value !== undefined && value !== null && value !== '').length;
 }
 
 async function deleteShiftFromDatabase(data) {
@@ -350,6 +522,39 @@ async function deleteEmployeeFromDatabase(data) {
     await bulkRemoveByIds('Shifts', shifts.map(shift => shift._id));
     await bulkRemoveByIds('EmployeeRates', rates.map(rate => rate._id));
     await wixData.remove('Employees', wixId);
+}
+
+async function deduplicateShifts() {
+    const allShifts = await loadAllByQuery(wixData.query('Shifts').limit(100));
+    const groups = new Map();
+
+    allShifts.forEach(shift => {
+        const key = getShiftDedupeKey(shift);
+        if (!groups.has(key)) {
+            groups.set(key, []);
+        }
+        groups.get(key).push(shift);
+    });
+
+    const idsToRemove = [];
+    groups.forEach(group => {
+        if (group.length < 2) return;
+
+        const keeper = group.reduce((best, shift) => (
+            shouldPreferShift(shift, best) ? shift : best
+        ), group[0]);
+
+        group
+            .filter(shift => shift._id !== keeper._id)
+            .forEach(shift => idsToRemove.push(shift._id));
+    });
+
+    await bulkRemoveByIds('Shifts', idsToRemove);
+
+    return {
+        duplicateGroups: [...groups.values()].filter(group => group.length > 1).length,
+        deletedCount: idsToRemove.length
+    };
 }
 
 function normalizeClosedDays(days) {

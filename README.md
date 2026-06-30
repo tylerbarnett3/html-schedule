@@ -83,6 +83,9 @@ Direct visits to the public GitHub Pages URLs load fictional mock data. Real Wix
 - The app uses local IDs in the iframe and Wix `_id` values in the database. The Velo code maps between those IDs when loading and syncing.
 - Edit automatically deletes `Shifts` records older than 90 days on load and after successful sync to stay below Wix record limits.
 - Syncs are additive/update-oriented for shifts and employees. Explicit delete actions handle shift deletion, denied time-off request deletion, closed-day cleanup, and permanent employee deletion.
+- Successful edit syncs return Wix `_id` mappings for newly inserted employees, rates, and shifts. The iframe applies those IDs immediately so later autosaves update the same rows instead of inserting duplicates.
+- Shift sync is idempotent for exact semantic matches. If a stale client submits a shift/day-off/time-off request without a `wixId`, the Velo code reuses the matching database row when employee, date, times, request fields, and time-off period match.
+- The Edit tools menu includes `Remove Duplicates`, which deletes exact duplicate `Shifts` records already created in Wix while keeping one canonical copy of each matching record.
 - Employee rate periods removed in Edit are cleaned up during sync for the affected employee.
 - Archiving is the preferred way to remove employees from normal scheduling. Permanent employee delete removes the employee, their rates, and their shifts from Wix.
 - Before major data changes, use the app's export feature to download a JSON backup.
