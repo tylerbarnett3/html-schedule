@@ -953,6 +953,12 @@
                 color: #24190f;
             }
 
+            .availability-card {
+                background: #e6fffa;
+                border: 1px solid rgba(49, 151, 149, 0.34);
+                color: #234e52;
+            }
+
             .shift-cancel {
                 background: rgba(255, 250, 241, 0.26);
                 border-color: rgba(255, 250, 241, 0.5);
@@ -1336,6 +1342,23 @@
                 >
                     Request Time Off
                 </button>
+                <button
+                    onclick="openAvailabilityModal()"
+                    style="
+                        margin-top: 15px;
+                        margin-left: 8px;
+                        padding: 10px 20px;
+                        background: #319795;
+                        color: white;
+                        border: none;
+                        border-radius: 6px;
+                        cursor: pointer;
+                        font-weight: 600;
+                        font-size: 14px;
+                    "
+                >
+                    Mark Availability
+                </button>
             </div>
 
             <div id="mobileTimeOffPanel" class="mobile-time-off-panel" hidden></div>
@@ -1353,6 +1376,18 @@
                                 aria-label="Toggle visibility of days off on calendar"
                             />
                             <span class="toggle-label">Show Time Off</span>
+                        </label>
+                    </div>
+                    <div class="section">
+                        <label class="sidebar-toggle">
+                            <input
+                                type="checkbox"
+                                id="showAvailabilityCheckbox"
+                                checked
+                                onchange="toggleAvailability()"
+                                aria-label="Toggle visibility of availability on calendar"
+                            />
+                            <span class="toggle-label">Show Availability</span>
                         </label>
                     </div>
                     <!-- Employee Filter -->
@@ -1591,6 +1626,118 @@
             </div>
         </div>
 
+        <!-- Availability Modal -->
+        <div class="modal" id="availabilityModal">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h2>Mark Availability</h2>
+                </div>
+
+                <div class="input-group">
+                    <label>Your Name</label>
+                    <select id="availabilityEmployeeSelect">
+                        <option value="">Select your name</option>
+                    </select>
+                </div>
+
+                <div class="input-group">
+                    <label>Available For</label>
+                    <select id="availabilityPeriod">
+                        <option value="full-day">Full Day</option>
+                        <option value="morning">Morning (Open - 5pm)</option>
+                        <option value="evening">Evening (5pm - Close)</option>
+                    </select>
+                </div>
+
+                <div class="input-group">
+                    <div class="date-picker-nav request-month-nav">
+                        <button
+                            type="button"
+                            class="date-picker-nav-icon"
+                            onclick="previousAvailabilityMonth()"
+                            aria-label="Previous month"
+                            title="Previous month"
+                        >
+                            <svg
+                                xmlns="http://www.w3.org/2000/svg"
+                                width="24"
+                                height="24"
+                                viewBox="0 0 24 24"
+                                fill="none"
+                                stroke="currentColor"
+                                stroke-width="2"
+                                stroke-linecap="round"
+                                stroke-linejoin="round"
+                                aria-hidden="true"
+                            >
+                                <path d="m12 19-7-7 7-7" />
+                                <path d="M19 12H5" />
+                            </svg>
+                        </button>
+                        <span
+                            id="availabilityMonthLabel"
+                            class="request-month-label"
+                        ></span>
+                        <button
+                            type="button"
+                            class="date-picker-nav-icon"
+                            onclick="nextAvailabilityMonth()"
+                            aria-label="Next month"
+                            title="Next month"
+                        >
+                            <svg
+                                xmlns="http://www.w3.org/2000/svg"
+                                width="24"
+                                height="24"
+                                viewBox="0 0 24 24"
+                                fill="none"
+                                stroke="currentColor"
+                                stroke-width="2"
+                                stroke-linecap="round"
+                                stroke-linejoin="round"
+                                aria-hidden="true"
+                            >
+                                <path d="M5 12h14" />
+                                <path d="m12 5 7 7-7 7" />
+                            </svg>
+                        </button>
+                    </div>
+
+                    <div
+                        class="date-picker-grid"
+                        id="availabilityDatePickerGrid"
+                    ></div>
+
+                    <div class="selected-dates-container">
+                        <div class="selected-dates-label">Selected Dates:</div>
+                        <div
+                            class="selected-dates-chips"
+                            id="availabilitySelectedDatesChips"
+                        >
+                            <span style="color: #718096; font-size: 13px"
+                                >No dates selected</span
+                            >
+                        </div>
+                    </div>
+                </div>
+
+                <div class="modal-actions">
+                    <button
+                        class="btn btn-secondary"
+                        onclick="closeAvailabilityModal()"
+                    >
+                        Cancel
+                    </button>
+                    <button
+                        class="btn btn-primary"
+                        onclick="submitAvailability()"
+                    >
+                        Save Availability
+                    </button>
+                </div>
+            </div>
+        </div>
+
         <!-- Cancel Confirmation Modal -->
         <div class="modal" id="cancelConfirmModal">
             <div class="modal-content">
@@ -1625,7 +1772,7 @@
         </div>
 
         <script>
-            const APP_VERSION = "v2.1";
+            const APP_VERSION = "v2.2";
             console.log(`Schedule View App Version: ${APP_VERSION}`);
 
             function isEmbeddedInWix() {
@@ -1636,17 +1783,23 @@
 
             let employees = [];
             let shifts = [];
+            let availability = [];
             let closedDays = [];
             let currentStartDate = new Date();
             let currentEndDate = new Date();
             let selectedEmployees = new Set();
             let showDayOffs = true;
+            let showAvailability = true;
 
             // Time-off request variables
             let selectedDates = [];
             let currentPickerMonth = new Date();
+            let selectedAvailabilityDates = [];
+            let availabilityPickerMonth = new Date();
             let cancelingShiftId = null;
             let cancelingEmployeeName = null;
+            let cancelingAvailabilityId = null;
+            let cancelingAvailabilityName = null;
             const TIME_OFF_PERIOD_LABELS = {
                 "full-day": "Full Day",
                 morning: "Morning",
@@ -1764,6 +1917,26 @@
                             timeOffPeriod: "evening",
                         },
                     ]),
+                    availability: [
+                        {
+                            id: 3000,
+                            employeeId: 1000,
+                            employeeName: employeeName(1000),
+                            date: formatMockDate(2),
+                            availabilityPeriod: "full-day",
+                            submittedAt: new Date().toISOString(),
+                            submittedBy: employeeName(1000),
+                        },
+                        {
+                            id: 3001,
+                            employeeId: 1004,
+                            employeeName: employeeName(1004),
+                            date: formatMockDate(6),
+                            availabilityPeriod: "evening",
+                            submittedAt: new Date().toISOString(),
+                            submittedBy: employeeName(1004),
+                        },
+                    ],
                 };
             }
 
@@ -1772,6 +1945,12 @@
                 shifts = (data.shifts || []).map((shift) => ({
                     ...shift,
                     timeOffPeriod: normalizeTimeOffPeriod(shift.timeOffPeriod),
+                }));
+                availability = (data.availability || []).map((item) => ({
+                    ...item,
+                    availabilityPeriod: normalizeTimeOffPeriod(
+                        item.availabilityPeriod,
+                    ),
                 }));
                 closedDays = normalizeClosedDays(data.closedDays || []);
 
@@ -1941,12 +2120,20 @@
 
                 // Reset state variables
                 selectedDates = [];
+                selectedAvailabilityDates = [];
                 cancelingShiftId = null;
                 cancelingEmployeeName = null;
+                cancelingAvailabilityId = null;
+                cancelingAvailabilityName = null;
                 const periodSelect =
                     document.getElementById("requestTimeOffPeriod");
                 if (periodSelect) {
                     periodSelect.value = "full-day";
+                }
+                const availabilityPeriodSelect =
+                    document.getElementById("availabilityPeriod");
+                if (availabilityPeriodSelect) {
+                    availabilityPeriodSelect.value = "full-day";
                 }
             }
 
@@ -2024,6 +2211,44 @@
                         event.data.message ||
                             "There was an error submitting your time-off request.",
                     );
+                } else if (
+                    event.data &&
+                    event.data.action === "AVAILABILITY_SUBMITTED"
+                ) {
+                    const submittedDates = event.data.submittedDates || [];
+                    const skippedDates = event.data.skippedDates || [];
+                    const skippedText = formatDateList(skippedDates);
+
+                    if (submittedDates.length > 0) {
+                        selectedAvailabilityDates = [];
+                        closeAvailabilityModal();
+                        alert(
+                            skippedDates.length > 0
+                                ? `Availability saved. Skipped dates that were closed or already had overlapping availability: ${skippedText}`
+                                : "Availability saved.",
+                        );
+                    } else {
+                        hideLoading();
+                        alert(
+                            skippedDates.length > 0
+                                ? `No new availability was saved. These dates were closed or already had overlapping availability: ${skippedText}`
+                                : "No availability was saved.",
+                        );
+                    }
+                } else if (
+                    event.data &&
+                    event.data.action === "AVAILABILITY_CANCELLED"
+                ) {
+                    loadFromDatabase();
+                } else if (
+                    event.data &&
+                    event.data.action === "AVAILABILITY_ERROR"
+                ) {
+                    hideLoading();
+                    alert(
+                        event.data.message ||
+                            "There was an error saving availability.",
+                    );
                 }
             });
 
@@ -2078,6 +2303,13 @@
             function toggleDayOffs() {
                 showDayOffs = document.getElementById(
                     "showDayOffsCheckbox",
+                ).checked;
+                renderCalendar();
+            }
+
+            function toggleAvailability() {
+                showAvailability = document.getElementById(
+                    "showAvailabilityCheckbox",
                 ).checked;
                 renderCalendar();
             }
@@ -2410,6 +2642,27 @@
                                 return 0;
                             });
 
+                        const dayAvailability = availability
+                            .filter((item) => {
+                                if (dayIsClosed) return false;
+                                if (!showAvailability) return false;
+                                if (item.date !== dateStr) return false;
+                                if (selectedEmployees.size === 0) return false;
+                                return selectedEmployees.has(item.employeeId);
+                            })
+                            .sort((a, b) => {
+                                const employeeCompare =
+                                    a.employeeName.localeCompare(
+                                        b.employeeName,
+                                    );
+                                if (employeeCompare !== 0) {
+                                    return employeeCompare;
+                                }
+                                return getPeriodSortValue(
+                                    a.availabilityPeriod,
+                                ) - getPeriodSortValue(b.availabilityPeriod);
+                            });
+
                         const cellIndex = i + 7;
                         const row = Math.floor(cellIndex / 2);
                         const col = cellIndex % 2;
@@ -2521,6 +2774,19 @@
                                     </div>
                                 `;
                                               })
+                                              .join("") +
+                                          dayAvailability
+                                              .map((item) => {
+                                                  return `
+                                    <div class="shift-card availability-card">
+                                        <div class="shift-employee">${item.employeeName}</div>
+                                        <div class="shift-time">AVAILABLE - ${formatTimeOffPeriod(
+                                            item.availabilityPeriod,
+                                        ).toUpperCase()}</div>
+                                        <button class="shift-cancel" onclick="cancelAvailability(${item.id}, '${item.employeeName}')">Remove</button>
+                                    </div>
+                                `;
+                                              })
                                               .join("")
                                 }
                             </div>
@@ -2543,6 +2809,7 @@
 
             // Time-Off Request Functions
             let requestEmployeeListenerAttached = false;
+            let availabilityEmployeeListenerAttached = false;
 
             function handleRequestEmployeeChange() {
                 renderDatePicker();
@@ -2587,6 +2854,42 @@
 
                 restoreMobileTimeOffRequestModal();
                 openFloatingModal("timeOffRequestModal");
+            }
+
+            function openAvailabilityModal() {
+                selectedAvailabilityDates = [];
+                availabilityPickerMonth = new Date();
+                document.getElementById("availabilityPeriod").value =
+                    "full-day";
+
+                const select = document.getElementById(
+                    "availabilityEmployeeSelect",
+                );
+                const activeEmployees = employees.filter((e) => !e.archived);
+                select.innerHTML =
+                    '<option value="">Select your name</option>' +
+                    activeEmployees
+                        .map(
+                            (e) =>
+                                `<option value="${e.id}">${e.name}</option>`,
+                        )
+                        .join("");
+
+                if (!availabilityEmployeeListenerAttached) {
+                    select.addEventListener("change", renderAvailabilityPicker);
+                    document
+                        .getElementById("availabilityPeriod")
+                        .addEventListener("change", renderAvailabilityPicker);
+                    availabilityEmployeeListenerAttached = true;
+                }
+
+                renderAvailabilityPicker();
+                openFloatingModal("availabilityModal");
+            }
+
+            function closeAvailabilityModal() {
+                closeAllModals();
+                selectedAvailabilityDates = [];
             }
 
             function closeTimeOffRequestModal() {
@@ -2757,6 +3060,246 @@
                 }
             }
 
+            function getPeriodSortValue(period) {
+                const normalized = normalizeTimeOffPeriod(period);
+                if (normalized === "full-day") return 0;
+                if (normalized === "morning") return 1;
+                return 2;
+            }
+
+            function availabilityPeriodsOverlap(requestedPeriod, existingPeriod) {
+                return timeOffPeriodsConflict(requestedPeriod, existingPeriod);
+            }
+
+            function checkAvailabilityConflict(dateStr) {
+                if (isClosedDate(dateStr)) return true;
+
+                const selectedEmployeeId = parseInt(
+                    document.getElementById("availabilityEmployeeSelect").value,
+                );
+                if (!selectedEmployeeId) return false;
+
+                const selectedPeriod = normalizeTimeOffPeriod(
+                    document.getElementById("availabilityPeriod").value,
+                );
+
+                return availability.some((item) => {
+                    if (
+                        item.date !== dateStr ||
+                        item.employeeId !== selectedEmployeeId
+                    ) {
+                        return false;
+                    }
+
+                    return availabilityPeriodsOverlap(
+                        selectedPeriod,
+                        item.availabilityPeriod,
+                    );
+                });
+            }
+
+            function renderAvailabilityPicker() {
+                const grid = document.getElementById(
+                    "availabilityDatePickerGrid",
+                );
+                const year = availabilityPickerMonth.getFullYear();
+                const month = availabilityPickerMonth.getMonth();
+
+                document.getElementById("availabilityMonthLabel").textContent =
+                    availabilityPickerMonth.toLocaleDateString("en-US", {
+                        month: "long",
+                        year: "numeric",
+                    });
+
+                const firstDay = new Date(year, month, 1);
+                const lastDay = new Date(year, month + 1, 0);
+                const daysInMonth = lastDay.getDate();
+                const startDayOfWeek = firstDay.getDay();
+
+                let html = "";
+                ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"].forEach(
+                    (day) => {
+                        html += `<div class="date-picker-day-header">${day}</div>`;
+                    },
+                );
+
+                for (let i = 0; i < startDayOfWeek; i++) {
+                    html += "<div></div>";
+                }
+
+                const today = new Date();
+                today.setHours(0, 0, 0, 0);
+                const maxDate = new Date(today);
+                maxDate.setDate(maxDate.getDate() + 365);
+
+                for (let day = 1; day <= daysInMonth; day++) {
+                    const date = new Date(year, month, day);
+                    const dateStr = formatDate(date);
+                    const isPast = date < today;
+                    const isTooFar = date > maxDate;
+                    const hasConflict = checkAvailabilityConflict(dateStr);
+                    const isClosed = isClosedDate(dateStr);
+                    const isDisabled =
+                        isPast || isTooFar || hasConflict || isClosed;
+                    const isSelected =
+                        selectedAvailabilityDates.includes(dateStr);
+                    const selectedClass = isSelected ? "selected" : "";
+
+                    html += `
+                    <button class="date-picker-date ${selectedClass}"
+                            onclick="toggleAvailabilityDateSelection('${dateStr}')"
+                            title="${isClosed ? "Closed for business" : hasConflict ? "Availability already marked" : ""}"
+                            ${isDisabled ? "disabled" : ""}>
+                        ${day}
+                    </button>
+                `;
+                }
+
+                grid.innerHTML = html;
+                renderAvailabilitySelectedDatesChips();
+            }
+
+            function toggleAvailabilityDateSelection(dateStr) {
+                const index = selectedAvailabilityDates.indexOf(dateStr);
+                if (index > -1) {
+                    selectedAvailabilityDates.splice(index, 1);
+                } else {
+                    selectedAvailabilityDates.push(dateStr);
+                }
+                selectedAvailabilityDates.sort();
+                renderAvailabilityPicker();
+            }
+
+            function renderAvailabilitySelectedDatesChips() {
+                const container = document.getElementById(
+                    "availabilitySelectedDatesChips",
+                );
+                if (selectedAvailabilityDates.length === 0) {
+                    container.innerHTML =
+                        '<span style="color: #718096; font-size: 13px;">No dates selected</span>';
+                    return;
+                }
+
+                container.innerHTML = selectedAvailabilityDates
+                    .map((dateStr) => {
+                        const date = new Date(dateStr + "T00:00:00");
+                        const formatted = date.toLocaleDateString("en-US", {
+                            month: "short",
+                            day: "numeric",
+                            year: "numeric",
+                        });
+                        return `
+                    <div class="date-chip">
+                        <span>${formatted}</span>
+                        <button class="date-chip-remove" onclick="toggleAvailabilityDateSelection('${dateStr}')">×</button>
+                    </div>
+                `;
+                    })
+                    .join("");
+            }
+
+            function previousAvailabilityMonth() {
+                availabilityPickerMonth.setMonth(
+                    availabilityPickerMonth.getMonth() - 1,
+                );
+                renderAvailabilityPicker();
+            }
+
+            function nextAvailabilityMonth() {
+                const today = new Date();
+                const maxMonth = new Date(
+                    today.getFullYear(),
+                    today.getMonth() + 12,
+                    1,
+                );
+                const nextMonth = new Date(
+                    availabilityPickerMonth.getFullYear(),
+                    availabilityPickerMonth.getMonth() + 1,
+                    1,
+                );
+
+                if (nextMonth <= maxMonth) {
+                    availabilityPickerMonth = nextMonth;
+                    renderAvailabilityPicker();
+                }
+            }
+
+            function submitAvailability() {
+                const employeeId = parseInt(
+                    document.getElementById("availabilityEmployeeSelect").value,
+                );
+                const employee = employees.find((e) => e.id === employeeId);
+                const availabilityPeriod = normalizeTimeOffPeriod(
+                    document.getElementById("availabilityPeriod").value,
+                );
+
+                if (!employeeId || !employee) {
+                    alert("Please select your name");
+                    return;
+                }
+
+                if (selectedAvailabilityDates.length === 0) {
+                    alert("Please select at least one date");
+                    return;
+                }
+
+                if (
+                    selectedAvailabilityDates.some((dateStr) =>
+                        checkAvailabilityConflict(dateStr),
+                    )
+                ) {
+                    alert(
+                        "One or more selected dates already has overlapping availability.",
+                    );
+                    return;
+                }
+
+                if (
+                    selectedAvailabilityDates.some((dateStr) =>
+                        isClosedDate(dateStr),
+                    )
+                ) {
+                    alert("Availability cannot be submitted for closed days.");
+                    return;
+                }
+
+                if (IS_MOCK_MODE) {
+                    selectedAvailabilityDates.forEach((dateStr) => {
+                        availability.push({
+                            id: Date.now() + Math.random(),
+                            employeeId,
+                            employeeName: employee.name,
+                            date: dateStr,
+                            availabilityPeriod,
+                            submittedAt: new Date().toISOString(),
+                            submittedBy: employee.name,
+                        });
+                    });
+
+                    selectedAvailabilityDates = [];
+                    closeAvailabilityModal();
+                    renderCalendar();
+                    alert("Availability saved.");
+                    return;
+                }
+
+                window.parent.postMessage(
+                    {
+                        action: "SUBMIT_AVAILABILITY",
+                        data: {
+                            employeeId,
+                            employeeName: employee.name,
+                            dates: selectedAvailabilityDates,
+                            submittedAt: new Date().toISOString(),
+                            availabilityPeriod,
+                        },
+                    },
+                    "*",
+                );
+
+                showLoading();
+            }
+
             function submitTimeOffRequest() {
                 const employeeId = parseInt(
                     document.getElementById("requestEmployeeSelect").value,
@@ -2875,6 +3418,31 @@
 
                 cancelingShiftId = shiftId;
                 cancelingEmployeeName = employeeName;
+                cancelingAvailabilityId = null;
+                cancelingAvailabilityName = null;
+
+                const select = document.getElementById("cancelConfirmName");
+                const activeEmployees = employees.filter((e) => !e.archived);
+                select.innerHTML =
+                    '<option value="">Select your name</option>' +
+                    activeEmployees
+                        .map(
+                            (e) =>
+                                `<option value="${e.name}">${e.name}</option>`,
+                        )
+                        .join("");
+
+                openFloatingModal("cancelConfirmModal");
+            }
+
+            function cancelAvailability(availabilityId, employeeName) {
+                const item = availability.find((a) => a.id === availabilityId);
+                if (!item) return;
+
+                cancelingAvailabilityId = availabilityId;
+                cancelingAvailabilityName = employeeName;
+                cancelingShiftId = null;
+                cancelingEmployeeName = null;
 
                 const select = document.getElementById("cancelConfirmName");
                 const activeEmployees = employees.filter((e) => !e.archived);
@@ -2903,10 +3471,46 @@
                     return;
                 }
 
-                if (selectedName !== cancelingEmployeeName) {
+                const expectedName =
+                    cancelingAvailabilityName || cancelingEmployeeName;
+
+                if (selectedName !== expectedName) {
                     alert(
-                        "Name does not match. You can only cancel your own time-off requests.",
+                        "Name does not match. You can only remove your own entry.",
                     );
+                    return;
+                }
+
+                if (cancelingAvailabilityId !== null) {
+                    const item = availability.find(
+                        (a) => a.id === cancelingAvailabilityId,
+                    );
+
+                    if (IS_MOCK_MODE) {
+                        availability = availability.filter(
+                            (a) => a.id !== cancelingAvailabilityId,
+                        );
+                        closeCancelConfirmModal();
+                        renderCalendar();
+                        alert("Availability removed.");
+                        return;
+                    }
+
+                    window.parent.postMessage(
+                        {
+                            action: "CANCEL_AVAILABILITY",
+                            data: {
+                                wixId: item.wixId,
+                                employeeName: item.employeeName,
+                                date: item.date,
+                                availabilityPeriod: item.availabilityPeriod,
+                            },
+                        },
+                        "*",
+                    );
+
+                    closeCancelConfirmModal();
+                    alert("Availability removed.");
                     return;
                 }
 

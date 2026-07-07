@@ -44,6 +44,12 @@ The current code expects these Wix collections:
   - `requestDate`
   - `requestedBy`
   - `timeOffPeriod` (`full-day`, `morning`, or `evening`)
+- `Availability`
+  - `employee` reference to `Employees`
+  - `date`
+  - `availabilityPeriod` (`full-day`, `morning`, or `evening`)
+  - `submittedAt`
+  - `submittedBy`
 - `ClosedDays`
   - `date`
 
@@ -65,6 +71,8 @@ The current code expects these Wix collections:
    - add/edit/delete a shift
    - submit a time-off request from View
    - approve/deny that request from Edit
+   - submit availability from View
+   - confirm availability appears in Edit and can be hidden with `Show Availability`
    - confirm the employee view does not expose rate data
 
 ## Access Model

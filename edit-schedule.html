@@ -1519,6 +1519,13 @@
                 color: #24190f;
             }
 
+            .availability-card {
+                background: #e6fffa;
+                border: 1px solid rgba(49, 151, 149, 0.34);
+                color: #234e52;
+                cursor: default;
+            }
+
             .add-shift-btn {
                 background: rgba(255, 250, 241, 0.72);
                 border: 1px dashed rgba(132, 111, 82, 0.42);
@@ -2234,6 +2241,18 @@
                                 aria-label="Toggle visibility of days off on calendar"
                             />
                             <span class="toggle-label">Show Time Off</span>
+                        </label>
+                    </div>
+                    <div class="section">
+                        <label class="sidebar-toggle">
+                            <input
+                                type="checkbox"
+                                id="showAvailabilityCheckbox"
+                                checked
+                                onchange="toggleAvailability()"
+                                aria-label="Toggle visibility of availability on calendar"
+                            />
+                            <span class="toggle-label">Show Availability</span>
                         </label>
                     </div>
 
@@ -2976,7 +2995,7 @@
         </div>
 
         <script>
-            const APP_VERSION = "v2.2";
+            const APP_VERSION = "v2.3";
             console.log(`Schedule Edit App Version: ${APP_VERSION}`);
 
             function isEmbeddedInWix() {
@@ -3099,6 +3118,7 @@
 
             let employees = [];
             let shifts = [];
+            let availability = [];
             let closedDays = [];
             let currentStartDate = new Date();
             let currentEndDate = new Date();
@@ -3111,6 +3131,7 @@
             let undoStack = [];
             let maxUndoSteps = 20;
             let showDayOffs = true; // Track whether to show days off
+            let showAvailability = true;
             const TIME_OFF_PERIOD_LABELS = {
                 "full-day": "Full Day",
                 morning: "Morning",
@@ -3246,6 +3267,28 @@
                             timeOffPeriod: "evening",
                         },
                     ]),
+                    availability: [
+                        {
+                            id: 3000,
+                            wixId: null,
+                            employeeId: 1000,
+                            employeeName: employeeName(1000),
+                            date: formatMockDate(2),
+                            availabilityPeriod: "full-day",
+                            submittedAt: new Date().toISOString(),
+                            submittedBy: employeeName(1000),
+                        },
+                        {
+                            id: 3001,
+                            wixId: null,
+                            employeeId: 1004,
+                            employeeName: employeeName(1004),
+                            date: formatMockDate(6),
+                            availabilityPeriod: "evening",
+                            submittedAt: new Date().toISOString(),
+                            submittedBy: employeeName(1004),
+                        },
+                    ],
                 };
             }
 
@@ -3556,6 +3599,12 @@
                 shifts = (data.shifts || []).map((shift) => ({
                     ...shift,
                     timeOffPeriod: normalizeTimeOffPeriod(shift.timeOffPeriod),
+                }));
+                availability = (data.availability || []).map((item) => ({
+                    ...item,
+                    availabilityPeriod: normalizeTimeOffPeriod(
+                        item.availabilityPeriod,
+                    ),
                 }));
                 closedDays = normalizeClosedDays(data.closedDays || []);
 
@@ -4344,6 +4393,13 @@
                 renderCalendar();
             }
 
+            function toggleAvailability() {
+                showAvailability = document.getElementById(
+                    "showAvailabilityCheckbox",
+                ).checked;
+                renderCalendar();
+            }
+
             function toggleDrawer(drawerId) {
                 const drawer = document.getElementById(drawerId);
                 const toggle = document.getElementById(drawerId + "Toggle");
@@ -4856,6 +4912,13 @@
 
             function formatTimeOffPeriod(period) {
                 return TIME_OFF_PERIOD_LABELS[normalizeTimeOffPeriod(period)];
+            }
+
+            function getPeriodSortValue(period) {
+                const normalized = normalizeTimeOffPeriod(period);
+                if (normalized === "full-day") return 0;
+                if (normalized === "morning") return 1;
+                return 2;
             }
 
             function timeOffPeriodsConflict(requestedPeriod, existingPeriod) {
@@ -6316,6 +6379,27 @@
                                 return 0;
                             });
 
+                        const dayAvailability = availability
+                            .filter((item) => {
+                                if (dayIsClosed) return false;
+                                if (!showAvailability) return false;
+                                if (item.date !== dateStr) return false;
+                                if (selectedEmployees.size === 0) return false;
+                                return selectedEmployees.has(item.employeeId);
+                            })
+                            .sort((a, b) => {
+                                const employeeCompare =
+                                    a.employeeName.localeCompare(
+                                        b.employeeName,
+                                    );
+                                if (employeeCompare !== 0) {
+                                    return employeeCompare;
+                                }
+                                return getPeriodSortValue(
+                                    a.availabilityPeriod,
+                                ) - getPeriodSortValue(b.availabilityPeriod);
+                            });
+
                         calendarHTML += `
                         <div class="day-column">
                             <div style="padding: 8px; font-weight: 600; color: #2d3748; border-bottom: 1px solid #e2e8f0;">
@@ -6414,6 +6498,18 @@
                                         style="background: ${bgColor};">
                                         <div class="shift-employee">${shift.employeeName}</div>
                                         <div class="shift-time">${shiftText}</div>
+                                     </div>
+                                 `;
+                                              })
+                                              .join("") +
+                                          dayAvailability
+                                              .map((item) => {
+                                                  return `
+                                    <div class="shift-card availability-card">
+                                        <div class="shift-employee">${item.employeeName}</div>
+                                        <div class="shift-time">AVAILABLE - ${formatTimeOffPeriod(
+                                            item.availabilityPeriod,
+                                        ).toUpperCase()}</div>
                                      </div>
                                  `;
                                               })
