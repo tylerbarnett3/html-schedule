@@ -3420,18 +3420,13 @@
                 showLoading();
             }
 
-            function cancelTimeOffRequest(shiftId, employeeName) {
-                const shift = shifts.find((s) => s.id === shiftId);
-                if (!shift) return;
-
-                cancelingShiftId = shiftId;
-                cancelingEmployeeName = employeeName;
-                cancelingAvailabilityId = null;
-                cancelingAvailabilityName = null;
-
+            function prepareCancelConfirmModal() {
                 const select = document.getElementById("cancelConfirmName");
+                const isAvailability = cancelingAvailabilityId !== null;
                 document.getElementById("cancelConfirmMessage").textContent =
-                    "To cancel this time-off request, please select your name to confirm:";
+                    isAvailability
+                        ? "To cancel this availability, please select your name to confirm:"
+                        : "To cancel this time-off request, please select your name to confirm:";
                 const activeEmployees = employees.filter((e) => !e.archived);
                 select.innerHTML =
                     '<option value="">Select your name</option>' +
@@ -3441,6 +3436,18 @@
                                 `<option value="${e.name}">${e.name}</option>`,
                         )
                         .join("");
+            }
+
+            function cancelTimeOffRequest(shiftId, employeeName) {
+                const shift = shifts.find((s) => s.id === shiftId);
+                if (!shift) return;
+
+                cancelingShiftId = shiftId;
+                cancelingEmployeeName = employeeName;
+                cancelingAvailabilityId = null;
+                cancelingAvailabilityName = null;
+
+                prepareCancelConfirmModal();
 
                 openFloatingModal("cancelConfirmModal");
             }
@@ -3454,18 +3461,7 @@
                 cancelingShiftId = null;
                 cancelingEmployeeName = null;
 
-                const select = document.getElementById("cancelConfirmName");
-                document.getElementById("cancelConfirmMessage").textContent =
-                    "To cancel this availability, please select your name to confirm:";
-                const activeEmployees = employees.filter((e) => !e.archived);
-                select.innerHTML =
-                    '<option value="">Select your name</option>' +
-                    activeEmployees
-                        .map(
-                            (e) =>
-                                `<option value="${e.name}">${e.name}</option>`,
-                        )
-                        .join("");
+                prepareCancelConfirmModal();
 
                 openFloatingModal("cancelConfirmModal");
             }
