@@ -566,10 +566,6 @@ function normalizeClosedDays(days) {
     }).filter(Boolean))].sort();
 }
 
-function normalizeTimeOffPeriod(period) {
-    return ['full-day', 'morning', 'evening'].includes(period) ? period : 'full-day';
-}
-
 async function loadFromDatabase() {
     try {
         const cleanup = await pruneOldShifts();
@@ -674,6 +670,9 @@ async function loadFromDatabase() {
             const wixEmployeeId = item.employee._id || item.employee;
             const localEmployeeId = employeeIdMap[wixEmployeeId];
             const employee = employeesData.find(e => e.id === localEmployeeId);
+            const availabilityPeriod = ['full-day', 'morning', 'evening'].includes(item.availabilityPeriod)
+                ? item.availabilityPeriod
+                : 'full-day';
 
             return {
                 id: Date.now() + index + 200000,
@@ -681,7 +680,7 @@ async function loadFromDatabase() {
                 employeeId: localEmployeeId,
                 employeeName: employee?.name || 'Unknown',
                 date: item.date,
-                availabilityPeriod: normalizeTimeOffPeriod(item.availabilityPeriod),
+                availabilityPeriod,
                 submittedAt: item.submittedAt || null,
                 submittedBy: item.submittedBy || employee?.name || null
             };
