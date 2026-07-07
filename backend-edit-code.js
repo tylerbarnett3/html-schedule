@@ -566,6 +566,10 @@ function normalizeClosedDays(days) {
     }).filter(Boolean))].sort();
 }
 
+function normalizeTimeOffPeriod(period) {
+    return ['full-day', 'morning', 'evening'].includes(period) ? period : 'full-day';
+}
+
 async function loadFromDatabase() {
     try {
         const cleanup = await pruneOldShifts();
