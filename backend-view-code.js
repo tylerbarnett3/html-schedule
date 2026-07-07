@@ -1,6 +1,6 @@
 import wixData from 'wix-data';
 
-const APP_VERSION = 'v2.2';
+const APP_VERSION = 'v2.3';
 
 $w.onReady(function () {
     const iframe = $w('#html1');
