@@ -300,6 +300,59 @@
                 }
             }
 
+            .toast {
+                position: fixed;
+                top: 20px;
+                right: 20px;
+                z-index: 10001;
+                display: flex;
+                align-items: center;
+                gap: 12px;
+                max-width: 400px;
+                padding: 16px 24px;
+                border-radius: 14px;
+                background: #fffaf1;
+                border: 1px solid rgba(104, 78, 45, 0.16);
+                box-shadow: 0 18px 40px rgba(58, 39, 21, 0.18);
+                color: #2d2117;
+                opacity: 0;
+                transform: translateX(400px);
+                transition:
+                    opacity 0.3s ease,
+                    transform 0.3s ease;
+            }
+
+            .toast.show {
+                opacity: 1;
+                transform: translateX(0);
+            }
+
+            .toast.success {
+                border-left: 5px solid #2f855a;
+            }
+
+            .toast.info {
+                border-left: 5px solid #2b6cb0;
+            }
+
+            .toast-content {
+                flex: 1;
+                min-width: 0;
+            }
+
+            .toast-title {
+                font-size: 14px;
+                font-weight: 800;
+                line-height: 1.25;
+            }
+
+            .toast-message {
+                margin-top: 3px;
+                color: #5f4b35;
+                font-size: 13px;
+                line-height: 1.35;
+            }
+
             .modal-overlay {
                 z-index: 999;
             }
@@ -490,6 +543,18 @@
                 .modal-content {
                     width: 300px;
                     max-height: 60vh;
+                }
+
+                .toast {
+                    top: 10px;
+                    left: 10px;
+                    right: 10px;
+                    max-width: none;
+                    transform: translateY(-100px);
+                }
+
+                .toast.show {
+                    transform: translateY(0);
                 }
             }
 
@@ -1994,6 +2059,39 @@
                     .classList.remove("active");
             }
 
+            function showToast(title, message = "", type = "success") {
+                document
+                    .querySelectorAll(".toast")
+                    .forEach((toast) => toast.remove());
+
+                const toast = document.createElement("div");
+                toast.className = `toast ${type}`;
+
+                const content = document.createElement("div");
+                content.className = "toast-content";
+
+                const titleEl = document.createElement("div");
+                titleEl.className = "toast-title";
+                titleEl.textContent = title;
+                content.appendChild(titleEl);
+
+                if (message) {
+                    const messageEl = document.createElement("div");
+                    messageEl.className = "toast-message";
+                    messageEl.textContent = message;
+                    content.appendChild(messageEl);
+                }
+
+                toast.appendChild(content);
+                document.body.appendChild(toast);
+
+                setTimeout(() => toast.classList.add("show"), 10);
+                setTimeout(() => {
+                    toast.classList.remove("show");
+                    setTimeout(() => toast.remove(), 300);
+                }, 3000);
+            }
+
             // Floating modal positioning
             let lastClickEvent = null;
             let timeOffRequestModalHome = null;
@@ -2195,13 +2293,14 @@
                     if (submittedDates.length > 0 && skippedDates.length > 0) {
                         selectedDates = [];
                         closeTimeOffRequestModal();
-                        alert(
-                            `Time-off request submitted. Skipped dates that are closed or already had a pending or approved request: ${skippedText}`,
+                        showToast(
+                            "Time-off request submitted",
+                            `Skipped dates that are closed or already had a pending or approved request: ${skippedText}`,
                         );
                     } else if (submittedDates.length > 0) {
                         selectedDates = [];
                         closeTimeOffRequestModal();
-                        alert(
+                        showToast(
                             "Time-off request submitted! Your manager will review it shortly.",
                         );
                     } else if (skippedDates.length > 0) {
@@ -2230,10 +2329,11 @@
                     if (submittedDates.length > 0) {
                         selectedAvailabilityDates = [];
                         closeAvailabilityModal();
-                        alert(
+                        showToast(
+                            "Availability added",
                             skippedDates.length > 0
-                                ? `Availability saved. Skipped dates that were closed or already had overlapping availability: ${skippedText}`
-                                : "Availability saved.",
+                                ? `Skipped dates that were closed or already had overlapping availability: ${skippedText}`
+                                : "",
                         );
                     } else {
                         hideLoading();
@@ -2247,7 +2347,7 @@
                     event.data &&
                     event.data.action === "AVAILABILITY_CANCELLED"
                 ) {
-                    loadFromDatabase();
+                    hideLoading();
                 } else if (
                     event.data &&
                     event.data.action === "AVAILABILITY_ERROR"
@@ -3287,7 +3387,7 @@
                     selectedAvailabilityDates = [];
                     closeAvailabilityModal();
                     renderCalendar();
-                    alert("Availability saved.");
+                    showToast("Availability added");
                     return;
                 }
 
@@ -3397,7 +3497,7 @@
                     selectedDates = [];
                     closeTimeOffRequestModal();
                     renderCalendar();
-                    alert(
+                    showToast(
                         "Time-off request submitted! Your manager will review it shortly.",
                     );
                     return;
@@ -3500,7 +3600,7 @@
                         );
                         closeCancelConfirmModal();
                         renderCalendar();
-                        alert("Availability removed.");
+                        showToast("Availability removed");
                         return;
                     }
 
@@ -3518,7 +3618,7 @@
                     );
 
                     closeCancelConfirmModal();
-                    alert("Availability removed.");
+                    showToast("Availability removed");
                     return;
                 }
 
@@ -3528,7 +3628,7 @@
                     shifts = shifts.filter((s) => s.id !== cancelingShiftId);
                     closeCancelConfirmModal();
                     renderCalendar();
-                    alert("Time-off request cancelled.");
+                    showToast("Time-off request cancelled");
                     return;
                 }
 
@@ -3546,7 +3646,7 @@
 
                 closeCancelConfirmModal();
 
-                alert("Time-off request cancelled.");
+                showToast("Time-off request cancelled");
             }
 
             // Initialize - Auto-load on page load
