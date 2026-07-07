@@ -1749,7 +1749,10 @@
                 <div class="modal-header">
                     <h2>Confirm Cancellation</h2>
                 </div>
-                <p style="margin-bottom: 20px; color: #4a5568">
+                <p
+                    id="cancelConfirmMessage"
+                    style="margin-bottom: 20px; color: #4a5568"
+                >
                     To cancel this time-off request, please select your name to
                     confirm:
                 </p>
@@ -3427,6 +3430,8 @@
                 cancelingAvailabilityName = null;
 
                 const select = document.getElementById("cancelConfirmName");
+                document.getElementById("cancelConfirmMessage").textContent =
+                    "To cancel this time-off request, please select your name to confirm:";
                 const activeEmployees = employees.filter((e) => !e.archived);
                 select.innerHTML =
                     '<option value="">Select your name</option>' +
@@ -3450,6 +3455,8 @@
                 cancelingEmployeeName = null;
 
                 const select = document.getElementById("cancelConfirmName");
+                document.getElementById("cancelConfirmMessage").textContent =
+                    "To cancel this availability, please select your name to confirm:";
                 const activeEmployees = employees.filter((e) => !e.archived);
                 select.innerHTML =
                     '<option value="">Select your name</option>' +
