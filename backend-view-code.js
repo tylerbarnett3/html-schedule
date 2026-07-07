@@ -1,6 +1,6 @@
 import wixData from 'wix-data';
 
-const APP_VERSION = 'v2.1';
+const APP_VERSION = 'v2.2';
 
 $w.onReady(function () {
     const iframe = $w('#html1');
@@ -23,6 +23,14 @@ $w.onReady(function () {
         // Handle time-off request cancellation
         if (action === 'CANCEL_TIME_OFF_REQUEST') {
             await handleCancelRequest(event.data.shiftData);
+        }
+
+        if (action === 'SUBMIT_AVAILABILITY') {
+            await handleAvailabilitySubmit(event.data.data);
+        }
+
+        if (action === 'CANCEL_AVAILABILITY') {
+            await handleAvailabilityCancel(event.data.data);
         }
     });
     
@@ -70,6 +78,8 @@ async function loadFromDatabase() {
             allShifts = allShifts.concat(shiftsResult.items);
         }
 
+        const allAvailability = await loadAllAvailability();
+
         const closedDays = normalizeClosedDays(
             (await loadAllClosedDays()).map(day => day.date)
         );
@@ -116,11 +126,29 @@ async function loadFromDatabase() {
                 timeOffPeriod: shift.timeOffPeriod || 'full-day'
             };
         }).filter(shift => shift.employeeId !== undefined);
+
+        const availabilityData = allAvailability.map((item, index) => {
+            const wixEmployeeId = item.employee._id || item.employee;
+            const localEmployeeId = employeeIdMap[wixEmployeeId];
+            const employee = employeesData.find(e => e.id === localEmployeeId);
+
+            return {
+                id: Date.now() + index + 200000,
+                wixId: item._id,
+                employeeId: localEmployeeId,
+                employeeName: employee?.name || 'Unknown',
+                date: item.date,
+                availabilityPeriod: normalizeTimeOffPeriod(item.availabilityPeriod),
+                submittedAt: item.submittedAt || null,
+                submittedBy: item.submittedBy || employee?.name || null
+            };
+        }).filter(item => item.employeeId !== undefined);
         
         $w('#html1').postMessage({
             action: 'LOAD_COMPLETE',
             employees: employeesData,
             shifts: shiftsData,
+            availability: availabilityData,
             closedDays: closedDays,
             appVersion: APP_VERSION
         });
@@ -128,6 +156,22 @@ async function loadFromDatabase() {
     } catch (error) {
         console.error('Load error:', error);
     }
+}
+
+async function loadAllAvailability() {
+    let allAvailability = [];
+    let availabilityQuery = wixData.query('Availability')
+        .include('employee')
+        .limit(100);
+    let availabilityResult = await availabilityQuery.find();
+    allAvailability = allAvailability.concat(availabilityResult.items);
+
+    while (availabilityResult.hasNext()) {
+        availabilityResult = await availabilityResult.next();
+        allAvailability = allAvailability.concat(availabilityResult.items);
+    }
+
+    return allAvailability;
 }
 
 async function loadAllClosedDays() {
@@ -166,6 +210,128 @@ function timeOffPeriodsConflict(requestedPeriod, existingPeriod) {
         existing === 'full-day' ||
         requested === existing
     );
+}
+
+function availabilityPeriodsOverlap(requestedPeriod, existingPeriod) {
+    return timeOffPeriodsConflict(requestedPeriod, existingPeriod);
+}
+
+async function handleAvailabilitySubmit(requestData) {
+    const { employeeName, dates, submittedAt } = requestData;
+    const availabilityPeriod = normalizeTimeOffPeriod(requestData.availabilityPeriod);
+
+    try {
+        const employeeQuery = await wixData.query('Employees')
+            .eq('name', employeeName)
+            .find();
+
+        if (employeeQuery.items.length === 0) {
+            $w('#html1').postMessage({
+                action: 'AVAILABILITY_ERROR',
+                message: 'Employee not found in database'
+            });
+            return;
+        }
+
+        const wixEmployeeId = employeeQuery.items[0]._id;
+        const skippedDates = [];
+        const submittedDates = [];
+        const closedDays = normalizeClosedDays(
+            (await loadAllClosedDays()).map(day => day.date)
+        );
+        const closedDateSet = new Set(closedDays);
+
+        for (let date of dates) {
+            if (closedDateSet.has(date)) {
+                skippedDates.push(date);
+                continue;
+            }
+
+            const existingAvailability = await wixData.query('Availability')
+                .eq('employee', wixEmployeeId)
+                .eq('date', date)
+                .find();
+
+            const hasOverlap = existingAvailability.items.some(item => {
+                return availabilityPeriodsOverlap(
+                    availabilityPeriod,
+                    item.availabilityPeriod
+                );
+            });
+
+            if (hasOverlap) {
+                skippedDates.push(date);
+                continue;
+            }
+
+            await wixData.insert('Availability', {
+                employee: wixEmployeeId,
+                date,
+                availabilityPeriod,
+                submittedAt: submittedAt || new Date().toISOString(),
+                submittedBy: employeeName
+            });
+            submittedDates.push(date);
+        }
+
+        $w('#html1').postMessage({
+            action: 'AVAILABILITY_SUBMITTED',
+            submittedDates,
+            skippedDates
+        });
+
+        await loadFromDatabase();
+    } catch (error) {
+        console.error('❌ Error submitting availability:', error);
+        $w('#html1').postMessage({
+            action: 'AVAILABILITY_ERROR',
+            message: error.message
+        });
+    }
+}
+
+async function handleAvailabilityCancel(data) {
+    try {
+        if (data.wixId) {
+            await wixData.remove('Availability', data.wixId);
+            $w('#html1').postMessage({ action: 'AVAILABILITY_CANCELLED' });
+            await loadFromDatabase();
+            return;
+        }
+
+        const employeeQuery = await wixData.query('Employees')
+            .eq('name', data.employeeName)
+            .find();
+
+        if (employeeQuery.items.length === 0) {
+            $w('#html1').postMessage({
+                action: 'AVAILABILITY_ERROR',
+                message: 'Employee not found in database'
+            });
+            return;
+        }
+
+        const wixEmployeeId = employeeQuery.items[0]._id;
+        const availabilityPeriod = normalizeTimeOffPeriod(data.availabilityPeriod);
+        const existing = await wixData.query('Availability')
+            .eq('employee', wixEmployeeId)
+            .eq('date', data.date)
+            .eq('availabilityPeriod', availabilityPeriod)
+            .find();
+
+        if (existing.items.length > 0) {
+            await wixData.remove('Availability', existing.items[0]._id);
+        }
+
+        $w('#html1').postMessage({ action: 'AVAILABILITY_CANCELLED' });
+        await loadFromDatabase();
+    } catch (error) {
+        console.error('❌ Error cancelling availability:', error);
+        $w('#html1').postMessage({
+            action: 'AVAILABILITY_ERROR',
+            message: error.message
+        });
+    }
 }
 
 async function handleTimeOffRequest(requestData) {

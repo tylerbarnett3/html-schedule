@@ -1,6 +1,6 @@
 import wixData from 'wix-data';
 
-const APP_VERSION = 'v2.2';
+const APP_VERSION = 'v2.3';
 const SHIFT_RETENTION_DAYS = 90;
 
 $w.onReady(function () {
@@ -599,6 +599,7 @@ async function loadFromDatabase() {
         }
         
         const allRates = await loadAllEmployeeRates();
+        const allAvailability = await loadAllAvailability();
         const closedDays = normalizeClosedDays(
             (await loadAllClosedDays()).map(day => day.date)
         );
@@ -664,11 +665,29 @@ async function loadFromDatabase() {
                 timeOffPeriod: shift.timeOffPeriod || 'full-day'
             };
         }).filter(shift => shift.employeeId !== undefined); // Filter out shifts with no valid employee
+
+        const availabilityData = allAvailability.map((item, index) => {
+            const wixEmployeeId = item.employee._id || item.employee;
+            const localEmployeeId = employeeIdMap[wixEmployeeId];
+            const employee = employeesData.find(e => e.id === localEmployeeId);
+
+            return {
+                id: Date.now() + index + 200000,
+                wixId: item._id,
+                employeeId: localEmployeeId,
+                employeeName: employee?.name || 'Unknown',
+                date: item.date,
+                availabilityPeriod: normalizeTimeOffPeriod(item.availabilityPeriod),
+                submittedAt: item.submittedAt || null,
+                submittedBy: item.submittedBy || employee?.name || null
+            };
+        }).filter(item => item.employeeId !== undefined);
         
         $w('#html1').postMessage({
             action: 'LOAD_COMPLETE',
             employees: employeesData,
             shifts: shiftsData,
+            availability: availabilityData,
             closedDays: closedDays,
             appVersion: APP_VERSION,
             cleanup
@@ -705,6 +724,22 @@ async function loadAllClosedDays() {
     }
 
     return allClosedDays;
+}
+
+async function loadAllAvailability() {
+    let allAvailability = [];
+    let availabilityQuery = wixData.query('Availability')
+        .include('employee')
+        .limit(100);
+    let availabilityResult = await availabilityQuery.find();
+    allAvailability = allAvailability.concat(availabilityResult.items);
+
+    while (availabilityResult.hasNext()) {
+        availabilityResult = await availabilityResult.next();
+        allAvailability = allAvailability.concat(availabilityResult.items);
+    }
+
+    return allAvailability;
 }
 
 async function pruneOldShifts() {
