@@ -568,6 +568,18 @@
                 margin-bottom: 8px;
             }
 
+            .request-item-time-off {
+                background: #fff4f1;
+                border-left: 4px solid var(--red);
+                color: #5f241f;
+            }
+
+            .request-item-availability {
+                background: #ecfbf8;
+                border-left: 4px solid #319795;
+                color: #234e52;
+            }
+
             .request-header {
                 justify-content: space-between;
                 align-items: start;
@@ -579,8 +591,34 @@
             }
 
             .request-dates {
-                font-size: 13px;
+                display: flex;
+                align-items: center;
+                gap: 8px;
+                flex-wrap: wrap;
+                font-size: 14px;
+                font-weight: 600;
                 margin-bottom: 8px;
+            }
+
+            .request-type-pill {
+                display: inline-flex;
+                align-items: center;
+                border-radius: 999px;
+                padding: 3px 8px;
+                font-size: 11px;
+                font-weight: 800;
+                text-transform: uppercase;
+                letter-spacing: 0.04em;
+            }
+
+            .request-item-time-off .request-type-pill {
+                background: rgba(207, 84, 72, 0.14);
+                color: #8f3028;
+            }
+
+            .request-item-availability .request-type-pill {
+                background: rgba(49, 151, 149, 0.16);
+                color: #235f61;
             }
 
             .approve-deny-btn {
@@ -1578,6 +1616,11 @@
             .request-tabs {
                 background: #efe4d2;
                 border-radius: 999px;
+            }
+
+            .request-tab {
+                background: transparent;
+                color: var(--clay-800);
             }
 
             .request-tab.active,
@@ -6883,13 +6926,17 @@
                 return timeOffRequests
                     .concat(availabilityRequests)
                     .sort((a, b) => {
+                        const typeOrder = {
+                            "time-off": 0,
+                            availability: 1,
+                        };
                         const dateCompare = a.date.localeCompare(b.date);
                         if (dateCompare !== 0) return dateCompare;
                         const employeeCompare = a.employeeName.localeCompare(
                             b.employeeName,
                         );
                         if (employeeCompare !== 0) return employeeCompare;
-                        return a.typeLabel.localeCompare(b.typeLabel);
+                        return typeOrder[a.type] - typeOrder[b.type];
                     });
             }
 
@@ -6926,17 +6973,18 @@
                             : "Unknown";
 
                         return `
-                    <div class="request-item">
+                    <div class="request-item request-item-${req.type}">
                         <div class="request-header">
                             <strong>${req.employeeName}</strong>
                             <span class="request-date">Requested: ${formattedRequestDate}</span>
                         </div>
-                        <div class="request-dates" style="font-weight: 600; font-size: 14px;">
-                            ${req.typeLabel}: ${formattedDate} - ${formatTimeOffPeriod(
+                        <div class="request-dates">
+                            <span class="request-type-pill">${req.typeLabel}</span>
+                            <span>${formattedDate} - ${formatTimeOffPeriod(
                                 req.type === "availability"
                                     ? req.availabilityPeriod
                                     : req.timeOffPeriod,
-                            )}
+                            )}</span>
                         </div>
                         ${
                             showActions
@@ -6965,13 +7013,10 @@
             function showRequestTab(tabName) {
                 document.querySelectorAll(".request-tab").forEach((btn) => {
                     btn.classList.remove("active");
-                    btn.style.background = "white";
                 });
                 document
                     .getElementById(tabName + "Tab")
                     .classList.add("active");
-                document.getElementById(tabName + "Tab").style.background =
-                    "#f7fafc";
 
                 document.getElementById("pendingRequestsList").style.display =
                     tabName === "pending" ? "block" : "none";
