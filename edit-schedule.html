@@ -1526,6 +1526,12 @@
                 cursor: default;
             }
 
+            .availability-card.pending-availability {
+                background: #fef3c7;
+                border-color: rgba(217, 119, 6, 0.42);
+                color: #78350f;
+            }
+
             .add-shift-btn {
                 background: rgba(255, 250, 241, 0.72);
                 border: 1px dashed rgba(132, 111, 82, 0.42);
@@ -2383,7 +2389,7 @@
                         </div>
                     </div>
 
-                    <!-- Time-Off Requests Drawer -->
+                    <!-- Requests Drawer -->
                     <div class="section">
                         <div
                             class="drawer-header"
@@ -2409,7 +2415,7 @@
                                         d="M6.75 3v2.25M17.25 3v2.25M3 18.75V7.5a2.25 2.25 0 0 1 2.25-2.25h13.5A2.25 2.25 0 0 1 21 7.5v11.25m-18 0A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75m-18 0v-7.5A2.25 2.25 0 0 1 5.25 9h13.5A2.25 2.25 0 0 1 21 11.25v7.5"
                                     />
                                 </svg>
-                                Time-Off Requests
+                                Requests
                             </h3>
                             <span
                                 class="drawer-toggle"
@@ -3275,8 +3281,9 @@
                             employeeName: employeeName(1000),
                             date: formatMockDate(2),
                             availabilityPeriod: "full-day",
-                            submittedAt: new Date().toISOString(),
-                            submittedBy: employeeName(1000),
+                            requestStatus: "approved",
+                            requestDate: new Date().toISOString(),
+                            requestedBy: employeeName(1000),
                         },
                         {
                             id: 3001,
@@ -3285,8 +3292,9 @@
                             employeeName: employeeName(1004),
                             date: formatMockDate(6),
                             availabilityPeriod: "evening",
-                            submittedAt: new Date().toISOString(),
-                            submittedBy: employeeName(1004),
+                            requestStatus: "pending",
+                            requestDate: new Date().toISOString(),
+                            requestedBy: employeeName(1004),
                         },
                     ],
                 };
@@ -3510,6 +3518,22 @@
                 });
             }
 
+            function approveAvailabilityRequestInWix(item) {
+                if (!item || !item.wixId) return;
+
+                sendToWix("APPROVE_AVAILABILITY_REQUEST", {
+                    wixId: item.wixId,
+                });
+            }
+
+            function denyAvailabilityRequestInWix(item) {
+                if (!item || !item.wixId) return;
+
+                sendToWix("DENY_AVAILABILITY_REQUEST", {
+                    wixId: item.wixId,
+                });
+            }
+
             function deleteEmployeeFromWix(employee) {
                 if (!employee || !employee.wixId) return;
 
@@ -3605,6 +3629,7 @@
                     availabilityPeriod: normalizeTimeOffPeriod(
                         item.availabilityPeriod,
                     ),
+                    requestStatus: item.requestStatus || "approved",
                 }));
                 closedDays = normalizeClosedDays(data.closedDays || []);
 
@@ -6504,10 +6529,17 @@
                                               .join("") +
                                           dayAvailability
                                               .map((item) => {
+                                                  const isPendingAvailability =
+                                                      item.requestStatus ===
+                                                      "pending";
+                                                  const availabilityText =
+                                                      isPendingAvailability
+                                                          ? "PENDING AVAILABILITY"
+                                                          : "AVAILABLE";
                                                   return `
-                                    <div class="shift-card availability-card">
+                                    <div class="shift-card availability-card ${isPendingAvailability ? "pending-availability" : ""}">
                                         <div class="shift-employee">${item.employeeName}</div>
-                                        <div class="shift-time">AVAILABLE - ${formatTimeOffPeriod(
+                                        <div class="shift-time">${availabilityText} - ${formatTimeOffPeriod(
                                             item.availabilityPeriod,
                                         ).toUpperCase()}</div>
                                      </div>
@@ -6663,6 +6695,26 @@
                                 "There was an error deleting this time-off request",
                             "error",
                         );
+                    } else if (
+                        event.data.action ===
+                            "APPROVE_AVAILABILITY_REQUEST_COMPLETE" ||
+                        event.data.action ===
+                            "DENY_AVAILABILITY_REQUEST_COMPLETE"
+                    ) {
+                        loadFromDatabase();
+                    } else if (
+                        event.data.action ===
+                            "APPROVE_AVAILABILITY_REQUEST_ERROR" ||
+                        event.data.action ===
+                            "DENY_AVAILABILITY_REQUEST_ERROR"
+                    ) {
+                        showToast(
+                            "Availability Update Failed",
+                            event.data.message ||
+                                "There was an error updating this availability request",
+                            "error",
+                        );
+                        loadFromDatabase();
                     } else if (event.data.action === "DELETE_EMPLOYEE_ERROR") {
                         showToast(
                             "Delete Failed",
@@ -6765,9 +6817,9 @@
                 }, 250);
             });
 
-            // Time-Off Request Management Functions
+            // Request Management Functions
             function renderTimeOffDrawer() {
-                const individualRequests = getIndividualTimeOffRequests();
+                const individualRequests = getIndividualRequests();
 
                 const pending = individualRequests.filter(
                     (r) => r.status === "pending",
@@ -6784,24 +6836,23 @@
                 renderRequestList("approvedRequestsList", approved, false);
             }
 
-            function getIndividualTimeOffRequests() {
-                // Return each day as an individual request item (no grouping)
-                return shifts
+            function getIndividualRequests() {
+                const timeOffRequests = shifts
                     .filter((shift) => {
-                        // Include pending time-off requests
                         if (
                             shift.isTimeOffRequest &&
                             shift.requestStatus === "pending"
                         ) {
                             return true;
                         }
-                        // Include approved requests (for history tab)
                         if (shift.requestStatus === "approved") {
                             return true;
                         }
                         return false;
                     })
                     .map((shift) => ({
+                        type: "time-off",
+                        typeLabel: "Time Off",
                         shiftId: shift.id,
                         employeeName: shift.employeeName,
                         employeeId: shift.employeeId,
@@ -6809,12 +6860,36 @@
                         status: shift.requestStatus,
                         date: shift.date,
                         timeOffPeriod: shift.timeOffPeriod,
-                    }))
+                    }));
+
+                const availabilityRequests = availability
+                    .filter(
+                        (item) =>
+                            item.requestStatus === "pending" ||
+                            item.requestStatus === "approved",
+                    )
+                    .map((item) => ({
+                        type: "availability",
+                        typeLabel: "Availability",
+                        availabilityId: item.id,
+                        employeeName: item.employeeName,
+                        employeeId: item.employeeId,
+                        requestDate: item.requestDate,
+                        status: item.requestStatus,
+                        date: item.date,
+                        availabilityPeriod: item.availabilityPeriod,
+                    }));
+
+                return timeOffRequests
+                    .concat(availabilityRequests)
                     .sort((a, b) => {
-                        // Sort by date first, then by employee name
                         const dateCompare = a.date.localeCompare(b.date);
                         if (dateCompare !== 0) return dateCompare;
-                        return a.employeeName.localeCompare(b.employeeName);
+                        const employeeCompare = a.employeeName.localeCompare(
+                            b.employeeName,
+                        );
+                        if (employeeCompare !== 0) return employeeCompare;
+                        return a.typeLabel.localeCompare(b.typeLabel);
                     });
             }
 
@@ -6857,21 +6932,25 @@
                             <span class="request-date">Requested: ${formattedRequestDate}</span>
                         </div>
                         <div class="request-dates" style="font-weight: 600; font-size: 14px;">
-                            ${formattedDate} - ${formatTimeOffPeriod(req.timeOffPeriod)}
+                            ${req.typeLabel}: ${formattedDate} - ${formatTimeOffPeriod(
+                                req.type === "availability"
+                                    ? req.availabilityPeriod
+                                    : req.timeOffPeriod,
+                            )}
                         </div>
                         ${
                             showActions
                                 ? `
                             <div class="request-actions">
-                                <button onclick="approveTimeOffRequest(${req.shiftId})"
+                                <button onclick="${req.type === "availability" ? `approveAvailabilityRequest(${req.availabilityId})` : `approveTimeOffRequest(${req.shiftId})`}"
                                         class="btn btn-success"
                                         style="flex: 1; padding: 6px; font-size: 13px;">
-                                    ✓ Approve
+                                    Approve
                                 </button>
-                                <button onclick="denyTimeOffRequest(${req.shiftId})"
+                                <button onclick="${req.type === "availability" ? `denyAvailabilityRequest(${req.availabilityId})` : `denyTimeOffRequest(${req.shiftId})`}"
                                         class="btn btn-delete"
                                         style="flex: 1; padding: 6px; font-size: 13px;">
-                                    ✗ Deny
+                                    Deny
                                 </button>
                             </div>
                         `
@@ -6992,6 +7071,49 @@
                         ? `Request denied and removed for ${employeeName}`
                         : `${shiftIds.length} requests denied and removed`;
                 showToast("Time Off Denied", message, "info");
+            }
+
+            function approveAvailabilityRequest(availabilityId) {
+                const item = availability.find((a) => a.id === availabilityId);
+                if (!item) return false;
+
+                saveState();
+                item.requestStatus = "approved";
+                approveAvailabilityRequestInWix(item);
+                renderCalendar();
+                renderTimeOffDrawer();
+
+                showToast(
+                    "Availability Approved",
+                    `Availability approved for ${item.employeeName}`,
+                    "success",
+                );
+                return true;
+            }
+
+            function denyAvailabilityRequest(availabilityId) {
+                const item = availability.find((a) => a.id === availabilityId);
+                if (!item) return;
+
+                if (
+                    !confirm(
+                        `Deny ${item.employeeName}'s availability request for this day? This will delete the request.`,
+                    )
+                ) {
+                    return;
+                }
+
+                saveState();
+                denyAvailabilityRequestInWix(item);
+                availability = availability.filter((a) => a.id !== availabilityId);
+                renderCalendar();
+                renderTimeOffDrawer();
+
+                showToast(
+                    "Availability Denied",
+                    `Request denied and removed for ${item.employeeName}`,
+                    "info",
+                );
             }
         </script>
         <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
