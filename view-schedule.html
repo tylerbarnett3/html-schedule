@@ -959,6 +959,12 @@
                 color: #234e52;
             }
 
+            .availability-card.pending-availability {
+                background: #fef3c7;
+                border-color: rgba(217, 119, 6, 0.42);
+                color: #78350f;
+            }
+
             .availability-card .shift-cancel {
                 border: 1px solid rgba(35, 78, 82, 0.45);
                 color: #111827;
@@ -1362,7 +1368,7 @@
                         font-size: 14px;
                     "
                 >
-                    Mark Availability
+                    Request Availability
                 </button>
             </div>
 
@@ -1635,7 +1641,7 @@
         <div class="modal" id="availabilityModal">
             <div class="modal-content">
                 <div class="modal-header">
-                    <h2>Mark Availability</h2>
+                    <h2>Request Availability</h2>
                 </div>
 
                 <div class="input-group">
@@ -1737,7 +1743,7 @@
                         class="btn btn-primary"
                         onclick="submitAvailability()"
                     >
-                        Save Availability
+                        Submit Request
                     </button>
                 </div>
             </div>
@@ -1932,8 +1938,9 @@
                             employeeName: employeeName(1000),
                             date: formatMockDate(2),
                             availabilityPeriod: "full-day",
-                            submittedAt: new Date().toISOString(),
-                            submittedBy: employeeName(1000),
+                            requestStatus: "approved",
+                            requestDate: new Date().toISOString(),
+                            requestedBy: employeeName(1000),
                         },
                         {
                             id: 3001,
@@ -1941,8 +1948,9 @@
                             employeeName: employeeName(1004),
                             date: formatMockDate(6),
                             availabilityPeriod: "evening",
-                            submittedAt: new Date().toISOString(),
-                            submittedBy: employeeName(1004),
+                            requestStatus: "pending",
+                            requestDate: new Date().toISOString(),
+                            requestedBy: employeeName(1004),
                         },
                     ],
                 };
@@ -1959,6 +1967,7 @@
                     availabilityPeriod: normalizeTimeOffPeriod(
                         item.availabilityPeriod,
                     ),
+                    requestStatus: item.requestStatus || "approved",
                 }));
                 closedDays = normalizeClosedDays(data.closedDays || []);
 
@@ -2232,15 +2241,15 @@
                         closeAvailabilityModal();
                         alert(
                             skippedDates.length > 0
-                                ? `Availability saved. Skipped dates that were closed or already had overlapping availability: ${skippedText}`
-                                : "Availability saved.",
+                                ? `Availability request submitted. Skipped dates that were closed or already had overlapping availability: ${skippedText}`
+                                : "Availability request submitted! Your manager will review it shortly.",
                         );
                     } else {
                         hideLoading();
                         alert(
                             skippedDates.length > 0
-                                ? `No new availability was saved. These dates were closed or already had overlapping availability: ${skippedText}`
-                                : "No availability was saved.",
+                                ? `No new availability requests were submitted. These dates were closed or already had overlapping availability: ${skippedText}`
+                                : "No availability requests were submitted.",
                         );
                     }
                 } else if (
@@ -2255,7 +2264,7 @@
                     hideLoading();
                     alert(
                         event.data.message ||
-                            "There was an error saving availability.",
+                            "There was an error submitting availability.",
                     );
                 }
             });
@@ -2785,13 +2794,24 @@
                                               .join("") +
                                           dayAvailability
                                               .map((item) => {
+                                                  const isPendingAvailability =
+                                                      item.requestStatus ===
+                                                      "pending";
+                                                  const availabilityText =
+                                                      isPendingAvailability
+                                                          ? "PENDING AVAILABILITY"
+                                                          : "AVAILABLE";
                                                   return `
-                                    <div class="shift-card availability-card">
+                                    <div class="shift-card availability-card ${isPendingAvailability ? "pending-availability" : ""}">
                                         <div class="shift-employee">${item.employeeName}</div>
-                                        <div class="shift-time">AVAILABLE - ${formatTimeOffPeriod(
+                                        <div class="shift-time">${availabilityText} - ${formatTimeOffPeriod(
                                             item.availabilityPeriod,
                                         ).toUpperCase()}</div>
-                                        <button class="shift-cancel" onclick="cancelAvailability(${item.id}, '${item.employeeName}')">Remove</button>
+                                        ${
+                                            isPendingAvailability
+                                                ? `<button class="shift-cancel" onclick="cancelAvailability(${item.id}, '${item.employeeName}')">Cancel Request</button>`
+                                                : ""
+                                        }
                                     </div>
                                 `;
                                               })
@@ -3279,15 +3299,18 @@
                             employeeName: employee.name,
                             date: dateStr,
                             availabilityPeriod,
-                            submittedAt: new Date().toISOString(),
-                            submittedBy: employee.name,
+                            requestStatus: "pending",
+                            requestDate: new Date().toISOString(),
+                            requestedBy: employee.name,
                         });
                     });
 
                     selectedAvailabilityDates = [];
                     closeAvailabilityModal();
                     renderCalendar();
-                    alert("Availability saved.");
+                    alert(
+                        "Availability request submitted! Your manager will review it shortly.",
+                    );
                     return;
                 }
 
@@ -3298,7 +3321,7 @@
                             employeeId,
                             employeeName: employee.name,
                             dates: selectedAvailabilityDates,
-                            submittedAt: new Date().toISOString(),
+                            requestDate: new Date().toISOString(),
                             availabilityPeriod,
                         },
                     },
@@ -3425,7 +3448,7 @@
                 const isAvailability = cancelingAvailabilityId !== null;
                 document.getElementById("cancelConfirmMessage").textContent =
                     isAvailability
-                        ? "To cancel this availability, please select your name to confirm:"
+                        ? "To cancel this availability request, please select your name to confirm:"
                         : "To cancel this time-off request, please select your name to confirm:";
                 const activeEmployees = employees.filter((e) => !e.archived);
                 select.innerHTML =
@@ -3500,7 +3523,7 @@
                         );
                         closeCancelConfirmModal();
                         renderCalendar();
-                        alert("Availability removed.");
+                        alert("Availability request cancelled.");
                         return;
                     }
 
@@ -3518,7 +3541,7 @@
                     );
 
                     closeCancelConfirmModal();
-                    alert("Availability removed.");
+                    alert("Availability request cancelled.");
                     return;
                 }
 

@@ -139,8 +139,9 @@ async function loadFromDatabase() {
                 employeeName: employee?.name || 'Unknown',
                 date: item.date,
                 availabilityPeriod: normalizeTimeOffPeriod(item.availabilityPeriod),
-                submittedAt: item.submittedAt || null,
-                submittedBy: item.submittedBy || employee?.name || null
+                requestStatus: item.requestStatus || 'approved',
+                requestDate: item.requestDate || null,
+                requestedBy: item.requestedBy || employee?.name || null
             };
         }).filter(item => item.employeeId !== undefined);
         
@@ -217,7 +218,7 @@ function availabilityPeriodsOverlap(requestedPeriod, existingPeriod) {
 }
 
 async function handleAvailabilitySubmit(requestData) {
-    const { employeeName, dates, submittedAt } = requestData;
+    const { employeeName, dates, requestDate } = requestData;
     const availabilityPeriod = normalizeTimeOffPeriod(requestData.availabilityPeriod);
 
     try {
@@ -250,6 +251,7 @@ async function handleAvailabilitySubmit(requestData) {
             const existingAvailability = await wixData.query('Availability')
                 .eq('employee', wixEmployeeId)
                 .eq('date', date)
+                .hasSome('requestStatus', ['pending', 'approved'])
                 .find();
 
             const hasOverlap = existingAvailability.items.some(item => {
@@ -268,8 +270,9 @@ async function handleAvailabilitySubmit(requestData) {
                 employee: wixEmployeeId,
                 date,
                 availabilityPeriod,
-                submittedAt: submittedAt || new Date().toISOString(),
-                submittedBy: employeeName
+                requestStatus: 'pending',
+                requestDate: requestDate || new Date().toISOString(),
+                requestedBy: employeeName
             });
             submittedDates.push(date);
         }
@@ -317,6 +320,7 @@ async function handleAvailabilityCancel(data) {
             .eq('employee', wixEmployeeId)
             .eq('date', data.date)
             .eq('availabilityPeriod', availabilityPeriod)
+            .eq('requestStatus', 'pending')
             .find();
 
         if (existing.items.length > 0) {

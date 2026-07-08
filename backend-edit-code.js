@@ -46,6 +46,22 @@ $w.onReady(function () {
                 console.error('Time-off request delete failed:', error);
                 iframe.postMessage({ action: 'DELETE_TIME_OFF_REQUESTS_ERROR', message: error.message });
             }
+        } else if (action === 'APPROVE_AVAILABILITY_REQUEST') {
+            try {
+                await approveAvailabilityRequest(data);
+                iframe.postMessage({ action: 'APPROVE_AVAILABILITY_REQUEST_COMPLETE' });
+            } catch (error) {
+                console.error('Availability approval failed:', error);
+                iframe.postMessage({ action: 'APPROVE_AVAILABILITY_REQUEST_ERROR', message: error.message });
+            }
+        } else if (action === 'DENY_AVAILABILITY_REQUEST') {
+            try {
+                await denyAvailabilityRequest(data);
+                iframe.postMessage({ action: 'DENY_AVAILABILITY_REQUEST_COMPLETE' });
+            } catch (error) {
+                console.error('Availability denial failed:', error);
+                iframe.postMessage({ action: 'DENY_AVAILABILITY_REQUEST_ERROR', message: error.message });
+            }
         } else if (action === 'DELETE_EMPLOYEE') {
             try {
                 await deleteEmployeeFromDatabase(data);
@@ -508,6 +524,28 @@ async function deleteTimeOffRequestsFromDatabase(data) {
     await bulkRemoveByIds('Shifts', wixIds);
 }
 
+async function approveAvailabilityRequest(data) {
+    const wixId = data?.wixId;
+    if (!wixId) {
+        return;
+    }
+
+    const item = await wixData.get('Availability', wixId);
+    await wixData.update('Availability', {
+        ...item,
+        requestStatus: 'approved'
+    });
+}
+
+async function denyAvailabilityRequest(data) {
+    const wixId = data?.wixId;
+    if (!wixId) {
+        return;
+    }
+
+    await wixData.remove('Availability', wixId);
+}
+
 async function deleteEmployeeFromDatabase(data) {
     const wixId = data?.wixId;
     if (!wixId) {
@@ -681,8 +719,9 @@ async function loadFromDatabase() {
                 employeeName: employee?.name || 'Unknown',
                 date: item.date,
                 availabilityPeriod,
-                submittedAt: item.submittedAt || null,
-                submittedBy: item.submittedBy || employee?.name || null
+                requestStatus: item.requestStatus || 'approved',
+                requestDate: item.requestDate || null,
+                requestedBy: item.requestedBy || employee?.name || null
             };
         }).filter(item => item.employeeId !== undefined);
         
