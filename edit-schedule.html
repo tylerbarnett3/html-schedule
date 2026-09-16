@@ -5949,6 +5949,15 @@
             `,
                     )
                     .join("");
+
+                // Explicitly reset live checkbox state so Safari cannot restore
+                // selections from the previous time the modal was open.
+                list
+                    .querySelectorAll(".shift-employee-checkbox")
+                    .forEach((checkbox) => {
+                        checkbox.checked = false;
+                        checkbox.indeterminate = false;
+                    });
             }
 
             function openShiftModal(dateStr) {
