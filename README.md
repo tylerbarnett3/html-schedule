@@ -44,6 +44,13 @@ The current code expects these Wix collections:
   - `requestDate`
   - `requestedBy`
   - `timeOffPeriod` (`full-day`, `morning`, or `evening`)
+  - `actualEmployee` reference to `Employees`
+  - `actualStartTime`
+  - `actualEndTime`
+  - `actualStatus` (`confirmed`, `adjusted`, `not-worked`, or `unscheduled`)
+  - `actualizedAt`
+  - `actualNote`
+  - `isUnscheduledActual`
 - `Availability`
   - `employee` reference to `Employees`
   - `date`
@@ -73,6 +80,8 @@ The current code expects these Wix collections:
    - approve/deny that request from Edit
    - submit availability from View
    - confirm availability appears in Edit and can be hidden with `Show Availability`
+   - actualize a completed week in Edit, save it, and confirm the actual values reload
+   - confirm actual-only shifts and actual-time changes do not appear in View or the printed schedule
    - confirm the employee view does not expose rate data
 
 ## Access Model
@@ -89,6 +98,8 @@ Direct visits to the public GitHub Pages URLs load fictional mock data. Real Wix
 - UI-only changes deploy through GitHub Pages after a push to `main`; they do not require pasting full HTML into Wix.
 - Local development/builds require Node.js compatible with Vite 8. GitHub Actions uses Node 22.
 - The app uses local IDs in the iframe and Wix `_id` values in the database. The Velo code maps between those IDs when loading and syncing.
+- Actualization preserves the published schedule fields. Actual values live in the separate `actual*` fields, and actual-only shifts are excluded from the employee view and printed schedule.
+- The Actualize workspace opens to the previous completed week. Future shifts cannot be actualized, and edits remain local drafts until `Save actuals` is selected.
 - Edit automatically deletes `Shifts` records older than 90 days on load and after successful sync to stay below Wix record limits.
 - Syncs are additive/update-oriented for shifts and employees. Explicit delete actions handle shift deletion, denied time-off request deletion, closed-day cleanup, and permanent employee deletion.
 - Successful edit syncs return Wix `_id` mappings for newly inserted employees, rates, and shifts. The iframe applies those IDs immediately so later autosaves update the same rows instead of inserting duplicates.

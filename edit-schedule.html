@@ -792,6 +792,10 @@
                 --green: #3f9a6b;
                 --red: #cf5448;
                 --blue: #3d7e9f;
+                --actual-card-header: #654a33;
+                --actual-card-header-muted: #eadcc9;
+                --actual-card-body: #fffaf3;
+                --actual-card-footer: #f2e7d8;
                 --shadow-soft: 0 18px 50px rgba(58, 39, 21, 0.13);
                 --shadow-card: 0 10px 26px rgba(58, 39, 21, 0.1);
                 --radius-xl: 28px;
@@ -2082,6 +2086,905 @@
                     grid-template-columns: 1fr;
                 }
             }
+
+            .actualize-workspace[hidden],
+            .actualize-add-panel[hidden] {
+                display: none !important;
+            }
+
+            .schedule-area {
+                min-width: 0;
+            }
+
+            .main-content.actualize-mode {
+                grid-template-columns: minmax(0, 1fr);
+            }
+
+            .main-content.actualize-mode .sidebar {
+                display: none;
+            }
+
+            .actualize-toolbar-btn {
+                background: var(--gold);
+                color: var(--clay-900);
+                border: 1px solid rgba(255, 255, 255, 0.22);
+                box-shadow: 0 8px 18px rgba(0, 0, 0, 0.14);
+            }
+
+            .actualize-toolbar-btn:hover:not(:disabled) {
+                background: #e4bc69;
+            }
+
+            .actualize-workspace {
+                display: grid;
+                gap: 18px;
+                padding: 24px;
+                color: var(--ink);
+            }
+
+            .actualize-heading,
+            .actualize-week-bar,
+            .actualize-command-bar,
+            .actualize-save-bar {
+                display: flex;
+                align-items: center;
+                justify-content: space-between;
+                gap: 16px;
+            }
+
+            .actualize-heading h2 {
+                margin: 0 0 5px;
+                color: var(--clay-900);
+                font-size: 24px;
+                line-height: 1.15;
+                letter-spacing: -0.025em;
+            }
+
+            .actualize-save-copy {
+                color: var(--muted);
+                font-size: 13px;
+                line-height: 1.5;
+            }
+
+            .actualize-week-bar {
+                padding: 14px 16px;
+                border: 1px solid var(--line);
+                border-radius: var(--radius-md);
+                background: rgba(255, 252, 246, 0.86);
+            }
+
+            .actualize-week-bar > button {
+                flex: 0 0 auto;
+                width: 42px;
+                height: 42px;
+                display: inline-flex;
+                align-items: center;
+                justify-content: center;
+                border: 1px solid var(--line);
+                border-radius: 999px;
+                background: var(--cream);
+                color: var(--clay-800);
+                cursor: pointer;
+            }
+
+            .actualize-week-copy {
+                width: min(100%, 360px);
+                min-width: 0;
+                text-align: center;
+            }
+
+            .actualize-date-fields {
+                display: grid;
+                grid-template-columns: repeat(2, minmax(0, 1fr));
+                gap: 10px;
+                text-align: left;
+            }
+
+            .actualize-date-fields label {
+                min-width: 0;
+            }
+
+            .actualize-date-fields label > span {
+                display: block;
+                margin-bottom: 4px;
+                color: var(--muted);
+                font-size: 10px;
+                font-weight: 800;
+                letter-spacing: 0.035em;
+                text-transform: uppercase;
+            }
+
+            .actualize-date-fields input {
+                width: 100%;
+                min-width: 0;
+                min-height: 36px;
+                padding: 7px 9px;
+                border: 1px solid var(--line);
+                border-radius: 10px;
+                background: #fffdf8;
+                color: var(--clay-900);
+                font: inherit;
+                font-size: 12px;
+                font-weight: 700;
+                font-variant-numeric: tabular-nums;
+            }
+
+            .actualize-date-fields input[readonly] {
+                background: #f3ebdf;
+                color: var(--muted);
+                cursor: default;
+            }
+
+            #actualizeProgressLabel {
+                display: block;
+                margin-top: 6px;
+                color: var(--muted);
+                font-size: 12px;
+            }
+
+            .actualize-day-tabs {
+                display: grid;
+                grid-template-columns: repeat(7, minmax(0, 1fr));
+                grid-template-rows: repeat(2, minmax(62px, auto));
+                gap: 7px;
+                padding-bottom: 2px;
+            }
+
+            .actualize-day-tab {
+                min-height: 62px;
+                padding: 9px 8px;
+                border: 1px solid var(--line);
+                border-radius: 12px;
+                background: rgba(255, 252, 246, 0.72);
+                color: var(--clay-700);
+                cursor: pointer;
+                text-align: center;
+                min-width: 0;
+            }
+
+            .actualize-day-tab:hover,
+            .actualize-day-tab:focus-visible {
+                border-color: rgba(166, 119, 55, 0.58);
+                background: var(--cream);
+            }
+
+            .actualize-day-tab.active {
+                border-color: var(--clay-700);
+                background: var(--clay-800);
+                color: var(--cream);
+            }
+
+            .actualize-day-tab .day-name,
+            .actualize-day-tab .day-progress {
+                display: block;
+            }
+
+            .actualize-day-tab .day-name {
+                font-size: 13px;
+                font-weight: 800;
+                white-space: nowrap;
+            }
+
+            .actualize-day-tab .day-name > span {
+                display: inline;
+            }
+
+            .actualize-day-tab .day-progress {
+                margin-top: 4px;
+                font-size: 11px;
+                opacity: 0.76;
+                font-variant-numeric: tabular-nums;
+            }
+
+            .actualize-summary {
+                display: grid;
+                grid-template-columns: repeat(5, minmax(0, 1fr));
+                gap: 1px;
+                border: 1px solid var(--line);
+                border-radius: var(--radius-md);
+                background: var(--line);
+                overflow: hidden;
+            }
+
+            .actualize-stat {
+                min-width: 0;
+                padding: 13px 15px;
+                background: rgba(247, 241, 231, 0.96);
+            }
+
+            .actualize-stat span,
+            .actualize-stat strong {
+                display: block;
+            }
+
+            .actualize-stat span {
+                color: var(--muted);
+                font-size: 11px;
+                font-weight: 700;
+            }
+
+            .actualize-stat strong {
+                margin-top: 3px;
+                color: var(--clay-900);
+                font-size: 17px;
+                font-variant-numeric: tabular-nums;
+            }
+
+            .actualize-output {
+                overflow: hidden;
+                border: 1px solid var(--line);
+                border-radius: var(--radius-md);
+                background: rgba(255, 252, 246, 0.86);
+            }
+
+            .actualize-output-header {
+                display: flex;
+                align-items: center;
+                justify-content: space-between;
+                gap: 16px;
+                padding: 14px 16px;
+                border-bottom: 1px solid var(--line);
+            }
+
+            .actualize-output-header h3 {
+                margin: 0;
+                color: var(--clay-900);
+                font-size: 15px;
+                line-height: 1.3;
+            }
+
+            .actualize-output-header p {
+                margin: 3px 0 0;
+                color: var(--muted);
+                font-size: 11px;
+                line-height: 1.4;
+            }
+
+            .actualize-output-header .btn {
+                flex: 0 0 auto;
+                width: auto;
+            }
+
+            .actualize-output-preview {
+                min-height: 52px;
+                margin: 0;
+                padding: 14px 16px 16px;
+                overflow-wrap: anywhere;
+                white-space: pre-wrap;
+                background: #fffdf8;
+                color: var(--clay-900);
+                font-family: inherit;
+                font-size: 13px;
+                font-variant-numeric: tabular-nums;
+                line-height: 1.6;
+            }
+
+            .actualize-command-bar {
+                display: flex;
+                align-items: center;
+                justify-content: flex-end;
+            }
+
+            .actualize-add-actions {
+                display: flex;
+                align-items: center;
+                gap: 8px;
+                flex-wrap: wrap;
+            }
+
+            .actualize-command-bar .btn,
+            .actualize-save-bar .btn,
+            .actualize-heading .btn {
+                width: auto;
+            }
+
+            .actualize-list {
+                display: grid;
+                gap: 12px;
+            }
+
+            .actualize-row {
+                overflow: hidden;
+                border: 1px solid rgba(91, 65, 40, 0.22);
+                border-radius: var(--radius-md);
+                background: var(--actual-card-body);
+                transition:
+                    border-color 180ms ease,
+                    background 180ms ease,
+                    box-shadow 180ms ease;
+            }
+
+            .actualize-row-header {
+                display: flex;
+                align-items: flex-start;
+                justify-content: space-between;
+                gap: 20px;
+                padding: 15px 18px 13px;
+                border-bottom: 1px solid rgba(53, 38, 25, 0.18);
+                background: var(--actual-card-header);
+            }
+
+            .actualize-row-main {
+                display: grid;
+                grid-template-columns:
+                    minmax(190px, 0.85fr) minmax(360px, 1.5fr)
+                    minmax(230px, 0.9fr);
+                gap: 22px;
+                align-items: start;
+                padding: 16px 18px;
+                background: var(--actual-card-body);
+            }
+
+            .actualize-row.is-adjusted,
+            .actualize-row.is-unscheduled {
+                border-color: rgba(166, 119, 55, 0.5);
+                background: #fffbf2;
+            }
+
+            .actualize-row.is-not-worked {
+                border-color: rgba(207, 84, 72, 0.38);
+                background: #fffaf8;
+            }
+
+            .actualize-row.is-not-worked .actualize-row-header {
+                background: #75453d;
+            }
+
+            .actualize-scheduled strong,
+            .actualize-scheduled span {
+                display: block;
+            }
+
+            .actualize-scheduled strong {
+                color: var(--clay-900);
+                font-size: 16px;
+                line-height: 1.25;
+            }
+
+            .actualize-scheduled span {
+                margin-top: 4px;
+                color: var(--muted);
+                font-size: 14px;
+                font-variant-numeric: tabular-nums;
+            }
+
+            .actualize-row-header .actualize-scheduled strong {
+                color: var(--cream);
+            }
+
+            .actualize-row-header .actualize-scheduled span {
+                color: var(--actual-card-header-muted);
+            }
+
+            .actualize-field-label {
+                display: block;
+                margin-bottom: 7px;
+                color: var(--clay-700);
+                font-size: 10px;
+                font-weight: 800;
+                letter-spacing: 0.035em;
+                text-transform: uppercase;
+            }
+
+            .actualize-row select,
+            .actualize-row input[type="time"],
+            .actualize-row input[type="text"],
+            .actualize-add-panel select,
+            .actualize-add-panel input {
+                width: 100%;
+                min-height: 40px;
+                padding: 8px 10px;
+                border: 1px solid var(--line);
+                border-radius: 10px;
+                background: #fffdf8;
+                color: var(--ink);
+                font: inherit;
+                font-size: 13px;
+                outline: none;
+            }
+
+            .actualize-row select:focus,
+            .actualize-row input:focus,
+            .actualize-add-panel select:focus,
+            .actualize-add-panel input:focus {
+                border-color: rgba(166, 119, 55, 0.86);
+                box-shadow: 0 0 0 3px rgba(216, 169, 79, 0.18);
+            }
+
+            .actualize-time-editor {
+                display: grid;
+                grid-template-columns: 1fr auto 1fr;
+                gap: 8px;
+                align-items: start;
+            }
+
+            .actualize-time-separator {
+                padding-top: 37px;
+                color: var(--muted);
+                font-size: 12px;
+            }
+
+            .actualize-time-field > label {
+                display: block;
+                margin-bottom: 5px;
+                color: var(--muted);
+                font-size: 10px;
+                font-weight: 700;
+            }
+
+            .actualize-time-nudge-pair {
+                display: flex;
+                align-items: center;
+                gap: 8px;
+                margin-top: 6px;
+            }
+
+            .actualize-time-nudge-pair > span {
+                margin-right: auto;
+                color: var(--muted);
+                font-size: 11px;
+                font-weight: 700;
+            }
+
+            .actualize-time-nudge-pair .actualize-mini-btn {
+                width: 32px;
+                min-height: 32px;
+                padding: 0;
+                font-size: 16px;
+                line-height: 1;
+            }
+
+            .actualize-mini-btn {
+                min-height: 36px;
+                padding: 7px 10px;
+                border: 1px solid var(--line);
+                border-radius: 10px;
+                background: #f7f0e5;
+                color: var(--clay-800);
+                cursor: pointer;
+                font: inherit;
+                font-size: 11px;
+                font-weight: 800;
+                white-space: nowrap;
+            }
+
+            .actualize-mini-btn:hover,
+            .actualize-mini-btn:focus-visible {
+                border-color: rgba(166, 119, 55, 0.66);
+                background: #fff8e9;
+            }
+
+            .actualize-mini-btn:focus-visible,
+            .actualize-day-tab:focus-visible,
+            .actualize-week-bar > button:focus-visible {
+                outline: 3px solid rgba(216, 169, 79, 0.5);
+                outline-offset: 2px;
+            }
+
+            .actualize-mini-btn:disabled {
+                opacity: 0.45;
+                cursor: not-allowed;
+            }
+
+            .actualize-status {
+                display: inline;
+                color: var(--cream);
+                font-size: 12px;
+                font-weight: 800;
+                line-height: 1.25;
+            }
+
+            .actualize-status.confirmed {
+                color: #cde5d4;
+            }
+
+            .actualize-status.adjusted,
+            .actualize-status.unscheduled {
+                color: #f2d595;
+            }
+
+            .actualize-status.not-worked {
+                color: #f4d2cd;
+            }
+
+            .actualize-status-wrap {
+                min-width: 0;
+                max-width: 340px;
+                text-align: right;
+            }
+
+            .actualize-row-header .actualize-difference {
+                color: var(--actual-card-header-muted);
+            }
+
+            .actualize-outcome {
+                min-width: 0;
+            }
+
+            .actualize-row-actions {
+                display: grid;
+                grid-template-columns: repeat(2, minmax(0, 1fr));
+                gap: 6px;
+            }
+
+            .actualize-row-actions .actualize-mini-btn.is-selected {
+                border-color: #b9a486;
+                background: #ded2c0;
+                color: var(--clay-800);
+                box-shadow: inset 0 0 0 1px rgba(76, 55, 37, 0.08);
+            }
+
+            .actualize-row-actions .actualize-mini-btn.is-selected:hover,
+            .actualize-row-actions .actualize-mini-btn.is-selected:focus-visible {
+                border-color: #aa9271;
+                background: #d6c7b1;
+            }
+
+            .actualize-row-actions .actualize-action-vacated {
+                color: #8a2e24;
+            }
+
+            .actualize-row-actions .actualize-action-vacated.is-selected {
+                border-color: #d3a8a1;
+                background: #efd9d5;
+                color: #7a3028;
+            }
+
+            .actualize-locked-outcome {
+                grid-column: 1 / -1;
+                min-height: 40px;
+                display: flex;
+                align-items: center;
+                padding: 8px 10px;
+                border: 1px solid var(--line);
+                border-radius: 10px;
+                background: rgba(246, 239, 228, 0.7);
+                color: var(--muted);
+                font-size: 12px;
+                font-weight: 700;
+            }
+
+            .actualize-row-note {
+                display: grid;
+                grid-template-columns: minmax(0, 1fr) auto;
+                gap: 12px;
+                align-items: center;
+                padding: 12px 18px 16px;
+                border-top: 1px solid var(--line);
+                background: var(--actual-card-footer);
+            }
+
+            .actualize-row-note-actions {
+                display: flex;
+                flex-wrap: wrap;
+                align-items: center;
+                justify-content: flex-end;
+                gap: 10px;
+            }
+
+            .actualize-row-note-actions .actualize-difference {
+                margin-top: 0;
+                white-space: nowrap;
+            }
+
+            .actualize-reset-btn,
+            .actualize-remove-btn {
+                min-height: 36px;
+                padding: 7px 11px;
+                border: 1px solid var(--line);
+                border-radius: 10px;
+                background: rgba(255, 250, 241, 0.72);
+                color: var(--clay-800);
+                cursor: pointer;
+                font: inherit;
+                font-size: 11px;
+                font-weight: 800;
+            }
+
+            .actualize-reset-btn:hover:not(:disabled),
+            .actualize-reset-btn:focus-visible,
+            .actualize-remove-btn:hover:not(:disabled),
+            .actualize-remove-btn:focus-visible {
+                border-color: rgba(166, 119, 55, 0.66);
+                background: var(--cream);
+            }
+
+            .actualize-remove-btn {
+                color: #8f302b;
+            }
+
+            .actualize-reset-btn:disabled,
+            .actualize-remove-btn:disabled {
+                cursor: not-allowed;
+                opacity: 0.48;
+            }
+
+            .actualize-difference {
+                margin-top: 5px;
+                color: var(--muted);
+                font-size: 11px;
+                line-height: 1.35;
+            }
+
+            .actualize-empty {
+                padding: 42px 20px;
+                border: 1px dashed rgba(103, 78, 51, 0.28);
+                border-radius: var(--radius-md);
+                background: rgba(255, 252, 246, 0.6);
+                text-align: center;
+            }
+
+            .actualize-empty strong {
+                display: block;
+                color: var(--clay-900);
+            }
+
+            .actualize-add-panel {
+                padding: 16px;
+                border: 1px solid rgba(166, 119, 55, 0.42);
+                border-radius: var(--radius-md);
+                background: #fff9eb;
+            }
+
+            .actualize-add-panel h3 {
+                margin-bottom: 12px;
+                color: var(--clay-900);
+                font-size: 16px;
+            }
+
+            .actualize-add-grid {
+                display: grid;
+                grid-template-columns: 1.15fr 1fr 0.8fr 0.8fr 1.4fr;
+                gap: 10px;
+                align-items: end;
+            }
+
+            .actualize-add-grid label {
+                display: grid;
+                gap: 5px;
+                color: var(--clay-800);
+                font-size: 11px;
+                font-weight: 800;
+            }
+
+            .actualize-save-bar {
+                position: sticky;
+                bottom: 12px;
+                z-index: 8;
+                margin-top: 4px;
+                padding: 14px 16px;
+                border: 1px solid rgba(91, 65, 40, 0.3);
+                border-radius: var(--radius-md);
+                background: rgba(255, 250, 241, 0.98);
+                box-shadow: 0 10px 26px rgba(58, 39, 21, 0.11);
+                backdrop-filter: blur(12px);
+            }
+
+            .actualize-save-copy strong,
+            .actualize-save-copy span {
+                display: block;
+            }
+
+            .actualize-save-copy strong {
+                color: var(--clay-900);
+                font-size: 13px;
+            }
+
+            .actualize-save-actions {
+                display: flex;
+                align-items: center;
+                gap: 8px;
+            }
+
+            .day-date-heading {
+                display: flex;
+                align-items: center;
+                justify-content: space-between;
+                gap: 6px;
+                padding: 8px;
+                border-bottom: 1px solid #e2e8f0;
+                color: #2d3748;
+                font-weight: 600;
+            }
+
+            @media (max-width: 1120px) {
+                .actualize-row-main {
+                    grid-template-columns: minmax(180px, 0.8fr) minmax(320px, 1.2fr);
+                    align-items: start;
+                }
+
+                .actualize-outcome {
+                    grid-column: 1 / -1;
+                }
+
+                .actualize-add-grid {
+                    grid-template-columns: repeat(2, minmax(0, 1fr));
+                }
+
+                .actualize-add-grid label:last-child {
+                    grid-column: 1 / -1;
+                }
+            }
+
+            @media (max-width: 768px) {
+                .toolbar-right {
+                    width: 100%;
+                    margin-left: 0;
+                    flex-direction: column;
+                }
+
+                .toolbar-right .actualize-toolbar-btn,
+                .toolbar-right .tools-menu-wrap,
+                .toolbar-right .tools-menu-wrap > .toolbar-btn {
+                    width: 100%;
+                }
+
+                .actualize-workspace {
+                    padding: 16px 12px;
+                }
+
+                .actualize-heading {
+                    align-items: stretch;
+                    flex-direction: column;
+                    gap: 12px;
+                }
+
+                .actualize-heading h2 {
+                    font-size: 21px;
+                }
+
+                .actualize-heading .btn {
+                    width: 100%;
+                }
+
+                .actualize-day-tabs {
+                    grid-template-rows: repeat(2, minmax(56px, auto));
+                    gap: 4px;
+                }
+
+                .actualize-day-tab {
+                    min-height: 56px;
+                    padding: 8px 3px;
+                }
+
+                .actualize-day-tab .day-name {
+                    font-size: 11px;
+                }
+
+                .actualize-day-tab .day-name > span {
+                    display: block;
+                }
+
+                .actualize-day-tab .day-progress {
+                    font-size: 9px;
+                }
+
+                .actualize-date-fields {
+                    grid-template-columns: 1fr;
+                    gap: 6px;
+                }
+
+                .actualize-summary {
+                    grid-template-columns: repeat(6, minmax(0, 1fr));
+                }
+
+                .actualize-stat:nth-child(-n + 2) {
+                    grid-column: span 3;
+                }
+
+                .actualize-stat:nth-child(n + 3) {
+                    grid-column: span 2;
+                }
+
+                .actualize-stat {
+                    padding: 12px;
+                }
+
+                .actualize-output-header {
+                    align-items: stretch;
+                    flex-direction: column;
+                    gap: 10px;
+                }
+
+                .actualize-output-header .btn {
+                    width: 100%;
+                }
+
+                .actualize-output-preview {
+                    padding: 12px 14px 14px;
+                    font-size: 12px;
+                }
+
+                .actualize-command-bar {
+                    align-items: stretch;
+                    flex-direction: column;
+                    gap: 8px;
+                }
+
+                .actualize-add-actions {
+                    display: grid;
+                    grid-template-columns: 1fr 1fr;
+                    gap: 8px;
+                }
+
+                .actualize-command-bar .btn {
+                    width: 100%;
+                }
+
+                .actualize-row-main,
+                .actualize-add-grid {
+                    grid-template-columns: 1fr;
+                }
+
+                .actualize-add-grid label:last-child {
+                    grid-column: auto;
+                }
+
+                .actualize-row-header {
+                    display: grid;
+                    grid-template-columns: 1fr;
+                    gap: 10px;
+                    padding: 14px;
+                }
+
+                .actualize-status-wrap {
+                    max-width: none;
+                    display: flex;
+                    align-items: center;
+                    gap: 8px;
+                    text-align: left;
+                }
+
+                .actualize-status-wrap .actualize-difference {
+                    margin-top: 0;
+                }
+
+                .actualize-row-main {
+                    gap: 18px;
+                    padding: 16px 14px;
+                }
+
+                .actualize-row-actions {
+                    grid-template-columns: repeat(2, minmax(0, 1fr));
+                }
+
+                .actualize-locked-outcome {
+                    grid-column: 1 / -1;
+                }
+
+                .actualize-row select,
+                .actualize-row input[type="time"],
+                .actualize-row input[type="text"],
+                .actualize-add-panel select,
+                .actualize-add-panel input,
+                .actualize-mini-btn {
+                    min-height: 44px;
+                }
+
+                .actualize-time-nudge-pair .actualize-mini-btn {
+                    width: 44px;
+                }
+
+                .actualize-row-note {
+                    grid-template-columns: 1fr;
+                    padding: 12px 14px 14px;
+                }
+
+                .actualize-row-note-actions {
+                    justify-content: space-between;
+                }
+
+                .actualize-save-bar {
+                    align-items: stretch;
+                    flex-direction: column;
+                    margin: 4px 0 0;
+                    padding: 13px 12px;
+                }
+
+                .actualize-save-actions .btn {
+                    flex: 1;
+                }
+            }
         </style>
     </head>
     <body>
@@ -2093,7 +2996,7 @@
             <div class="loading-details" id="loadingDetails"></div>
         </div>
     </div>
-    
+
         <div class="container">
             <div class="header">
                 <h1>Mad Potter Schedule</h1>
@@ -2155,6 +3058,28 @@
                     </div>
                 </div>
                 <div class="toolbar-right">
+                    <button
+                        type="button"
+                        id="actualizeButton"
+                        class="toolbar-btn actualize-toolbar-btn"
+                        onclick="openActualizeWorkspace()"
+                        aria-label="Open payroll"
+                        title="Review payroll"
+                    >
+                        <svg
+                            xmlns="http://www.w3.org/2000/svg"
+                            fill="none"
+                            viewBox="0 0 24 24"
+                            stroke-width="2"
+                            stroke="currentColor"
+                            aria-hidden="true"
+                        >
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M13.4 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-7.4" />
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M2 6h4M2 10h4M2 14h4M2 18h4" />
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M21.378 5.626a1 1 0 0 0-3.004-3.004l-5.01 5.012a2 2 0 0 0-.506.854l-.837 2.87a.5.5 0 0 0 .62.62l2.87-.837a2 2 0 0 0 .854-.506z" />
+                        </svg>
+                        <span>Payroll</span>
+                    </button>
                     <div class="tools-menu-wrap">
                         <button
                             onclick="toggleToolsMenu(event)"
@@ -2277,7 +3202,7 @@
                 </div>
             </div>
 
-            <div class="main-content">
+            <div class="main-content" id="mainContent">
                 <div class="sidebar">
                     <!-- Day Off Toggle (standalone) -->
                     <div class="section">
@@ -2501,6 +3426,7 @@
                 </div>
 
                 <div class="schedule-area">
+                    <div id="scheduleWorkspace">
                     <div class="week-navigation">
                         <button
                             class="period-nav-btn"
@@ -2569,6 +3495,189 @@
 
                     <div id="mobileShiftPanel" class="mobile-shift-panel" hidden></div>
                     <div class="calendar" id="calendar"></div>
+                    </div>
+
+                    <section
+                        id="actualizeWorkspace"
+                        class="actualize-workspace"
+                        aria-labelledby="actualizeTitle"
+                        hidden
+                    >
+                        <div class="actualize-heading">
+                            <div>
+                                <h2 id="actualizeTitle">Payroll</h2>
+                            </div>
+                            <button
+                                type="button"
+                                class="btn btn-secondary"
+                                onclick="closeActualizeWorkspace()"
+                            >
+                                Back to schedule
+                            </button>
+                        </div>
+
+                        <div class="actualize-week-bar">
+                            <button
+                                type="button"
+                                onclick="changeActualizeWeek(-14)"
+                                aria-label="Previous pay period"
+                                title="Previous pay period"
+                            >
+                                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="m15 18-6-6 6-6" />
+                                </svg>
+                            </button>
+                            <div class="actualize-week-copy">
+                                <div class="actualize-date-fields">
+                                    <label>
+                                        <span>Start</span>
+                                        <input
+                                            type="date"
+                                            id="actualizeStartDate"
+                                            onchange="setActualizeStartDate(this.value)"
+                                        />
+                                    </label>
+                                    <label>
+                                        <span>End</span>
+                                        <input
+                                            type="date"
+                                            id="actualizeEndDate"
+                                            readonly
+                                            tabindex="-1"
+                                            aria-readonly="true"
+                                        />
+                                    </label>
+                                </div>
+                                <span id="actualizeProgressLabel"></span>
+                            </div>
+                            <button
+                                type="button"
+                                onclick="changeActualizeWeek(14)"
+                                aria-label="Next pay period"
+                                title="Next pay period"
+                            >
+                                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="m9 18 6-6-6-6" />
+                                </svg>
+                            </button>
+                        </div>
+
+                        <div id="actualizeSummary" class="actualize-summary"></div>
+
+                        <section
+                            class="actualize-output"
+                            aria-labelledby="actualizeOutputTitle"
+                        >
+                            <div class="actualize-output-header">
+                                <div>
+                                    <h3 id="actualizeOutputTitle">Payroll output</h3>
+                                    <p id="actualizeOutputDescription">
+                                        Saved actual hours for this pay period.
+                                    </p>
+                                </div>
+                                <button
+                                    type="button"
+                                    class="btn btn-secondary"
+                                    id="actualizeCopyHoursButton"
+                                    onclick="copyActualizePayrollHours()"
+                                >
+                                    Copy payroll hours
+                                </button>
+                            </div>
+                            <pre
+                                id="actualizePayrollOutput"
+                                class="actualize-output-preview"
+                                tabindex="0"
+                                aria-describedby="actualizeOutputDescription"
+                            ></pre>
+                        </section>
+
+                        <div
+                            id="actualizeDayTabs"
+                            class="actualize-day-tabs"
+                            role="tablist"
+                            aria-label="Days in pay period"
+                        ></div>
+
+                        <div class="actualize-command-bar">
+                            <button
+                                type="button"
+                                class="btn btn-secondary"
+                                onclick="toggleActualizeAddPanel()"
+                            >
+                                Add unscheduled shift
+                            </button>
+                        </div>
+
+                        <div
+                            id="actualizeAddPanel"
+                            class="actualize-add-panel"
+                            hidden
+                        >
+                            <h3>Add work that was not on the schedule</h3>
+                            <div class="actualize-add-grid">
+                                <label>
+                                    Employee
+                                    <select id="actualizeAddEmployee"></select>
+                                </label>
+                                <label>
+                                    Date
+                                    <input type="date" id="actualizeAddDate" />
+                                </label>
+                                <label>
+                                    Start
+                                    <input type="time" id="actualizeAddStart" value="09:00" />
+                                </label>
+                                <label>
+                                    End
+                                    <input type="time" id="actualizeAddEnd" value="17:00" />
+                                </label>
+                                <label>
+                                    Note (optional)
+                                    <input type="text" id="actualizeAddNote" maxlength="160" placeholder="Why this shift was added" />
+                                </label>
+                            </div>
+                            <div class="actualize-add-actions" style="margin-top: 12px">
+                                <button type="button" class="btn btn-success" onclick="addUnscheduledActualShift()">
+                                    Add to actuals
+                                </button>
+                                <button type="button" class="btn btn-secondary" onclick="toggleActualizeAddPanel(false)">
+                                    Cancel
+                                </button>
+                            </div>
+                        </div>
+
+                        <div id="actualizeShiftList" class="actualize-list"></div>
+
+                        <div class="actualize-save-bar">
+                            <div class="actualize-save-copy">
+                                <strong id="actualizeSaveTitle">No unsaved changes</strong>
+                                <span id="actualizeSaveDescription">
+                                    Update a shift to begin.
+                                </span>
+                            </div>
+                            <div class="actualize-save-actions">
+                                <button
+                                    type="button"
+                                    class="btn btn-secondary"
+                                    id="actualizeDiscardButton"
+                                    onclick="discardActualizationChanges()"
+                                    disabled
+                                >
+                                    Cancel
+                                </button>
+                                <button
+                                    type="button"
+                                    class="btn btn-success"
+                                    id="actualizeSaveButton"
+                                    onclick="finishActualization()"
+                                    disabled
+                                >
+                                    Save
+                                </button>
+                            </div>
+                        </div>
+                    </section>
                 </div>
             </div>
         </div>
@@ -3044,7 +4153,7 @@
         </div>
 
         <script>
-            const APP_VERSION = "v2.3";
+            const APP_VERSION = "v2.5";
             console.log(`Schedule Edit App Version: ${APP_VERSION}`);
 
             function isEmbeddedInWix() {
@@ -3181,6 +4290,13 @@
             let maxUndoSteps = 20;
             let showDayOffs = true; // Track whether to show days off
             let showAvailability = true;
+            let actualizeWeekStart = null;
+            let actualizeSelectedDate = null;
+            let actualizationDraft = new Map();
+            let actualizationPendingRemovals = new Map();
+            let actualizationDirty = false;
+            let pendingActualizationSave = false;
+            const ACTUALIZE_PERIOD_DAYS = 14;
             const TIME_OFF_PERIOD_LABELS = {
                 "full-day": "Full Day",
                 morning: "Morning",
@@ -3248,6 +4364,32 @@
                     employees,
                     closedDays: [formatMockDate(10)],
                     shifts: [
+                        [1000, "2026-09-13", "09:00", "15:00"],
+                        [1001, "2026-09-13", "12:00", "18:00"],
+                        [1006, "2026-09-13", "10:00", "14:00"],
+                        [1002, "2026-09-14", "10:00", "16:00"],
+                        [1003, "2026-09-14", "13:00", "19:00"],
+                        [1007, "2026-09-14", "14:00", "20:00"],
+                        [1004, "2026-09-15", "09:30", "14:30"],
+                        [1005, "2026-09-15", "11:00", "17:00"],
+                        [1008, "2026-09-15", "10:00", "18:00"],
+                        [1000, "2026-09-16", "09:00", "15:00"],
+                        [1002, "2026-09-16", "10:00", "16:00"],
+                        [1006, "2026-09-16", "12:00", "18:00"],
+                        [1001, "2026-09-17", "09:00", "15:00"],
+                        [1003, "2026-09-17", "13:00", "19:00"],
+                        [1007, "2026-09-17", "14:00", "20:00"],
+                        [1004, "2026-09-18", "09:30", "14:30"],
+                        [1005, "2026-09-18", "11:00", "17:00"],
+                        [1008, "2026-09-18", "10:00", "18:00"],
+                        [1000, "2026-09-19", "09:00", "15:00"],
+                        [1006, "2026-09-19", "10:00", "14:00"],
+                        [1007, "2026-09-19", "14:00", "20:00"],
+                        [1000, -2, "09:00", "15:00"],
+                        [1001, -2, "12:00", "18:00"],
+                        [1002, -1, "10:00", "16:00"],
+                        [1003, -1, "13:00", "19:00"],
+                        [1004, 0, "09:30", "14:30"],
                         [1000, 1, "09:00", "15:00"],
                         [1001, 1, "12:00", "18:00"],
                         [1002, 2, "10:00", "16:00"],
@@ -3262,7 +4404,10 @@
                         wixId: null,
                         employeeId,
                         employeeName: employeeName(employeeId),
-                        date: formatMockDate(offset),
+                        date:
+                            typeof offset === "string"
+                                ? offset
+                                : formatMockDate(offset),
                         startTime,
                         endTime,
                         isDayOff: false,
@@ -3270,6 +4415,14 @@
                         requestStatus: null,
                         requestDate: null,
                         requestedBy: null,
+                        actualEmployeeId: null,
+                        actualEmployeeName: null,
+                        actualStartTime: null,
+                        actualEndTime: null,
+                        actualStatus: null,
+                        actualizedAt: null,
+                        actualNote: "",
+                        isUnscheduledActual: false,
                     })).concat([
                         {
                             id: 2100,
@@ -3343,6 +4496,1187 @@
                 };
             }
 
+            function normalizeShiftActualFields(shift) {
+                const validStatuses = new Set([
+                    "confirmed",
+                    "adjusted",
+                    "not-worked",
+                    "unscheduled",
+                ]);
+                const actualStatus = validStatuses.has(shift.actualStatus)
+                    ? shift.actualStatus
+                    : null;
+
+                return {
+                    ...shift,
+                    actualEmployeeId: shift.actualEmployeeId ?? null,
+                    actualEmployeeName: shift.actualEmployeeName || null,
+                    actualStartTime: shift.actualStartTime || null,
+                    actualEndTime: shift.actualEndTime || null,
+                    actualStatus,
+                    actualizedAt: shift.actualizedAt || null,
+                    actualNote: shift.actualNote || "",
+                    isUnscheduledActual:
+                        shift.isUnscheduledActual === true ||
+                        actualStatus === "unscheduled",
+                };
+            }
+
+            function escapeActualizeHtml(value) {
+                return String(value ?? "")
+                    .replaceAll("&", "&amp;")
+                    .replaceAll("<", "&lt;")
+                    .replaceAll(">", "&gt;")
+                    .replaceAll('"', "&quot;")
+                    .replaceAll("'", "&#039;");
+            }
+
+            function getActualizeWeekDates() {
+                if (!actualizeWeekStart) return [];
+                return Array.from({ length: ACTUALIZE_PERIOD_DAYS }, (_, index) => {
+                    const date = new Date(actualizeWeekStart);
+                    date.setDate(date.getDate() + index);
+                    return date;
+                });
+            }
+
+            function isActualizableShift(shift) {
+                return !shift.isDayOff && !shift.isTimeOffRequest;
+            }
+
+            function isDateInActualizeWeek(dateStr) {
+                return getActualizeWeekDates().some(
+                    (date) => formatDate(date) === dateStr,
+                );
+            }
+
+            function isFutureActualDate(dateStr) {
+                const date = new Date(`${dateStr}T00:00:00`);
+                const today = new Date();
+                today.setHours(0, 0, 0, 0);
+                return date > today;
+            }
+
+            function buildActualizationDraft() {
+                actualizationDraft = new Map();
+                actualizationPendingRemovals = new Map();
+                shifts
+                    .filter(
+                        (shift) =>
+                            isActualizableShift(shift) &&
+                            isDateInActualizeWeek(shift.date),
+                    )
+                    .forEach((sourceShift) => {
+                        const shift = normalizeShiftActualFields(sourceShift);
+                        const isNotWorked =
+                            shift.actualStatus === "not-worked";
+                        const employee = employees.find(
+                            (item) => item.id === shift.actualEmployeeId,
+                        );
+                        actualizationDraft.set(String(shift.id), {
+                            ...shift,
+                            actualEmployeeId:
+                                shift.actualEmployeeId ?? shift.employeeId,
+                            actualEmployeeName:
+                                shift.actualEmployeeName ||
+                                employee?.name ||
+                                shift.employeeName,
+                            actualStartTime: isNotWorked
+                                ? null
+                                : shift.actualStartTime || shift.startTime,
+                            actualEndTime: isNotWorked
+                                ? null
+                                : shift.actualEndTime || shift.endTime,
+                            _resetActual: false,
+                            _clearActualStatus: false,
+                        });
+                    });
+
+                actualizationDirty = false;
+                renderActualizeWorkspace();
+            }
+
+            function sortActualizeRows(rows) {
+                return rows.sort((a, b) => {
+                    const dateCompare = a.date.localeCompare(b.date);
+                    if (dateCompare !== 0) return dateCompare;
+                    return (a.startTime || a.actualStartTime || "").localeCompare(
+                        b.startTime || b.actualStartTime || "",
+                    );
+                });
+            }
+
+            function getActualizeRows() {
+                return sortActualizeRows([...actualizationDraft.values()]);
+            }
+
+            function getSavedActualizeRows() {
+                return sortActualizeRows(
+                    shifts
+                        .filter(
+                            (shift) =>
+                                isActualizableShift(shift) &&
+                                isDateInActualizeWeek(shift.date),
+                        )
+                        .map(normalizeShiftActualFields),
+                );
+            }
+
+            function getActualizeRowsForDate(dateStr) {
+                return getActualizeRows().filter(
+                    (shift) => shift.date === dateStr,
+                );
+            }
+
+            function getShiftDurationMinutes(startTime, endTime) {
+                const interval = getShiftInterval(startTime, endTime);
+                return interval ? interval.end - interval.start : 0;
+            }
+
+            function formatActualHours(minutes) {
+                const hours = minutes / 60;
+                return `${Number.isInteger(hours) ? hours : hours.toFixed(1)} hr`;
+            }
+
+            function formatPayrollDecimalHours(minutes) {
+                return String(Math.round((minutes / 60) * 100) / 100);
+            }
+
+            function getPayrollClipboardText() {
+                const activeEmployees = employees
+                    .filter((employee) => !employee.archived)
+                    .sort((first, second) =>
+                        first.name.localeCompare(second.name, undefined, {
+                            sensitivity: "base",
+                        }),
+                    );
+                const minutesByEmployee = new Map(
+                    activeEmployees.map((employee) => [String(employee.id), 0]),
+                );
+
+                getSavedActualizeRows().forEach((shift) => {
+                    if (
+                        !shift.actualStatus ||
+                        shift.actualStatus === "not-worked" ||
+                        !shift.actualEmployeeId
+                    ) {
+                        return;
+                    }
+                    const employeeKey = String(shift.actualEmployeeId);
+                    if (!minutesByEmployee.has(employeeKey)) return;
+                    const minutes = getShiftDurationMinutes(
+                        shift.actualStartTime,
+                        shift.actualEndTime,
+                    );
+                    minutesByEmployee.set(
+                        employeeKey,
+                        minutesByEmployee.get(employeeKey) + minutes,
+                    );
+                });
+
+                return activeEmployees
+                    .map(
+                        (employee) =>
+                            `- ${employee.name} - ${formatPayrollDecimalHours(minutesByEmployee.get(String(employee.id)))} hours`,
+                    )
+                    .join("\n");
+            }
+
+            async function copyActualizePayrollHours() {
+                const output = getPayrollClipboardText();
+                if (!output) {
+                    showToast(
+                        "No active employees",
+                        "Add an active employee before copying payroll hours.",
+                        "info",
+                    );
+                    return;
+                }
+
+                try {
+                    let copied = false;
+                    if (navigator.clipboard?.writeText) {
+                        try {
+                            await navigator.clipboard.writeText(output);
+                            copied = true;
+                        } catch (clipboardError) {
+                            console.warn(
+                                "Modern clipboard access was unavailable; trying the browser fallback.",
+                                clipboardError,
+                            );
+                        }
+                    }
+                    if (!copied) {
+                        const textArea = document.createElement("textarea");
+                        textArea.value = output;
+                        textArea.setAttribute("readonly", "");
+                        textArea.style.position = "fixed";
+                        textArea.style.opacity = "0";
+                        document.body.appendChild(textArea);
+                        textArea.select();
+                        copied = document.execCommand("copy");
+                        textArea.remove();
+                        if (!copied) throw new Error("Clipboard unavailable");
+                    }
+                    const employeeCount = employees.filter(
+                        (employee) => !employee.archived,
+                    ).length;
+                    showToast(
+                        "Payroll hours copied",
+                        `${employeeCount} employee${employeeCount === 1 ? "" : "s"} copied to your clipboard.`,
+                        "success",
+                    );
+                } catch (error) {
+                    console.error("Unable to copy payroll hours:", error);
+                    showToast(
+                        "Could not copy payroll hours",
+                        "Your browser denied clipboard access. Try again after allowing clipboard permissions.",
+                        "error",
+                    );
+                }
+            }
+
+            function formatActualDifference(minutes) {
+                if (minutes === 0) return "No time difference";
+                const sign = minutes > 0 ? "+" : "−";
+                const absolute = Math.abs(minutes);
+                if (absolute >= 60) {
+                    const hours = Math.floor(absolute / 60);
+                    const remainder = absolute % 60;
+                    return `${sign}${hours} hr${remainder ? ` ${remainder} min` : ""}`;
+                }
+                return `${sign}${absolute} min`;
+            }
+
+            function getActualStatusLabel(status) {
+                return {
+                    confirmed: "As scheduled",
+                    adjusted: "Adjusted",
+                    "not-worked": "Vacated",
+                    unscheduled: "Unscheduled",
+                }[status] || "Needs review";
+            }
+
+            function deriveActualStatus(shift) {
+                if (shift.isUnscheduledActual) return "unscheduled";
+                if (shift.actualStatus === "not-worked") return "not-worked";
+
+                const matchesSchedule =
+                    shift.actualEmployeeId === shift.employeeId &&
+                    shift.actualStartTime === shift.startTime &&
+                    shift.actualEndTime === shift.endTime;
+                return matchesSchedule ? "confirmed" : "adjusted";
+            }
+
+            function getActualDifferenceText(shift) {
+                if (!shift.actualStatus) return "";
+                if (shift.actualStatus === "not-worked") {
+                    return "0 actual hours recorded.";
+                }
+                if (shift.actualStatus === "unscheduled") {
+                    return "Added to actual hours only.";
+                }
+
+                const details = [];
+                if (shift.actualEmployeeId !== shift.employeeId) {
+                    details.push("Different employee");
+                }
+                const scheduledMinutes = getShiftDurationMinutes(
+                    shift.startTime,
+                    shift.endTime,
+                );
+                const actualMinutes = getShiftDurationMinutes(
+                    shift.actualStartTime,
+                    shift.actualEndTime,
+                );
+                details.push(
+                    formatActualDifference(actualMinutes - scheduledMinutes),
+                );
+                return details.join(" · ");
+            }
+
+            function renderActualizeWorkspace() {
+                const workspace = document.getElementById(
+                    "actualizeWorkspace",
+                );
+                if (!workspace || workspace.hidden || !actualizeWeekStart) return;
+
+                const weekDates = getActualizeWeekDates();
+                const weekEnd = weekDates[weekDates.length - 1];
+                const startInput = document.getElementById(
+                    "actualizeStartDate",
+                );
+                const endInput = document.getElementById("actualizeEndDate");
+                if (startInput) startInput.value = formatDate(actualizeWeekStart);
+                if (endInput) endInput.value = formatDate(weekEnd);
+
+                const rows = getSavedActualizeRows().filter(
+                    (shift) => !isFutureActualDate(shift.date),
+                );
+                const reviewed = rows.filter((shift) => shift.actualStatus).length;
+                const progressLabel = document.getElementById(
+                    "actualizeProgressLabel",
+                );
+                if (progressLabel) {
+                    progressLabel.textContent = rows.length
+                        ? `${reviewed} of ${rows.length} shifts reviewed`
+                        : "No shifts scheduled this pay period";
+                }
+
+                renderActualizeDayTabs();
+                renderActualizeSummary();
+                renderActualizePayrollOutput();
+                renderActualizeShiftList();
+                renderActualizeSaveState();
+            }
+
+            function renderActualizeDayTabs() {
+                const tabs = document.getElementById("actualizeDayTabs");
+                if (!tabs) return;
+                const savedRows = getSavedActualizeRows();
+
+                tabs.innerHTML = getActualizeWeekDates()
+                    .map((date) => {
+                        const dateStr = formatDate(date);
+                        const rows = savedRows.filter(
+                            (shift) => shift.date === dateStr,
+                        );
+                        const isFuture = isFutureActualDate(dateStr);
+                        const reviewed = rows.filter(
+                            (shift) => shift.actualStatus,
+                        ).length;
+                        const isActive = dateStr === actualizeSelectedDate;
+                        const progressText = isFuture
+                            ? "Future"
+                            : rows.length
+                            ? `${reviewed}/${rows.length}`
+                            : isClosedDate(dateStr)
+                              ? "Closed"
+                              : "—";
+                        const progressLabel = isFuture
+                            ? "future date"
+                            : rows.length
+                              ? `${reviewed} of ${rows.length} shifts reviewed`
+                              : isClosedDate(dateStr)
+                                ? "closed"
+                                : "no shifts";
+                        return `
+                            <button
+                                type="button"
+                                class="actualize-day-tab ${isActive ? "active" : ""}"
+                                role="tab"
+                                aria-selected="${isActive}"
+                                aria-label="${date.toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric" })}, ${progressLabel}"
+                                onclick="selectActualizeDate('${dateStr}')"
+                            >
+                                <span class="day-name">
+                                    <span>${date.toLocaleDateString("en-US", { weekday: "short" })}</span>
+                                    <span>${date.getDate()}</span>
+                                </span>
+                                <span class="day-progress">${progressText}</span>
+                            </button>
+                        `;
+                    })
+                    .join("");
+            }
+
+            function renderActualizeSummary() {
+                const summary = document.getElementById("actualizeSummary");
+                if (!summary) return;
+
+                const rows = getSavedActualizeRows().filter(
+                    (shift) => !isFutureActualDate(shift.date),
+                );
+                const scheduledMinutes = rows
+                    .filter((shift) => !shift.isUnscheduledActual)
+                    .reduce(
+                        (total, shift) =>
+                            total +
+                            getShiftDurationMinutes(
+                                shift.startTime,
+                                shift.endTime,
+                            ),
+                        0,
+                    );
+                const actualMinutes = rows.reduce((total, shift) => {
+                    if (
+                        !shift.actualStatus ||
+                        shift.actualStatus === "not-worked"
+                    ) {
+                        return total;
+                    }
+                    return (
+                        total +
+                        getShiftDurationMinutes(
+                            shift.actualStartTime,
+                            shift.actualEndTime,
+                        )
+                    );
+                }, 0);
+                const reviewedRows = rows.filter(
+                    (shift) => shift.actualStatus,
+                );
+                const reviewedScheduledMinutes = reviewedRows
+                    .filter((shift) => !shift.isUnscheduledActual)
+                    .reduce(
+                        (total, shift) =>
+                            total +
+                            getShiftDurationMinutes(
+                                shift.startTime,
+                                shift.endTime,
+                            ),
+                        0,
+                    );
+                const adjustedCount = rows.filter((shift) =>
+                    ["adjusted", "unscheduled"].includes(shift.actualStatus),
+                ).length;
+                const noShowCount = rows.filter(
+                    (shift) => shift.actualStatus === "not-worked",
+                ).length;
+
+                summary.innerHTML = `
+                    <div class="actualize-stat"><span>Scheduled</span><strong>${formatActualHours(scheduledMinutes)}</strong></div>
+                    <div class="actualize-stat"><span>Actual reviewed</span><strong>${formatActualHours(actualMinutes)}</strong></div>
+                    <div class="actualize-stat"><span>Difference</span><strong>${reviewedRows.length ? formatActualDifference(actualMinutes - reviewedScheduledMinutes) : "—"}</strong></div>
+                    <div class="actualize-stat"><span>Adjusted</span><strong>${adjustedCount}</strong></div>
+                    <div class="actualize-stat"><span>Vacated</span><strong>${noShowCount}</strong></div>
+                `;
+            }
+
+            function renderActualizePayrollOutput() {
+                const preview = document.getElementById(
+                    "actualizePayrollOutput",
+                );
+                if (!preview) return;
+
+                const output = getPayrollClipboardText();
+                preview.textContent = output || "No active employees.";
+            }
+
+            function renderActualizeShiftList() {
+                const list = document.getElementById("actualizeShiftList");
+                if (!list) return;
+
+                const rows = getActualizeRowsForDate(actualizeSelectedDate);
+                if (rows.length === 0) {
+                    const emptyTitle = isClosedDate(actualizeSelectedDate)
+                        ? "Closed for business"
+                        : "No shifts to review";
+                    list.innerHTML = `
+                        <div class="actualize-empty">
+                            <strong>${emptyTitle}</strong>
+                        </div>
+                    `;
+                    return;
+                }
+
+                const employeeOptions =
+                    '<option value="">No employee</option>' +
+                    employees
+                    .map(
+                        (employee) =>
+                            `<option value="${employee.id}">${escapeActualizeHtml(employee.name)}${employee.archived ? " (Archived)" : ""}</option>`,
+                    )
+                    .join("");
+
+                list.innerHTML = `
+                    ${rows
+                        .map((shift) => {
+                            const key = String(shift.id);
+                            const employeeSelectId = `actual-employee-${key}`;
+                            const startInputId = `actual-start-${key}`;
+                            const endInputId = `actual-end-${key}`;
+                            const noShow = shift.actualStatus === "not-worked";
+                            const isFuture = isFutureActualDate(shift.date);
+                            const rowState = shift.actualStatus
+                                ? `is-${shift.actualStatus}`
+                                : "";
+                            const differenceText = isFuture && !shift.actualStatus
+                                ? "Available after this date begins."
+                                : getActualDifferenceText(shift);
+                            const canReset = Boolean(
+                                shift.isUnscheduledActual ||
+                                    shift.actualStatus ||
+                                    shift._clearActualStatus,
+                            );
+                            return `
+                                <article class="actualize-row ${rowState}">
+                                    <header class="actualize-row-header">
+                                        <div class="actualize-scheduled">
+                                            <strong>${escapeActualizeHtml(shift.employeeName)}</strong>
+                                            <span>${shift.isUnscheduledActual ? "Not originally scheduled" : `Scheduled · ${formatTime12Hour(shift.startTime)} – ${formatTime12Hour(shift.endTime)}`}</span>
+                                        </div>
+                                        <div class="actualize-status-wrap">
+                                            <span class="actualize-status ${shift.actualStatus || ""}">${isFuture && !shift.actualStatus ? "Upcoming" : getActualStatusLabel(shift.actualStatus)}</span>
+                                            ${differenceText ? `<div class="actualize-difference">${escapeActualizeHtml(differenceText)}</div>` : ""}
+                                        </div>
+                                    </header>
+                                    <div class="actualize-row-main">
+                                        <div class="actualize-actual-employee">
+                                            <label class="actualize-field-label" for="${employeeSelectId}">Actual employee</label>
+                                            <select
+                                                id="${employeeSelectId}"
+                                                aria-label="Actual employee for ${escapeActualizeHtml(shift.employeeName)}"
+                                                onchange="updateActualDraftField('${key}', 'actualEmployeeId', this.value)"
+                                                ${noShow || isFuture ? "disabled" : ""}
+                                            >
+                                                ${employeeOptions}
+                                            </select>
+                                        </div>
+                                        <div class="actualize-actual-time">
+                                            <div class="actualize-time-editor">
+                                                <div class="actualize-time-field">
+                                                    <label for="${startInputId}">ACTUAL START</label>
+                                                    <input
+                                                        id="${startInputId}"
+                                                        type="time"
+                                                        aria-label="Actual start time"
+                                                        value="${shift.actualStartTime || ""}"
+                                                        onchange="updateActualDraftField('${key}', 'actualStartTime', this.value)"
+                                                        ${noShow || isFuture ? "disabled" : ""}
+                                                    />
+                                                    <div class="actualize-time-nudge-pair">
+                                                        <span>15 min</span>
+                                                        <button type="button" class="actualize-mini-btn" aria-label="Move start time 15 minutes earlier" onclick="adjustActualTime('${key}', 'actualStartTime', -15)" ${noShow || isFuture ? "disabled" : ""}>−</button>
+                                                        <button type="button" class="actualize-mini-btn" aria-label="Move start time 15 minutes later" onclick="adjustActualTime('${key}', 'actualStartTime', 15)" ${noShow || isFuture ? "disabled" : ""}>+</button>
+                                                    </div>
+                                                </div>
+                                                <span class="actualize-time-separator">to</span>
+                                                <div class="actualize-time-field">
+                                                    <label for="${endInputId}">ACTUAL END</label>
+                                                    <input
+                                                        id="${endInputId}"
+                                                        type="time"
+                                                        aria-label="Actual end time"
+                                                        value="${shift.actualEndTime || ""}"
+                                                        onchange="updateActualDraftField('${key}', 'actualEndTime', this.value)"
+                                                        ${noShow || isFuture ? "disabled" : ""}
+                                                    />
+                                                    <div class="actualize-time-nudge-pair">
+                                                        <span>15 min</span>
+                                                        <button type="button" class="actualize-mini-btn" aria-label="Move end time 15 minutes earlier" onclick="adjustActualTime('${key}', 'actualEndTime', -15)" ${noShow || isFuture ? "disabled" : ""}>−</button>
+                                                        <button type="button" class="actualize-mini-btn" aria-label="Move end time 15 minutes later" onclick="adjustActualTime('${key}', 'actualEndTime', 15)" ${noShow || isFuture ? "disabled" : ""}>+</button>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="actualize-outcome">
+                                            <span class="actualize-field-label">Outcome</span>
+                                            <div class="actualize-row-actions">
+                                            ${
+                                                shift.isUnscheduledActual
+                                                    ? `<span class="actualize-locked-outcome">Actual-only shift</span>`
+                                                    : `
+                                                        <button type="button" class="actualize-mini-btn actualize-action-primary ${shift.actualStatus === "confirmed" ? "is-selected" : ""}" onclick="toggleConfirmedActualShift('${key}')" ${isFuture ? "disabled" : ""}>As scheduled</button>
+                                                        <button type="button" class="actualize-mini-btn actualize-action-vacated ${noShow ? "is-selected" : ""}" onclick="toggleVacatedActualShift('${key}')" ${isFuture ? "disabled" : ""}>Vacated</button>
+                                                    `
+                                            }
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="actualize-row-note">
+                                        <input
+                                            type="text"
+                                            maxlength="160"
+                                            aria-label="Optional actual shift note"
+                                            placeholder="Optional note"
+                                            value="${escapeActualizeHtml(shift.actualNote)}"
+                                            onchange="updateActualDraftField('${key}', 'actualNote', this.value)"
+                                            ${isFuture ? "disabled" : ""}
+                                        />
+                                        <div class="actualize-row-note-actions">
+                                            <span class="actualize-difference">${shift.actualizedAt ? `Last saved ${new Date(shift.actualizedAt).toLocaleDateString("en-US", { month: "short", day: "numeric" })}` : "Not saved yet"}</span>
+                                            ${shift.isUnscheduledActual ? `<button type="button" class="actualize-remove-btn" onclick="removeActualOnlyShift('${key}')" ${isFuture ? "disabled" : ""}>Remove</button>` : ""}
+                                            <button type="button" class="actualize-reset-btn" onclick="resetActualShift('${key}')" ${isFuture || !canReset ? "disabled" : ""}>Reset</button>
+                                        </div>
+                                    </div>
+                                </article>
+                            `;
+                        })
+                        .join("")}
+                `;
+
+                rows.forEach((shift) => {
+                    const select = list.querySelector(
+                        `select[onchange*="${String(shift.id)}"]`,
+                    );
+                    if (select) {
+                        select.value = String(shift.actualEmployeeId || "");
+                    }
+                });
+            }
+
+            function renderActualizeSaveState() {
+                const title = document.getElementById("actualizeSaveTitle");
+                const description = document.getElementById(
+                    "actualizeSaveDescription",
+                );
+                const saveButton = document.getElementById(
+                    "actualizeSaveButton",
+                );
+                const discardButton = document.getElementById(
+                    "actualizeDiscardButton",
+                );
+                const copyButton = document.getElementById(
+                    "actualizeCopyHoursButton",
+                );
+                const outputDescription = document.getElementById(
+                    "actualizeOutputDescription",
+                );
+                if (!title || !description || !saveButton || !discardButton) {
+                    return;
+                }
+
+                saveButton.disabled = !actualizationDirty || pendingActualizationSave;
+                discardButton.disabled =
+                    !actualizationDirty || pendingActualizationSave;
+                if (copyButton) {
+                    const hasPayrollOutput = Boolean(getPayrollClipboardText());
+                    copyButton.disabled =
+                        actualizationDirty ||
+                        pendingActualizationSave ||
+                        !hasPayrollOutput;
+                    copyButton.title = !hasPayrollOutput
+                        ? "No active employees to copy"
+                        : copyButton.disabled
+                          ? "Save your payroll changes before copying hours"
+                          : "Copy this pay period's saved actual hours";
+                }
+                if (outputDescription) {
+                    outputDescription.textContent =
+                        actualizationDirty || pendingActualizationSave
+                            ? "Save changes to update this output."
+                            : "Saved actual hours for this pay period.";
+                }
+
+                if (pendingActualizationSave) {
+                    title.textContent = "Saving actuals…";
+                    description.textContent =
+                        "Keep this page open until Wix confirms the update.";
+                    saveButton.textContent = "Saving…";
+                    return;
+                }
+
+                saveButton.textContent = "Save";
+                if (actualizationDirty) {
+                    const changedCount =
+                        getActualizeRows().filter(
+                            (shift) =>
+                                shift.actualStatus ||
+                                shift._resetActual ||
+                                shift._clearActualStatus,
+                        ).length + actualizationPendingRemovals.size;
+                    title.textContent = "Unsaved actual shift changes";
+                    description.textContent = `${changedCount} shift change${changedCount === 1 ? "" : "s"} will be saved.`;
+                } else {
+                    title.textContent = "No unsaved changes";
+                    description.textContent =
+                        "Update a shift to begin.";
+                }
+            }
+
+            function selectActualizeDate(dateStr) {
+                actualizeSelectedDate = dateStr;
+                toggleActualizeAddPanel(false);
+                renderActualizeWorkspace();
+            }
+
+            function updateActualDraftField(shiftId, field, value) {
+                const shift = actualizationDraft.get(String(shiftId));
+                if (!shift || isFutureActualDate(shift.date)) return;
+
+                if (field === "actualEmployeeId") {
+                    const employeeId = Number(value);
+                    const employee = employees.find(
+                        (item) => item.id === employeeId,
+                    );
+                    shift.actualEmployeeId = employeeId;
+                    shift.actualEmployeeName = employee?.name || "Unknown";
+                } else {
+                    shift[field] = value;
+                }
+
+                if (field !== "actualNote") {
+                    shift.actualStatus = deriveActualStatus(shift);
+                } else if (!shift.actualStatus) {
+                    shift.actualStatus = deriveActualStatus(shift);
+                }
+                shift._resetActual = false;
+                shift._clearActualStatus = false;
+                actualizationDirty = true;
+                renderActualizeWorkspace();
+            }
+
+            function adjustActualTime(shiftId, field, deltaMinutes) {
+                const shift = actualizationDraft.get(String(shiftId));
+                if (
+                    !shift ||
+                    shift.actualStatus === "not-worked" ||
+                    isFutureActualDate(shift.date)
+                ) {
+                    return;
+                }
+                const current = getTimeMinutes(shift[field]);
+                if (current === null) return;
+                const adjusted = (current + deltaMinutes + 24 * 60) % (24 * 60);
+                const hours = String(Math.floor(adjusted / 60)).padStart(2, "0");
+                const minutes = String(adjusted % 60).padStart(2, "0");
+                shift[field] = `${hours}:${minutes}`;
+                shift.actualStatus = deriveActualStatus(shift);
+                shift._resetActual = false;
+                shift._clearActualStatus = false;
+                actualizationDirty = true;
+                renderActualizeWorkspace();
+            }
+
+            function toggleConfirmedActualShift(shiftId) {
+                const shift = actualizationDraft.get(String(shiftId));
+                if (
+                    !shift ||
+                    shift.isUnscheduledActual ||
+                    isFutureActualDate(shift.date)
+                ) {
+                    return;
+                }
+                if (shift.actualStatus === "confirmed") {
+                    shift.actualStatus = null;
+                    shift._resetActual = false;
+                    shift._clearActualStatus = true;
+                    actualizationDirty = true;
+                    renderActualizeWorkspace();
+                    return;
+                }
+                shift.actualEmployeeId = shift.employeeId;
+                shift.actualEmployeeName = shift.employeeName;
+                shift.actualStartTime = shift.startTime;
+                shift.actualEndTime = shift.endTime;
+                shift.actualStatus = "confirmed";
+                shift._resetActual = false;
+                shift._clearActualStatus = false;
+                actualizationDirty = true;
+                renderActualizeWorkspace();
+            }
+
+            function toggleVacatedActualShift(shiftId) {
+                const shift = actualizationDraft.get(String(shiftId));
+                if (
+                    !shift ||
+                    shift.isUnscheduledActual ||
+                    isFutureActualDate(shift.date)
+                ) {
+                    return;
+                }
+                if (shift.actualStatus === "not-worked") {
+                    shift.actualStatus = null;
+                    shift._resetActual = false;
+                    shift._clearActualStatus = true;
+                    actualizationDirty = true;
+                    renderActualizeWorkspace();
+                    return;
+                }
+                shift.actualEmployeeId = null;
+                shift.actualEmployeeName = null;
+                shift.actualStartTime = null;
+                shift.actualEndTime = null;
+                shift.actualStatus = "not-worked";
+                shift._resetActual = false;
+                shift._clearActualStatus = false;
+                actualizationDirty = true;
+                renderActualizeWorkspace();
+            }
+
+            function resetActualShift(shiftId) {
+                const shift = actualizationDraft.get(String(shiftId));
+                if (!shift || isFutureActualDate(shift.date)) return;
+
+                shift.actualEmployeeId = shift.employeeId;
+                shift.actualEmployeeName = shift.employeeName;
+                shift.actualStartTime = shift.startTime;
+                shift.actualEndTime = shift.endTime;
+                shift.actualNote = "";
+                if (shift.isUnscheduledActual) {
+                    shift.actualStatus = "unscheduled";
+                    shift._resetActual = false;
+                    shift._clearActualStatus = false;
+                } else {
+                    shift.actualStatus = null;
+                    shift._resetActual = true;
+                    shift._clearActualStatus = false;
+                }
+                actualizationDirty = true;
+                renderActualizeWorkspace();
+            }
+
+            function toggleActualizeAddPanel(forceOpen) {
+                const panel = document.getElementById("actualizeAddPanel");
+                if (!panel) return;
+                const shouldOpen =
+                    typeof forceOpen === "boolean" ? forceOpen : panel.hidden;
+                panel.hidden = !shouldOpen;
+                if (!shouldOpen) return;
+
+                const employeeSelect = document.getElementById(
+                    "actualizeAddEmployee",
+                );
+                employeeSelect.innerHTML = employees
+                    .filter((employee) => !employee.archived)
+                    .map(
+                        (employee) =>
+                            `<option value="${employee.id}">${escapeActualizeHtml(employee.name)}</option>`,
+                    )
+                    .join("");
+                const dateInput = document.getElementById("actualizeAddDate");
+                const weekDates = getActualizeWeekDates();
+                dateInput.min = formatDate(weekDates[0]);
+                dateInput.max = formatDate(weekDates[weekDates.length - 1]);
+                dateInput.value = actualizeSelectedDate;
+            }
+
+            function addUnscheduledActualShift() {
+                const employeeId = Number(
+                    document.getElementById("actualizeAddEmployee").value,
+                );
+                const date = document.getElementById("actualizeAddDate").value;
+                const startTime = document.getElementById(
+                    "actualizeAddStart",
+                ).value;
+                const endTime = document.getElementById("actualizeAddEnd").value;
+                const actualNote = document
+                    .getElementById("actualizeAddNote")
+                    .value.trim();
+                const employee = employees.find(
+                    (item) => item.id === employeeId,
+                );
+
+                if (!employee || !date || !startTime || !endTime) {
+                    showToast(
+                        "Missing shift details",
+                        "Choose an employee, date, start time, and end time.",
+                        "error",
+                    );
+                    return;
+                }
+                if (!isDateInActualizeWeek(date)) {
+                    showToast(
+                        "Date outside this pay period",
+                        "Choose a date shown in the current pay period.",
+                        "error",
+                    );
+                    return;
+                }
+                if (isFutureActualDate(date)) {
+                    showToast(
+                        "Date has not happened yet",
+                        "Work can only be added for today or an earlier date.",
+                        "error",
+                    );
+                    return;
+                }
+
+                const id = Date.now() + Math.random();
+                actualizationDraft.set(String(id), {
+                    id,
+                    wixId: null,
+                    employeeId,
+                    employeeName: employee.name,
+                    date,
+                    startTime,
+                    endTime,
+                    isDayOff: false,
+                    isTimeOffRequest: false,
+                    requestStatus: null,
+                    requestDate: null,
+                    requestedBy: null,
+                    timeOffPeriod: "full-day",
+                    actualEmployeeId: employeeId,
+                    actualEmployeeName: employee.name,
+                    actualStartTime: startTime,
+                    actualEndTime: endTime,
+                    actualStatus: "unscheduled",
+                    actualizedAt: null,
+                    actualNote,
+                    isUnscheduledActual: true,
+                    _resetActual: false,
+                    _clearActualStatus: false,
+                });
+                actualizeSelectedDate = date;
+                actualizationDirty = true;
+                document.getElementById("actualizeAddNote").value = "";
+                toggleActualizeAddPanel(false);
+                renderActualizeWorkspace();
+            }
+
+            function removeActualOnlyShift(shiftId) {
+                const key = String(shiftId);
+                const draftShift = actualizationDraft.get(key);
+                if (!draftShift?.isUnscheduledActual) return;
+                const savedShift = shifts.find(
+                    (shift) => String(shift.id) === key,
+                );
+                actualizationPendingRemovals.set(key, savedShift?.wixId || null);
+                actualizationDraft.delete(key);
+                actualizationDirty = true;
+                renderActualizeWorkspace();
+            }
+
+            function getActualizationOverlapWarnings() {
+                const reviewed = getActualizeRows().filter(
+                    (shift) =>
+                        shift.actualStatus &&
+                        shift.actualStatus !== "not-worked" &&
+                        shift.actualEmployeeId &&
+                        shift.actualStartTime &&
+                        shift.actualEndTime,
+                );
+                const warnings = [];
+                for (let index = 0; index < reviewed.length; index++) {
+                    for (
+                        let compareIndex = index + 1;
+                        compareIndex < reviewed.length;
+                        compareIndex++
+                    ) {
+                        const first = reviewed[index];
+                        const second = reviewed[compareIndex];
+                        if (
+                            first.date !== second.date ||
+                            first.actualEmployeeId !== second.actualEmployeeId
+                        ) {
+                            continue;
+                        }
+                        if (
+                            doShiftIntervalsOverlap(
+                                getShiftInterval(
+                                    first.actualStartTime,
+                                    first.actualEndTime,
+                                ),
+                                getShiftInterval(
+                                    second.actualStartTime,
+                                    second.actualEndTime,
+                                ),
+                            )
+                        ) {
+                            warnings.push(
+                                `${first.actualEmployeeName || "Employee"} has overlapping actual shifts on ${formatDateLong(first.date)}.`,
+                            );
+                        }
+                    }
+                }
+                return [...new Set(warnings)];
+            }
+
+            function finishActualization() {
+                if (!actualizationDirty || pendingActualizationSave) return;
+
+                const reviewedRows = getActualizeRows().filter(
+                    (shift) => shift.actualStatus,
+                );
+                const invalidRow = reviewedRows.find(
+                    (shift) =>
+                        shift.actualStatus !== "not-worked" &&
+                        (!shift.actualEmployeeId ||
+                            !shift.actualStartTime ||
+                            !shift.actualEndTime),
+                );
+                if (invalidRow) {
+                    showToast(
+                        "Incomplete actual shift",
+                        `Add an employee and both times for ${invalidRow.employeeName}.`,
+                        "error",
+                    );
+                    return;
+                }
+
+                const overlapWarnings = getActualizationOverlapWarnings();
+                if (
+                    overlapWarnings.length > 0 &&
+                    !confirm(
+                        `${overlapWarnings.slice(0, 4).join("\n")}\n\nSave these actuals anyway?`,
+                    )
+                ) {
+                    return;
+                }
+
+                saveState();
+                const removalKeys = new Set(
+                    actualizationPendingRemovals.keys(),
+                );
+                shifts = shifts.filter(
+                    (shift) => !removalKeys.has(String(shift.id)),
+                );
+                const actualizedAt = new Date().toISOString();
+                actualizationDraft.forEach((draftShift) => {
+                    const existing = shifts.find(
+                        (shift) => String(shift.id) === String(draftShift.id),
+                    );
+                    if (draftShift._resetActual) {
+                        if (existing) {
+                            Object.assign(existing, {
+                                actualEmployeeId: null,
+                                actualEmployeeName: null,
+                                actualStartTime: null,
+                                actualEndTime: null,
+                                actualStatus: null,
+                                actualizedAt: null,
+                                actualNote: "",
+                                isUnscheduledActual: false,
+                            });
+                        }
+                        return;
+                    }
+                    if (draftShift._clearActualStatus) {
+                        if (existing) {
+                            Object.assign(existing, {
+                                actualEmployeeId:
+                                    draftShift.actualEmployeeId ?? null,
+                                actualEmployeeName:
+                                    draftShift.actualEmployeeName || null,
+                                actualStartTime:
+                                    draftShift.actualStartTime || null,
+                                actualEndTime:
+                                    draftShift.actualEndTime || null,
+                                actualStatus: null,
+                                actualNote: draftShift.actualNote || "",
+                            });
+                        }
+                        return;
+                    }
+                    if (!draftShift.actualStatus) return;
+                    const actualFields = {
+                        actualEmployeeId: draftShift.actualEmployeeId || null,
+                        actualEmployeeName:
+                            draftShift.actualEmployeeName || null,
+                        actualStartTime: draftShift.actualStartTime || null,
+                        actualEndTime: draftShift.actualEndTime || null,
+                        actualStatus: draftShift.actualStatus,
+                        actualizedAt,
+                        actualNote: draftShift.actualNote || "",
+                        isUnscheduledActual:
+                            draftShift.isUnscheduledActual || false,
+                    };
+                    if (existing) {
+                        Object.assign(existing, actualFields);
+                    } else if (draftShift.isUnscheduledActual) {
+                        shifts.push({ ...draftShift, ...actualFields });
+                    }
+                });
+
+                actualizationDirty = false;
+                pendingActualizationSave = !IS_MOCK_MODE;
+                renderCalendar();
+                renderEmployees();
+
+                if (IS_MOCK_MODE) {
+                    buildActualizationDraft();
+                    updateSaveStatus("saved");
+                    showToast(
+                        "Actuals saved",
+                        "Changes are local to this demo session.",
+                        "success",
+                    );
+                    return;
+                }
+
+                renderActualizeSaveState();
+                syncToDatabase();
+            }
+
+            function discardActualizationChanges() {
+                if (!actualizationDirty) return;
+                if (
+                    !confirm(
+                        "Discard the unsaved actual shift changes for this pay period?",
+                    )
+                ) {
+                    return;
+                }
+                buildActualizationDraft();
+            }
+
+            function openActualizeWorkspace() {
+                closeToolsMenu();
+                const today = new Date();
+                today.setHours(0, 0, 0, 0);
+                actualizeWeekStart = new Date(today);
+                actualizeWeekStart.setDate(
+                    actualizeWeekStart.getDate() - ACTUALIZE_PERIOD_DAYS,
+                );
+                const completedPeriodEnd = new Date(actualizeWeekStart);
+                completedPeriodEnd.setDate(
+                    completedPeriodEnd.getDate() + ACTUALIZE_PERIOD_DAYS - 1,
+                );
+                actualizeSelectedDate = formatDate(completedPeriodEnd);
+                document.getElementById("scheduleWorkspace").hidden = true;
+                document.getElementById("actualizeWorkspace").hidden = false;
+                document
+                    .getElementById("mainContent")
+                    .classList.add("actualize-mode");
+                document
+                    .getElementById("actualizeButton")
+                    .setAttribute("aria-pressed", "true");
+                buildActualizationDraft();
+                document
+                    .getElementById("actualizeTitle")
+                    ?.scrollIntoView({ block: "start" });
+            }
+
+            function closeActualizeWorkspace() {
+                if (
+                    actualizationDirty &&
+                    !confirm(
+                        "Leave actualization and discard your unsaved changes?",
+                    )
+                ) {
+                    return;
+                }
+                actualizationDirty = false;
+                toggleActualizeAddPanel(false);
+                document.getElementById("actualizeWorkspace").hidden = true;
+                document.getElementById("scheduleWorkspace").hidden = false;
+                document
+                    .getElementById("mainContent")
+                    .classList.remove("actualize-mode");
+                document
+                    .getElementById("actualizeButton")
+                    .setAttribute("aria-pressed", "false");
+            }
+
+            function setActualizeStartDate(dateValue) {
+                if (!dateValue) return;
+                if (
+                    actualizationDirty &&
+                    !confirm(
+                        "Change the date range and discard your unsaved payroll changes?",
+                    )
+                ) {
+                    renderActualizeWorkspace();
+                    return;
+                }
+
+                const nextStart = new Date(`${dateValue}T00:00:00`);
+                if (Number.isNaN(nextStart.getTime())) return;
+                actualizeWeekStart = nextStart;
+                actualizeSelectedDate = dateValue;
+                toggleActualizeAddPanel(false);
+                buildActualizationDraft();
+            }
+
+            function changeActualizeWeek(dayDelta) {
+                if (
+                    actualizationDirty &&
+                    !confirm(
+                        "Change the date range and discard your unsaved payroll changes?",
+                    )
+                ) {
+                    return;
+                }
+                actualizeWeekStart.setDate(
+                    actualizeWeekStart.getDate() + dayDelta,
+                );
+                actualizeSelectedDate = formatDate(actualizeWeekStart);
+                toggleActualizeAddPanel(false);
+                buildActualizationDraft();
+            }
+
             function autoSave() {
                 // Clear any pending auto-save
                 if (autoSaveTimeout) {
@@ -3385,6 +5719,9 @@
                     employees: employees,
                     shifts: shifts,
                     closedDays: closedDays,
+                    deletedShiftWixIds: [
+                        ...actualizationPendingRemovals.values(),
+                    ].filter(Boolean),
                 };
 
                 // Send to Wix parent page
@@ -3663,10 +6000,14 @@
 
             function applyLoadedScheduleData(data, { showLoadedToast = false } = {}) {
                 employees = data.employees || [];
-                shifts = (data.shifts || []).map((shift) => ({
-                    ...shift,
-                    timeOffPeriod: normalizeTimeOffPeriod(shift.timeOffPeriod),
-                }));
+                shifts = (data.shifts || []).map((shift) =>
+                    normalizeShiftActualFields({
+                        ...shift,
+                        timeOffPeriod: normalizeTimeOffPeriod(
+                            shift.timeOffPeriod,
+                        ),
+                    }),
+                );
                 availability = (data.availability || []).map((item) => ({
                     ...item,
                     availabilityPeriod: normalizeTimeOffPeriod(
@@ -3863,7 +6204,9 @@
                 switch (message.action) {
                     case "LOAD_DATA":
                         employees = message.employees || [];
-                        shifts = message.shifts || [];
+                        shifts = (message.shifts || []).map(
+                            normalizeShiftActualFields,
+                        );
                         closedDays = normalizeClosedDays(message.closedDays || []);
                         selectedEmployees = new Set(employees.map((e) => e.id));
                         renderEmployees();
@@ -3949,7 +6292,9 @@
                                     );
 
                                     employees = data.employees || [];
-                                    shifts = data.shifts || [];
+                                    shifts = (data.shifts || []).map(
+                                        normalizeShiftActualFields,
+                                    );
                                     closedDays = normalizeClosedDays(
                                         data.closedDays || [],
                                     );
@@ -4179,7 +6524,8 @@
                             const dayShifts = shifts.filter(
                                 (s) =>
                                     s.date === dateStr &&
-                                    s.employeeId === emp.id,
+                                    s.employeeId === emp.id &&
+                                    !s.isUnscheduledActual,
                             );
 
                             if (dayShifts.length > 0) {
@@ -4613,6 +6959,7 @@
             function calculateEmployeeShiftCount(employeeId) {
                 const employeeShifts = shifts.filter((s) => {
                     if (s.employeeId !== employeeId) return false;
+                    if (s.isUnscheduledActual) return false;
                     if (s.isDayOff) return false; // Don't count day offs
 
                     const shiftDate = new Date(s.date + "T00:00:00");
@@ -4633,6 +6980,7 @@
             function calculateEmployeeHours(employeeId) {
                 const employeeShifts = shifts.filter((s) => {
                     if (s.employeeId !== employeeId) return false;
+                    if (s.isUnscheduledActual) return false;
                     if (s.isDayOff) return false; // Exclude day offs from hours
                     if (s.isTimeOffRequest) return false; // Exclude time-off requests from hours
                     if (!s.startTime || !s.endTime) return false; // Exclude shifts without valid times
@@ -5070,6 +7418,7 @@
                 const requestedInterval = getShiftInterval(startTime, endTime);
 
                 for (const shift of shifts) {
+                    if (shift.isUnscheduledActual) continue;
                     if (
                         shift.id === ignoreShiftId ||
                         shift.employeeId !== employeeId ||
@@ -6367,6 +8716,7 @@
                             .filter((s) => {
                                 if (dayIsClosed) return false;
                                 if (s.date !== dateStr) return false;
+                                if (s.isUnscheduledActual) return false;
 
                                 // FILTER OUT DENIED REQUESTS - don't show on calendar
                                 if (s.requestStatus === "denied") return false;
@@ -6479,8 +8829,8 @@
 
                         calendarHTML += `
                         <div class="day-column">
-                            <div style="padding: 8px; font-weight: 600; color: #2d3748; border-bottom: 1px solid #e2e8f0;">
-                                ${dateDisplay}
+                            <div class="day-date-heading">
+                                <span>${dateDisplay}</span>
                             </div>
                             <div class="shifts-container" style="padding: 8px;"
                                   ondragover="handleDragOver(event)"
@@ -6641,6 +8991,9 @@
                     employees: employees,
                     shifts: shifts,
                     closedDays: closedDays,
+                    deletedShiftWixIds: [
+                        ...actualizationPendingRemovals.values(),
+                    ].filter(Boolean),
                 };
 
                 // Send to Wix parent page
@@ -6705,17 +9058,27 @@
                         const wasManualSave = document
                             .getElementById("loadingOverlay")
                             .classList.contains("active");
+                        const wasActualizationSave = pendingActualizationSave;
 
                         applySyncResult(event.data.syncResult);
                         isSaving = false;
+                        pendingActualizationSave = false;
                         updateSaveStatus("saved");
                         updateMaintenanceStatus(
                             event.data.cleanup,
                             event.data.appVersion,
                         );
                         hideLoading();
+                        if (wasActualizationSave) {
+                            buildActualizationDraft();
+                            showToast(
+                                "Actuals saved",
+                                "The published schedule is unchanged.",
+                                "success",
+                            );
+                        }
                         // Only show toast for manual saves (when loading overlay was shown)
-                        if (wasManualSave) {
+                        if (wasManualSave && !wasActualizationSave) {
                             showToast(
                                 "Saved to Database",
                                 "Your schedule has been backed up successfully",
@@ -6724,6 +9087,11 @@
                         }
                     } else if (event.data.action === "SYNC_ERROR") {
                         isSaving = false;
+                        if (pendingActualizationSave) {
+                            pendingActualizationSave = false;
+                            actualizationDirty = true;
+                            renderActualizeWorkspace();
+                        }
                         updateSaveStatus("error");
                         hideLoading();
                         showToast(

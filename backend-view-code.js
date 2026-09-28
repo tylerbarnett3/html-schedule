@@ -1,6 +1,6 @@
 import wixData from 'wix-data';
 
-const APP_VERSION = 'v2.3';
+const APP_VERSION = 'v2.4';
 
 $w.onReady(function () {
     const iframe = $w('#html1');
@@ -106,26 +106,29 @@ async function loadFromDatabase() {
         }
         
         // Convert shifts
-        const shiftsData = allShifts.map((shift, index) => {
-            const wixEmployeeId = shift.employee._id || shift.employee;
-            const localEmployeeId = employeeIdMap[wixEmployeeId];
-            const employee = employeesData.find(e => e.id === localEmployeeId);
-            
-            return {
-                id: Date.now() + index + 100000,
-                employeeId: localEmployeeId,
-                employeeName: employee?.name || 'Unknown',
-                date: shift.date,
-                startTime: shift.startTime,
-                endTime: shift.endTime,
-                isDayOff: shift.isDayOff || false,
-                isTimeOffRequest: shift.isTimeOffRequest || false,
-                requestStatus: shift.requestStatus || null,
-                requestDate: shift.requestDate || null,
-                requestedBy: shift.requestedBy || null,
-                timeOffPeriod: shift.timeOffPeriod || 'full-day'
-            };
-        }).filter(shift => shift.employeeId !== undefined);
+        const shiftsData = allShifts
+            .filter(shift => !shift.isUnscheduledActual)
+            .map((shift, index) => {
+                const wixEmployeeId = shift.employee._id || shift.employee;
+                const localEmployeeId = employeeIdMap[wixEmployeeId];
+                const employee = employeesData.find(e => e.id === localEmployeeId);
+
+                return {
+                    id: Date.now() + index + 100000,
+                    employeeId: localEmployeeId,
+                    employeeName: employee?.name || 'Unknown',
+                    date: shift.date,
+                    startTime: shift.startTime,
+                    endTime: shift.endTime,
+                    isDayOff: shift.isDayOff || false,
+                    isTimeOffRequest: shift.isTimeOffRequest || false,
+                    requestStatus: shift.requestStatus || null,
+                    requestDate: shift.requestDate || null,
+                    requestedBy: shift.requestedBy || null,
+                    timeOffPeriod: shift.timeOffPeriod || 'full-day'
+                };
+            })
+            .filter(shift => shift.employeeId !== undefined);
 
         const availabilityData = allAvailability.map((item, index) => {
             const wixEmployeeId = item.employee._id || item.employee;

@@ -1,6 +1,6 @@
 import wixData from 'wix-data';
 
-const APP_VERSION = 'v2.3';
+const APP_VERSION = 'v2.5';
 const SHIFT_RETENTION_DAYS = 90;
 
 $w.onReady(function () {
@@ -255,6 +255,8 @@ async function syncToDatabase(data) {
         await bulkRemoveByIds('EmployeeRates', staleRateIds);
         
         // ===== SYNC SHIFTS =====
+        await bulkRemoveByIds('Shifts', data.deletedShiftWixIds || []);
+
         let allExistingShifts = [];
         let shiftsQuery = wixData.query('Shifts').limit(100);
         let shiftsResult = await shiftsQuery.find();
@@ -278,6 +280,10 @@ async function syncToDatabase(data) {
                 console.warn('Skipping shift - no valid employee mapping for employeeId:', shift.employeeId);
                 continue;
             }
+
+            const actualEmployeeWixId = shift.actualEmployeeId
+                ? employeeIdMap[shift.actualEmployeeId] || null
+                : null;
             
             const shiftData = {
                 employee: wixEmpId,
@@ -289,7 +295,14 @@ async function syncToDatabase(data) {
                 requestStatus: shift.requestStatus || null,
                 requestDate: shift.requestDate || null,
                 requestedBy: shift.requestedBy || null,
-                timeOffPeriod: shift.timeOffPeriod || 'full-day'
+                timeOffPeriod: shift.timeOffPeriod || 'full-day',
+                actualEmployee: actualEmployeeWixId,
+                actualStartTime: shift.actualStartTime || null,
+                actualEndTime: shift.actualEndTime || null,
+                actualStatus: shift.actualStatus || null,
+                actualizedAt: shift.actualizedAt ? new Date(shift.actualizedAt) : null,
+                actualNote: shift.actualNote || null,
+                isUnscheduledActual: shift.isUnscheduledActual || false
             };
             
             if (shift.wixId) {
@@ -397,6 +410,10 @@ function validateSyncPayload(data) {
         throw new Error('Invalid sync payload: closedDays must be an array.');
     }
 
+    if (data.deletedShiftWixIds !== undefined && !Array.isArray(data.deletedShiftWixIds)) {
+        throw new Error('Invalid sync payload: deletedShiftWixIds must be an array.');
+    }
+
     if (data.employees.length === 0 && data.shifts.length === 0 && (!data.closedDays || data.closedDays.length === 0)) {
         throw new Error('Refusing to sync empty schedule data. Reload from the database and try again.');
     }
@@ -444,7 +461,8 @@ function getShiftDedupeKey(shift) {
         normalizeKeyValue(shift.requestStatus),
         normalizeKeyValue(shift.requestDate),
         normalizeKeyValue(shift.requestedBy),
-        normalizeKeyValue(shift.timeOffPeriod || 'full-day')
+        normalizeKeyValue(shift.timeOffPeriod || 'full-day'),
+        normalizeBoolean(shift.isUnscheduledActual)
     ].join('|');
 }
 
@@ -482,7 +500,14 @@ function getShiftCompletenessScore(shift) {
         shift.requestStatus,
         shift.requestDate,
         shift.requestedBy,
-        shift.timeOffPeriod
+        shift.timeOffPeriod,
+        shift.actualEmployee,
+        shift.actualStartTime,
+        shift.actualEndTime,
+        shift.actualStatus,
+        shift.actualizedAt,
+        shift.actualNote,
+        shift.isUnscheduledActual
     ].filter(value => value !== undefined && value !== null && value !== '').length;
 }
 
@@ -686,6 +711,11 @@ async function loadFromDatabase() {
             const wixEmployeeId = shift.employee._id || shift.employee;
             const localEmployeeId = employeeIdMap[wixEmployeeId];
             const employee = employeesData.find(e => e.id === localEmployeeId);
+            const wixActualEmployeeId = shift.actualEmployee?._id || shift.actualEmployee;
+            const localActualEmployeeId = wixActualEmployeeId
+                ? employeeIdMap[wixActualEmployeeId]
+                : null;
+            const actualEmployee = employeesData.find(e => e.id === localActualEmployeeId);
             
             return {
                 id: Date.now() + index + 100000,
@@ -700,7 +730,15 @@ async function loadFromDatabase() {
                 requestStatus: shift.requestStatus || null,
                 requestDate: shift.requestDate || null,
                 requestedBy: shift.requestedBy || null,
-                timeOffPeriod: shift.timeOffPeriod || 'full-day'
+                timeOffPeriod: shift.timeOffPeriod || 'full-day',
+                actualEmployeeId: localActualEmployeeId,
+                actualEmployeeName: actualEmployee?.name || null,
+                actualStartTime: shift.actualStartTime || null,
+                actualEndTime: shift.actualEndTime || null,
+                actualStatus: shift.actualStatus || null,
+                actualizedAt: shift.actualizedAt || null,
+                actualNote: shift.actualNote || '',
+                isUnscheduledActual: shift.isUnscheduledActual || false
             };
         }).filter(shift => shift.employeeId !== undefined); // Filter out shifts with no valid employee
 
