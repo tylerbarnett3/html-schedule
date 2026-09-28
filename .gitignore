@@ -2,3 +2,8 @@
 node_modules/
 dist/
 .vite-pages/
+
+# Local data and secrets
+schedule-backup-*.json
+.env
+.env.*
