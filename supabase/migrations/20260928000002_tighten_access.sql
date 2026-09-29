@@ -1,4 +1,4 @@
--- Follow-up to 001_schema.sql. Run once in the Supabase SQL Editor.
+-- Follow-up to 20260928000001_schema.sql. Run once in the Supabase SQL Editor.
 --
 -- 1. Only admins and logins linked to an employee can read the schedule. Before this,
 --    any logged-in account could, including one not linked to an employee.

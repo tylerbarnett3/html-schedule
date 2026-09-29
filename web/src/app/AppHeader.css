@@ -1,0 +1,123 @@
+/* Dark clay header band from the old page (design spec §1.5, §2.2). */
+.app-header {
+  position: relative;
+  /* clip (not just hidden) so the overflowing glow can't be scrolled into view by focus. */
+  overflow: hidden;
+  overflow: clip;
+  padding: var(--space-38) var(--space-32) var(--space-32);
+  color: var(--white);
+  text-align: center;
+  background: var(--gradient-header);
+}
+
+.app-header::before {
+  content: "";
+  position: absolute;
+  inset: auto -8% -80% -8%;
+  height: 170px;
+  background: var(--gradient-header-glow);
+  pointer-events: none;
+}
+
+.app-header-title,
+.app-header-actions {
+  position: relative;
+}
+
+.app-header-title {
+  margin-bottom: var(--space-10);
+  font-size: clamp(28px, 4vw, 48px);
+  font-weight: 700;
+  line-height: 1;
+  letter-spacing: -0.04em;
+  text-shadow: 0 8px 28px rgba(0, 0, 0, 0.28);
+}
+
+/* Padding, not margin: a margin would collapse into the title's 10px margin, and the old
+   page had both (30px between the title and the buttons). */
+.app-header-actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: var(--space-8);
+  padding-top: var(--space-20);
+}
+
+.app-header-account {
+  position: absolute;
+  top: var(--space-14);
+  right: var(--space-18);
+  z-index: var(--z-sticky);
+  display: flex;
+  align-items: center;
+  gap: var(--space-10);
+  max-width: min(45%, 360px);
+}
+
+.app-header-user {
+  min-width: 0;
+  overflow: hidden;
+  color: rgba(255, 250, 241, 0.84);
+  font-size: 13px;
+  font-weight: 600;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.app-header-signout {
+  flex: 0 0 auto;
+  min-height: 34px;
+  padding: var(--space-6) var(--space-14);
+  color: var(--cream);
+  font-size: 13px;
+  font-weight: 600;
+  background: rgba(255, 250, 241, 0.1);
+  border: 1px solid rgba(255, 250, 241, 0.32);
+  border-radius: var(--radius-pill);
+  transition: var(--transition-lift);
+}
+
+.app-header-signout:hover:not(:disabled) {
+  background: rgba(255, 250, 241, 0.2);
+  border-color: rgba(255, 250, 241, 0.5);
+  transform: var(--lift);
+}
+
+.app-header-signout:disabled {
+  opacity: 0.6;
+}
+
+@media (max-width: 768px) {
+  .app-header {
+    padding: var(--space-14) var(--space-18) 24px;
+  }
+
+  /* Phones: the account row sits above the title instead of floating over it. */
+  .app-header-account {
+    position: relative;
+    top: auto;
+    right: auto;
+    justify-content: flex-end;
+    max-width: none;
+    margin: 0 -6px var(--space-12) 0;
+  }
+
+  .app-header-signout {
+    min-height: 40px;
+  }
+
+  .app-header-title {
+    margin-top: var(--space-14);
+  }
+
+  .app-header-account + .app-header-title {
+    margin-top: 0;
+  }
+}
+
+@media (max-width: 480px) {
+  .app-header-actions {
+    flex-direction: column;
+    align-items: stretch;
+  }
+}

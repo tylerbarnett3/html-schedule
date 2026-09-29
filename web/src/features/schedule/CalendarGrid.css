@@ -1,0 +1,237 @@
+/* Day grid from the old page (design spec §2.7, §2.8, §2.10, §3). The WWGG stripe is gone:
+   every day uses the same paper surface. */
+.calendar-weekdays,
+.calendar-days {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  gap: var(--space-12);
+}
+
+.calendar-weekdays {
+  margin-bottom: var(--space-12);
+}
+
+.calendar-weekday {
+  padding: var(--space-10);
+  overflow: hidden;
+  color: var(--clay-800);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-align: center;
+  text-transform: uppercase;
+  background: var(--pill-bg);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-md);
+}
+
+.calendar-day {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  min-height: 178px;
+  overflow: hidden;
+  background: var(--surface-86);
+  border: 1px solid rgba(255, 255, 255, 0.74);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-card);
+}
+
+/* Today: a gold ring around the day plus a small tag in its header. */
+.calendar-day-today {
+  border-color: var(--gold);
+  box-shadow:
+    0 0 0 2px rgba(216, 169, 79, 0.5),
+    var(--shadow-card);
+}
+
+.calendar-day-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-6);
+  min-width: 0;
+  padding: var(--space-8);
+  color: var(--clay-900);
+  font-size: 16px;
+  font-weight: 800;
+  line-height: 1.2;
+  letter-spacing: -0.01em;
+  background: var(--gradient-date-header);
+  border-bottom: 1px solid var(--line);
+}
+
+/* The day card clips overflow, so draw the focus ring inside the header. */
+.calendar-day-header:focus-visible {
+  outline-offset: -3px;
+}
+
+.calendar-day-date {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.calendar-day-today .calendar-day-date {
+  margin: -2px -4px;
+  padding: 2px var(--space-6) 2px 5px;
+  background: rgba(216, 169, 79, 0.24);
+  border-radius: var(--radius-pill);
+  box-shadow: inset 0 0 0 1px rgba(216, 169, 79, 0.65);
+}
+
+.calendar-today-tag {
+  flex: 0 0 auto;
+  padding: 2px 7px;
+  color: var(--clay-900);
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  background: rgba(216, 169, 79, 0.26);
+  border: 1px solid rgba(216, 169, 79, 0.62);
+  border-radius: var(--radius-pill);
+}
+
+.calendar-day-body {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  min-height: 128px;
+  padding: var(--space-8);
+}
+
+.calendar-cards {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-8);
+}
+
+/* Stand-in cards for a day whose rows are still loading. */
+.calendar-skeleton {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-8);
+}
+
+.calendar-skeleton span {
+  height: 44px;
+  background: var(--pill-bg);
+  border-radius: var(--radius-md);
+  animation: calendar-skeleton-pulse 1.2s ease-in-out infinite alternate;
+}
+
+.calendar-skeleton span + span {
+  width: 70%;
+}
+
+@keyframes calendar-skeleton-pulse {
+  to {
+    opacity: 0.45;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .calendar-skeleton span {
+    animation: none;
+  }
+}
+
+/* Closed day: C L O S E D stacked on a sage block; it replaces every card. */
+.calendar-closed {
+  display: flex;
+  flex: 1;
+  align-items: center;
+  justify-content: center;
+  min-height: 160px;
+  padding: var(--space-18) var(--space-10);
+  color: var(--white);
+  font-size: 20px;
+  font-weight: 800;
+  line-height: 1.45;
+  letter-spacing: 0.12em;
+  text-align: center;
+  background: var(--closed-day);
+  border-radius: var(--radius-sm);
+}
+
+.calendar-closed-letters {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+/* Mid-size screens still get 7 columns (as the old page did); tighten the spacing so
+   names and buttons fit the narrow cells. */
+@media (min-width: 769px) and (max-width: 1100px) {
+  .calendar-weekdays,
+  .calendar-days {
+    gap: var(--space-8);
+  }
+
+  .calendar-weekdays {
+    margin-bottom: var(--space-8);
+  }
+
+  .calendar-weekday {
+    padding: var(--space-8) var(--space-4);
+    letter-spacing: 0.06em;
+  }
+
+  .calendar-day-header {
+    padding: var(--space-8) var(--space-6);
+    font-size: 15px;
+  }
+
+  .calendar-day-body {
+    padding: var(--space-6);
+  }
+
+  .calendar-closed {
+    letter-spacing: 0;
+  }
+}
+
+@media (max-width: 768px) {
+  .calendar-days {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .calendar-day {
+    min-height: auto;
+    border-radius: 16px;
+  }
+
+  .calendar-day-header {
+    padding: var(--space-12) var(--space-14);
+    font-size: 14px;
+    line-height: 1.25;
+  }
+
+  /* The agenda has room for the TODAY tag, so the date itself stays plain. */
+  .calendar-day-today .calendar-day-date {
+    margin: 0;
+    padding: 0;
+    background: none;
+    box-shadow: none;
+  }
+
+  .calendar-day-body {
+    min-height: 72px;
+    padding: var(--space-12);
+  }
+
+  .calendar-empty {
+    padding: var(--space-10) 2px;
+    color: var(--muted);
+    font-size: 13px;
+    font-style: italic;
+  }
+}
+
+@media (max-width: 480px) {
+  .calendar-closed {
+    min-height: 120px;
+  }
+}

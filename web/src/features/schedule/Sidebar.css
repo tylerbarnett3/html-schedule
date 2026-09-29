@@ -1,0 +1,197 @@
+/* Sidebar from the old page (design spec §2.5): two toggles and the employee filter drawer. */
+.sidebar {
+  min-width: 0;
+  padding: var(--space-22);
+  background: var(--gradient-sidebar);
+  border-right: 1px solid var(--line);
+}
+
+.sidebar-section + .sidebar-section {
+  margin-top: var(--space-18);
+}
+
+.sidebar-drawer-heading {
+  font-size: 14px;
+}
+
+.sidebar-drawer-toggle {
+  display: flex;
+  align-items: center;
+  gap: var(--space-8);
+  width: 100%;
+  min-height: 48px;
+  padding: var(--space-14) var(--space-16);
+  color: var(--white);
+  font-size: 14px;
+  font-weight: 700;
+  text-align: left;
+  background: var(--gradient-clay);
+  border: 1px solid var(--border-white-65);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-card);
+  transition:
+    var(--transition-lift),
+    border-radius 0.2s ease;
+}
+
+.sidebar-drawer-toggle:hover {
+  background: var(--gradient-clay-hover);
+}
+
+.sidebar-drawer-toggle[aria-expanded="true"] {
+  border-radius: var(--radius-md) var(--radius-md) 0 0;
+}
+
+.sidebar-drawer-title {
+  flex: 1;
+  min-width: 0;
+}
+
+.sidebar-drawer-count {
+  flex: none;
+  padding: 2px var(--space-8);
+  color: var(--cream);
+  font-size: 12px;
+  font-weight: 600;
+  background: rgba(255, 250, 241, 0.18);
+  border-radius: var(--radius-pill);
+}
+
+/* The old chevron inherited dark ink on the brown header; cream reads properly. */
+.sidebar-drawer-chevron {
+  flex: none;
+  color: rgba(255, 250, 241, 0.85);
+  font-size: 13px;
+  transition: transform 0.3s;
+}
+
+.sidebar-drawer-toggle[aria-expanded="true"] .sidebar-drawer-chevron {
+  transform: rotate(180deg);
+}
+
+/* Collapsible panel: grid rows animate from 0fr to 1fr; visibility hides the closed
+   panel from keyboard and screen readers once the animation ends. */
+.sidebar-drawer {
+  display: grid;
+  grid-template-rows: 0fr;
+  visibility: hidden;
+  border-radius: 0 0 var(--radius-md) var(--radius-md);
+  transition:
+    grid-template-rows 0.3s ease-out,
+    box-shadow 0.3s ease-out,
+    visibility 0s linear 0.3s;
+}
+
+.sidebar-drawer[data-open="true"] {
+  grid-template-rows: 1fr;
+  visibility: visible;
+  box-shadow: var(--shadow-card);
+  transition:
+    grid-template-rows 0.5s ease-in,
+    box-shadow 0.5s ease-in,
+    visibility 0s;
+}
+
+.sidebar-drawer-inner {
+  min-height: 0;
+  overflow: hidden;
+}
+
+.sidebar-drawer-content {
+  padding: var(--space-14);
+  background: var(--surface-92);
+  border: 1px solid var(--line);
+  border-top: none;
+  border-radius: 0 0 var(--radius-md) var(--radius-md);
+}
+
+.sidebar-filter-actions {
+  display: flex;
+  gap: var(--space-8);
+  margin-bottom: var(--space-12);
+}
+
+.sidebar-filter-actions .sidebar-filter-action {
+  flex: 1;
+  min-width: 0;
+  min-height: 34px;
+  padding: var(--space-8) var(--space-12);
+}
+
+.sidebar-filter-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+  gap: var(--space-8);
+}
+
+/* Filter rows: the old page gave them a lighter shadow and no visible border. */
+.sidebar-filter-list .sidebar-filter-item {
+  border-color: transparent;
+  box-shadow: var(--shadow-item);
+}
+
+.sidebar-filter-list .sidebar-filter-item:hover {
+  border-color: var(--border-hover);
+}
+
+.sidebar-filter-label {
+  display: flex;
+  align-items: center;
+  gap: var(--space-8);
+  min-width: 0;
+}
+
+.sidebar-swatch {
+  flex: none;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  box-shadow: inset 0 0 0 1px rgba(33, 23, 15, 0.18);
+}
+
+.sidebar-filter-name {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.sidebar-filter-loading {
+  display: flex;
+  justify-content: center;
+  padding: var(--space-10);
+}
+
+.sidebar-filter-empty {
+  padding: 30px var(--space-20);
+  font-size: 13px;
+  font-style: italic;
+  text-align: center;
+}
+
+@media (max-width: 1024px) {
+  .sidebar {
+    border-right: none;
+    border-bottom: 1px solid var(--line);
+  }
+}
+
+@media (max-width: 768px) {
+  .sidebar {
+    padding: var(--space-14);
+  }
+
+  .sidebar-filter-list {
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  }
+
+  .sidebar-filter-actions .sidebar-filter-action {
+    min-height: 40px;
+  }
+}
+
+@media (max-width: 480px) {
+  .sidebar-filter-list {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}

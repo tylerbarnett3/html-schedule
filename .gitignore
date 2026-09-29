@@ -7,3 +7,6 @@ dist/
 schedule-backup-*.json
 .env
 .env.*
+employee-logins.txt
+!.env.example
+!.env.localdb

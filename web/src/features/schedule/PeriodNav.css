@@ -1,0 +1,190 @@
+/* Period navigation card from the old page (design spec §2.6). */
+.period-nav {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-12);
+  margin-bottom: var(--space-22);
+  padding: var(--space-16);
+  background: var(--surface-82);
+  border: 1px solid rgba(255, 255, 255, 0.75);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-card);
+}
+
+/* The old circles were squeezed into ellipses; flex: none keeps them round. */
+.period-nav-arrow {
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  justify-content: center;
+  width: 48px;
+  height: 48px;
+  padding: 0;
+  color: var(--cream);
+  background: var(--gradient-clay);
+  border: none;
+  border-radius: 50%;
+  box-shadow: var(--shadow-button);
+  transition: var(--transition-lift);
+}
+
+.period-nav-arrow:hover {
+  background: var(--gradient-clay-hover);
+  transform: var(--lift);
+}
+
+.period-nav-arrow:active {
+  transform: none;
+}
+
+.period-nav-arrow:focus-visible {
+  outline-offset: 3px;
+}
+
+.period-nav-info {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-8);
+  min-width: 0;
+}
+
+.period-nav-title {
+  color: var(--clay-900);
+  font-size: clamp(17px, 2vw, 23px);
+  font-weight: 800;
+  line-height: 1.2;
+  letter-spacing: -0.03em;
+  text-align: center;
+}
+
+.period-nav-range,
+.period-nav-days {
+  display: block;
+}
+
+.period-nav-fields {
+  display: grid;
+  grid-template-columns: auto minmax(190px, 220px) auto minmax(190px, 220px);
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-10);
+  width: 100%;
+}
+
+.period-nav-label {
+  color: var(--muted);
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.period-nav-input {
+  width: 100%;
+  min-width: 0;
+  min-height: 48px;
+  padding: var(--space-10) var(--space-12);
+  color: var(--ink);
+  font-size: 16px;
+  line-height: 1.2;
+  background: var(--surface-92);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+  box-shadow: var(--shadow-inset);
+  transition:
+    border-color 0.18s ease,
+    box-shadow 0.18s ease;
+}
+
+.period-nav-input:focus {
+  outline: none;
+  border-color: var(--focus-border);
+  box-shadow: var(--focus-glow);
+}
+
+.period-nav-input:focus-visible {
+  outline: 2px solid var(--focus-ring);
+  outline-offset: 1px;
+}
+
+.period-nav-note {
+  color: var(--clay-700);
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.period-nav-note:empty {
+  display: none;
+}
+
+/* Just above the stacked-sidebar breakpoint the two fields can't share one row. */
+@media (min-width: 1025px) and (max-width: 1080px) {
+  .period-nav-fields {
+    grid-template-columns: auto minmax(0, 220px);
+  }
+
+  .period-nav-label {
+    text-align: right;
+  }
+}
+
+@media (max-width: 768px) {
+  .period-nav {
+    display: grid;
+    grid-template-columns: 44px minmax(0, 1fr) 44px;
+    grid-template-areas:
+      "prev title next"
+      "fields fields fields"
+      "note note note";
+    align-items: start;
+    gap: var(--space-12);
+    padding: var(--space-14);
+  }
+
+  .period-nav-info {
+    display: contents;
+  }
+
+  .period-nav-prev {
+    grid-area: prev;
+  }
+
+  .period-nav-next {
+    grid-area: next;
+  }
+
+  .period-nav-arrow {
+    width: 44px;
+    height: 44px;
+    margin-top: 3px;
+  }
+
+  .period-nav-title {
+    grid-area: title;
+    align-self: center;
+  }
+
+  .period-nav-fields {
+    grid-area: fields;
+    grid-template-columns: minmax(0, 1fr);
+    gap: var(--space-8);
+  }
+
+  .period-nav-label {
+    text-align: left;
+  }
+
+  .period-nav-note {
+    grid-area: note;
+    text-align: center;
+  }
+}
+
+@media (max-width: 480px) {
+  .period-nav {
+    grid-template-columns: 42px minmax(0, 1fr) 42px;
+    margin-bottom: var(--space-14);
+    border-radius: 16px;
+  }
+}

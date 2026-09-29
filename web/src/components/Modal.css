@@ -1,0 +1,172 @@
+/* Dialog card from the old page (design spec §2.12): centered on desktop, bottom sheet on phones. */
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: var(--z-modal);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--space-16);
+  background: var(--overlay-modal);
+  -webkit-backdrop-filter: blur(6px);
+  backdrop-filter: blur(6px);
+  animation: modal-fade 0.18s ease-out;
+}
+
+.modal {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  max-height: calc(100dvh - 48px);
+  background: var(--surface-96);
+  border: 1px solid var(--border-white-82);
+  border-radius: var(--radius-modal);
+  box-shadow: var(--shadow-modal);
+  outline: none;
+  animation: modal-rise 0.2s ease-out;
+}
+
+.modal-sm {
+  max-width: 440px;
+}
+
+.modal-md {
+  max-width: 500px;
+}
+
+.modal-header {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-12);
+  padding: 25px 25px var(--space-16);
+}
+
+.modal-title {
+  flex: 1;
+  min-width: 0;
+  color: var(--clay-900);
+  font-size: 24px;
+  font-weight: 700;
+  line-height: 1.2;
+  letter-spacing: -0.03em;
+}
+
+.modal-close {
+  display: inline-flex;
+  flex: 0 0 auto;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  margin: -6px -8px 0 0;
+  color: var(--clay-900);
+  background: var(--sand);
+  border: none;
+  border-radius: var(--radius-pill);
+  transition: var(--transition-lift);
+}
+
+.modal-close:hover {
+  background: var(--sand-hover);
+}
+
+/* A little vertical padding keeps focus rings from being clipped by the scroll box. */
+.modal-body {
+  flex: 1 1 auto;
+  min-height: 0;
+  padding: var(--space-4) 25px;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
+}
+
+.modal-footer {
+  display: flex;
+  gap: var(--space-10);
+  padding: var(--space-20) 25px 25px;
+}
+
+.modal-footer > * {
+  flex: 1 1 0;
+  min-width: 0;
+}
+
+@media (max-width: 768px) {
+  .modal-overlay {
+    align-items: flex-end;
+    padding: max(12px, env(safe-area-inset-top)) 0 0;
+  }
+
+  .modal,
+  .modal-sm,
+  .modal-md {
+    max-width: none;
+    max-height: 100%;
+    border-bottom: none;
+    border-radius: var(--radius-modal) var(--radius-modal) 0 0;
+    animation: modal-sheet 0.24s cubic-bezier(0.2, 0.8, 0.2, 1);
+  }
+
+  /* Forms get the whole screen so the date grid and actions fit without juggling. */
+  .modal-md {
+    height: 100%;
+  }
+
+  .modal-header {
+    padding: var(--space-18) var(--space-18) var(--space-12);
+  }
+
+  .modal-title {
+    font-size: 22px;
+  }
+
+  .modal-close {
+    width: 44px;
+    height: 44px;
+    margin: -8px -6px 0 0;
+  }
+
+  .modal-body {
+    padding: var(--space-4) var(--space-18);
+  }
+
+  .modal-footer {
+    flex-direction: column;
+    gap: var(--space-8);
+    padding: var(--space-14) var(--space-18) max(var(--space-18), env(safe-area-inset-bottom));
+    border-top: 1px solid var(--line);
+  }
+
+  .modal-footer > * {
+    flex: 0 0 auto;
+    min-height: 44px;
+  }
+}
+
+@keyframes modal-fade {
+  from {
+    opacity: 0;
+  }
+}
+
+@keyframes modal-rise {
+  from {
+    opacity: 0;
+    transform: translateY(10px) scale(0.98);
+  }
+}
+
+@keyframes modal-sheet {
+  from {
+    transform: translateY(100%);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .modal-overlay,
+  .modal,
+  .modal-sm,
+  .modal-md {
+    animation: none;
+  }
+}

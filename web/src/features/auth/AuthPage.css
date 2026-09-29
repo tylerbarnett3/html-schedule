@@ -1,0 +1,158 @@
+/* Sign-in and no-access pages: one paper card on the page's warm wash. */
+.auth-main {
+  display: grid;
+  place-items: start center;
+  padding: clamp(28px, 6vw, 64px) var(--space-18) clamp(36px, 7vw, 80px);
+  background: var(--surface-main);
+}
+
+.auth-card {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-18);
+  width: 100%;
+  max-width: 400px;
+  padding: 28px 28px 24px;
+  background: var(--surface-96);
+  border: 1px solid var(--border-white-82);
+  border-radius: var(--radius-modal);
+  box-shadow: var(--shadow-card);
+}
+
+.auth-title {
+  color: var(--clay-900);
+  font-size: 24px;
+  font-weight: 700;
+  line-height: 1.2;
+  letter-spacing: -0.03em;
+}
+
+.auth-field {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-6);
+}
+
+.auth-label {
+  color: var(--clay-800);
+  font-size: 14px;
+  font-weight: 800;
+  letter-spacing: -0.01em;
+}
+
+/* Same field look as the old period date inputs; 16px text avoids iOS zoom on focus. */
+.auth-input {
+  width: 100%;
+  min-height: 48px;
+  padding: var(--space-10) var(--space-12);
+  color: var(--ink);
+  font-size: 16px;
+  line-height: 1.2;
+  background: var(--surface-92);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+  box-shadow: var(--shadow-inset);
+  transition:
+    border-color 0.18s ease,
+    box-shadow 0.18s ease;
+}
+
+.auth-input:focus {
+  outline: none;
+  border-color: var(--focus-ring);
+  box-shadow: var(--focus-glow);
+}
+
+.auth-input[aria-invalid="true"] {
+  border-color: var(--red);
+}
+
+.auth-input[aria-invalid="true"]:focus {
+  border-color: var(--red);
+  box-shadow: 0 0 0 4px rgba(207, 84, 72, 0.16);
+}
+
+.auth-password {
+  position: relative;
+}
+
+.auth-input-password {
+  padding-right: 76px;
+}
+
+.auth-reveal {
+  position: absolute;
+  top: 50%;
+  right: var(--space-6);
+  min-width: 60px;
+  min-height: 36px;
+  padding: 0 var(--space-12);
+  color: var(--clay-800);
+  font-size: 13px;
+  font-weight: 700;
+  background: transparent;
+  border: none;
+  border-radius: var(--radius-pill);
+  transform: translateY(-50%);
+}
+
+.auth-reveal:hover {
+  background: var(--sand);
+}
+
+.auth-error {
+  padding: var(--space-10) var(--space-12);
+  color: var(--error-text);
+  font-size: 14px;
+  font-weight: 600;
+  line-height: 1.4;
+  background: var(--error-bg);
+  border: 1px solid var(--error-border);
+  border-radius: var(--radius-sm);
+}
+
+.auth-submit {
+  width: 100%;
+  min-height: 48px;
+  font-size: 15px;
+}
+
+.auth-actions {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-10);
+}
+
+/* Headings get focus when the page changes; no ring for that (it isn't a control). */
+.auth-title:focus {
+  outline: none;
+}
+
+.auth-submit-spinner .spinner-ring {
+  border-color: rgba(255, 250, 241, 0.28);
+  border-top-color: var(--gold-light);
+}
+
+.auth-help,
+.auth-message {
+  color: var(--muted);
+  font-size: 14px;
+  line-height: 1.5;
+  text-align: center;
+}
+
+.auth-message {
+  color: var(--ink);
+  font-size: 16px;
+  text-align: left;
+}
+
+@media (max-width: 480px) {
+  .auth-main {
+    padding: var(--space-18) var(--space-10) var(--space-26);
+  }
+
+  .auth-card {
+    padding: var(--space-22) var(--space-18) var(--space-20);
+  }
+}

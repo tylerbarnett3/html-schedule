@@ -1,0 +1,97 @@
+/* Page layout under the header (design spec §2.4): sidebar beside the schedule, stacked
+   at 1024px and below. */
+.schedule-main {
+  display: grid;
+  grid-template-columns: 280px minmax(0, 1fr);
+  background: var(--surface-main);
+}
+
+.schedule-area {
+  min-width: 0;
+  padding: clamp(18px, 3vw, 34px);
+}
+
+/* Shown in the header instead of the request buttons (archived login or admin). */
+.schedule-header-note {
+  max-width: 40rem;
+  color: rgba(255, 250, 241, 0.84);
+  font-size: 14px;
+  font-weight: 600;
+  line-height: 1.4;
+  text-wrap: balance;
+}
+
+.schedule-calendar {
+  position: relative;
+}
+
+/* A new range is loading: the previous one stays visible, dimmed. */
+.schedule-calendar-busy .calendar {
+  opacity: 0.55;
+  transition: opacity 0.2s ease;
+}
+
+.schedule-refreshing {
+  position: absolute;
+  top: var(--space-8);
+  left: 50%;
+  z-index: var(--z-sticky);
+  display: flex;
+  padding: var(--space-8);
+  background: var(--surface-96);
+  border-radius: var(--radius-pill);
+  box-shadow: var(--shadow-card);
+  transform: translateX(-50%);
+}
+
+/* Old rows are still on screen because a refresh failed. */
+.schedule-outdated {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-8) var(--space-12);
+  margin-bottom: var(--space-12);
+  padding: var(--space-8) var(--space-8) var(--space-8) var(--space-14);
+  color: var(--error-text);
+  font-size: 14px;
+  font-weight: 600;
+  line-height: 1.4;
+  background: var(--error-bg);
+  border: 1px solid var(--error-border);
+  border-radius: var(--radius-md);
+}
+
+.schedule-status {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-16);
+  min-height: 320px;
+  padding: 30px var(--space-20);
+  text-align: center;
+}
+
+.schedule-error {
+  font-size: 14px;
+  font-style: italic;
+}
+
+@media (max-width: 1024px) {
+  .schedule-main {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+@media (max-width: 768px) {
+  .schedule-area {
+    padding: var(--space-12);
+  }
+}
+
+@media (max-width: 480px) {
+  .schedule-area {
+    padding: var(--space-10) var(--space-8) var(--space-14);
+  }
+}

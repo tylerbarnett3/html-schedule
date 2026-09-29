@@ -1,0 +1,91 @@
+/* Pill buttons from the old page (design spec §2.14). */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-6);
+  border: 1px solid transparent;
+  border-radius: var(--radius-pill);
+  font-weight: 600;
+  line-height: 1.2;
+  text-align: center;
+  text-decoration: none;
+  white-space: nowrap;
+  transition: var(--transition-lift);
+}
+
+.btn-md {
+  min-height: 40px;
+  padding: var(--space-10) var(--space-16);
+  font-size: 13px;
+}
+
+.btn-sm {
+  min-height: 32px;
+  padding: var(--space-6) var(--space-12);
+  font-size: 12px;
+}
+
+.btn:hover:not(:disabled) {
+  transform: var(--lift);
+}
+
+.btn:active:not(:disabled) {
+  transform: none;
+}
+
+.btn:disabled {
+  opacity: 0.55;
+  box-shadow: none;
+}
+
+.btn-primary {
+  background: var(--gradient-clay);
+  color: var(--cream);
+  box-shadow: var(--shadow-button);
+}
+
+.btn-secondary {
+  background: var(--sand);
+  color: var(--clay-900);
+}
+
+.btn-secondary:hover:not(:disabled) {
+  background: var(--sand-hover);
+}
+
+/* Header call-to-action look. */
+.btn-gold {
+  background: var(--gradient-gold);
+  color: var(--clay-950);
+  border-color: rgba(255, 255, 255, 0.35);
+  box-shadow: var(--shadow-gold);
+  letter-spacing: -0.01em;
+}
+
+.btn-gold.btn-md {
+  padding: var(--space-12) var(--space-22);
+  font-size: 14px;
+}
+
+.btn-gold:hover:not(:disabled) {
+  box-shadow: var(--shadow-gold-hover);
+}
+
+/* The old delete button had no text color and rendered black; use cream. */
+.btn-danger {
+  background: var(--gradient-danger);
+  color: var(--cream);
+  box-shadow: 0 12px 24px rgba(184, 66, 56, 0.22);
+}
+
+.btn-ghost {
+  background: transparent;
+  color: var(--clay-800);
+  border-color: var(--line);
+}
+
+.btn-ghost:hover:not(:disabled) {
+  background: rgba(76, 55, 37, 0.07);
+  border-color: var(--border-hover);
+}

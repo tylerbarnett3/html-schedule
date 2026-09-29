@@ -1,0 +1,116 @@
+/* In-app replacement for the old page's alert() messages (decision 11). */
+.toast-region {
+  position: fixed;
+  right: var(--space-22);
+  bottom: var(--space-22);
+  z-index: var(--z-toast);
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: var(--space-10);
+  width: min(400px, calc(100vw - 32px));
+  pointer-events: none;
+}
+
+.toast {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-12);
+  width: 100%;
+  padding: var(--space-14) var(--space-10) var(--space-14) var(--space-16);
+  background: var(--surface-96);
+  border: 1px solid var(--border-white-82);
+  border-left: 4px solid var(--toast-accent, var(--clay-600));
+  border-radius: 16px;
+  box-shadow: 0 18px 44px rgba(33, 23, 15, 0.22);
+  pointer-events: auto;
+  animation: toast-in 0.2s ease-out;
+}
+
+.toast-success {
+  --toast-accent: var(--green);
+}
+
+.toast-error {
+  --toast-accent: var(--red);
+}
+
+.toast-info {
+  --toast-accent: var(--clay-600);
+}
+
+.toast-icon {
+  display: inline-flex;
+  flex: 0 0 22px;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  margin-top: 1px;
+  color: var(--cream);
+  background: var(--toast-accent, var(--clay-600));
+  border-radius: 50%;
+  font-size: 13px;
+  font-weight: 800;
+  line-height: 1;
+}
+
+.toast-message {
+  flex: 1;
+  min-width: 0;
+  padding-top: 2px;
+  color: var(--ink);
+  font-size: 14px;
+  line-height: 1.45;
+  white-space: pre-line;
+  overflow-wrap: anywhere;
+}
+
+.toast-dismiss {
+  display: inline-flex;
+  flex: 0 0 auto;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  margin: -5px 0 -5px 0;
+  color: var(--clay-800);
+  background: transparent;
+  border: none;
+  border-radius: var(--radius-pill);
+}
+
+.toast-dismiss:hover {
+  background: var(--sand);
+}
+
+/* On phones the request dialog is a bottom sheet, so toasts drop in from the top instead. */
+@media (max-width: 768px) {
+  .toast-region {
+    top: max(var(--space-12), env(safe-area-inset-top));
+    right: var(--space-12);
+    bottom: auto;
+    left: var(--space-12);
+    align-items: stretch;
+    width: auto;
+  }
+
+  .toast-dismiss {
+    width: 40px;
+    height: 40px;
+    margin: -9px -2px -9px 0;
+  }
+}
+
+@keyframes toast-in {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .toast {
+    animation: none;
+  }
+}

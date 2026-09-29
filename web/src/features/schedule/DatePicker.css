@@ -1,0 +1,166 @@
+/* Month grid for the request dialogs (design spec §2.13). */
+.date-picker-nav {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-12);
+  margin-bottom: var(--space-12);
+}
+
+.date-picker-nav-button {
+  display: inline-flex;
+  flex: 0 0 44px;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  padding: 0;
+  color: var(--clay-900);
+  background: var(--sand);
+  border: none;
+  border-radius: var(--radius-pill);
+  transition: var(--transition-lift);
+}
+
+.date-picker-nav-button:hover:not([aria-disabled="true"]) {
+  background: var(--sand-hover);
+  transform: var(--lift);
+}
+
+.date-picker-nav-button[aria-disabled="true"] {
+  cursor: not-allowed;
+  opacity: 0.4;
+}
+
+.date-picker-month {
+  flex: 1;
+  color: var(--slate-800);
+  font-size: 16px;
+  font-weight: 800;
+  text-align: center;
+}
+
+.date-picker-grid {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  gap: var(--space-4);
+}
+
+.date-picker-weekday {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--space-8) 0;
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.date-picker-day {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  /* A little wider than tall so the whole dialog fits a laptop screen. */
+  aspect-ratio: 5 / 4;
+  min-width: 0;
+  min-height: 40px;
+  padding: 0;
+  color: var(--clay-900);
+  font-size: 14px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  background: rgba(255, 255, 255, 0.72);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+  transition:
+    background 0.15s ease,
+    border-color 0.15s ease,
+    color 0.15s ease;
+}
+
+/* Selected days are excluded so hover never turns the selected text cream-on-cream. */
+.date-picker-day:hover:not(:disabled):not(.is-selected) {
+  background: var(--hover-cream);
+  border-color: rgba(216, 169, 79, 0.62);
+}
+
+.date-picker-day.is-selected {
+  color: var(--cream);
+  background: var(--gradient-clay);
+  border-color: transparent;
+  box-shadow: 0 6px 14px rgba(76, 55, 37, 0.22);
+}
+
+.date-picker-day.is-selected:hover:not(:disabled) {
+  background: var(--gradient-clay-hover);
+}
+
+/* Also covers a selected day that became unavailable after a refresh; its chip turns red. */
+.date-picker-day:disabled {
+  cursor: not-allowed;
+  color: var(--muted);
+  background: transparent;
+  border-color: rgba(91, 65, 40, 0.08);
+  box-shadow: none;
+  opacity: 0.55;
+}
+
+/* Closed days pick up the calendar's sage "closed" color. */
+.date-picker-day.is-closed:disabled {
+  color: #4f6b4c;
+  background: rgba(143, 174, 139, 0.2);
+  border-color: rgba(111, 144, 107, 0.22);
+}
+
+/* A dot under the number marks days I already asked for. */
+.date-picker-day.is-requested::after {
+  content: "";
+  position: absolute;
+  bottom: 18%;
+  left: 50%;
+  width: 5px;
+  height: 5px;
+  background: var(--clay-600);
+  border-radius: 50%;
+  transform: translateX(-50%);
+}
+
+.date-picker-day.is-selected:not(:disabled).is-requested::after {
+  background: var(--cream);
+}
+
+/* Today gets a gold ring, as on the calendar. */
+.date-picker-day.is-today {
+  border: 2px solid var(--gold);
+}
+
+.date-picker-day.is-today.is-selected {
+  box-shadow:
+    0 0 0 2px var(--gold),
+    0 6px 14px rgba(76, 55, 37, 0.22);
+}
+
+.date-picker-day:focus-visible {
+  z-index: 1;
+  outline: 3px solid var(--focus-ring);
+  outline-offset: 2px;
+}
+
+@media (max-width: 768px) {
+  .date-picker-day {
+    aspect-ratio: 1;
+    font-size: 15px;
+  }
+}
+
+@media (max-width: 360px) {
+  .date-picker-grid {
+    gap: 3px;
+  }
+
+  .date-picker-day {
+    min-height: 36px;
+    border-radius: 10px;
+  }
+}
