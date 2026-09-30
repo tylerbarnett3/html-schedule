@@ -1,6 +1,6 @@
 import type { ReactNode } from "react";
 import { Link, useMatch } from "react-router";
-import { useAuth } from "../lib/auth";
+import { emailToLogin, useAuth } from "../lib/auth";
 import { useSignOut } from "./useSignOut";
 import "./AppHeader.css";
 
@@ -14,8 +14,13 @@ export function AppHeader({ actions }: AppHeaderProps) {
   const { signingOut, signOut } = useSignOut();
   const onSchedulePage = useMatch("/") !== null;
 
+  // An admin with no employee record is shown by username, not "Admin", which would read
+  // like the Admin link below.
   const accountName =
-    auth.status === "signed-in" ? (auth.profile.employee?.name ?? (auth.profile.isAdmin ? "Admin" : null)) : null;
+    auth.status === "signed-in"
+      ? (auth.profile.employee?.name ??
+        (auth.profile.isAdmin ? emailToLogin(auth.session.user.email ?? "") || "Admin" : null))
+      : null;
   // An admin who is also an employee lands on their own schedule; this is their way to the
   // admin page (AM2). Admins without an employee record never see "/".
   const showAdminLink = auth.status === "signed-in" && auth.profile.isAdmin && onSchedulePage;

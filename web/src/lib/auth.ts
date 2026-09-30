@@ -12,6 +12,12 @@ export function loginToEmail(login: string): string {
   return trimmed.includes("@") ? trimmed : `${trimmed}@${LOGIN_EMAIL_DOMAIN}`;
 }
 
+/** The name a login signs in with: the username, or the full email for other logins. */
+export function emailToLogin(email: string): string {
+  const suffix = `@${LOGIN_EMAIL_DOMAIN}`;
+  return email.endsWith(suffix) ? email.slice(0, -suffix.length) : email;
+}
+
 export type Profile = {
   employee: Tables<"employees"> | null;
   isAdmin: boolean;
