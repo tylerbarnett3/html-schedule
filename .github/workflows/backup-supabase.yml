@@ -1,0 +1,79 @@
+name: Back up Supabase
+
+# Nightly encrypted backup of the schedule database. Each run saves one encrypted file
+# as a workflow artifact, kept for 90 days. See docs/backups.md for setup and restore.
+#
+# Needs two repository secrets:
+#   SUPABASE_DB_URL      Session pooler connection string (includes the database password)
+#   BACKUP_PASSPHRASE    Passphrase used to encrypt the backup; keep a copy somewhere safe
+
+on:
+  schedule:
+    - cron: "17 7 * * *" # 3:17 AM New York in summer, 2:17 AM in winter
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  backup:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Check secrets
+        env:
+          SUPABASE_DB_URL: ${{ secrets.SUPABASE_DB_URL }}
+          BACKUP_PASSPHRASE: ${{ secrets.BACKUP_PASSPHRASE }}
+        run: |
+          if [ -z "$SUPABASE_DB_URL" ] || [ -z "$BACKUP_PASSPHRASE" ]; then
+            echo "::error::Add the SUPABASE_DB_URL and BACKUP_PASSPHRASE repository secrets (see docs/backups.md)."
+            exit 1
+          fi
+
+      - name: Dump the database
+        env:
+          SUPABASE_DB_URL: ${{ secrets.SUPABASE_DB_URL }}
+        run: |
+          set -euo pipefail
+          mkdir backup
+          # pg_dump must be at least the server's version; Supabase runs Postgres 17.
+          pg_dump() {
+            docker run --rm -e PGURL="$SUPABASE_DB_URL" -v "$PWD/backup:/backup" postgres:17 \
+              sh -c 'pg_dump "$PGURL" "$@"' pg_dump "$@"
+          }
+          # Tables and rules, for reference; the migrations in supabase/migrations rebuild them.
+          pg_dump --schema-only --schema=public --no-owner --no-privileges --file=/backup/public-schema.sql
+          # Everything in the schedule tables.
+          pg_dump --data-only --schema=public --no-owner --no-privileges --file=/backup/public-data.sql
+          # Logins (employees.user_id and admins point at these).
+          pg_dump --data-only --table=auth.users --table=auth.identities --no-owner --no-privileges --file=/backup/auth-users.sql
+
+      - name: Check the dump
+        run: |
+          set -euo pipefail
+          for table in employees shifts time_off closed_days; do
+            grep -q "^COPY public.$table " backup/public-data.sql || { echo "::error::public.$table is missing from the dump"; exit 1; }
+          done
+          grep -q "^COPY auth.users " backup/auth-users.sql || { echo "::error::auth.users is missing from the dump"; exit 1; }
+          ls -l backup
+
+      - name: Encrypt
+        env:
+          BACKUP_PASSPHRASE: ${{ secrets.BACKUP_PASSPHRASE }}
+        run: |
+          set -euo pipefail
+          name="schedule-backup-$(date -u +%Y-%m-%d)"
+          echo "BACKUP_NAME=$name" >> "$GITHUB_ENV"
+          tar -czf - -C backup . \
+            | gpg --batch --yes --pinentry-mode loopback --symmetric --cipher-algo AES256 \
+                --passphrase-file <(printf '%s' "$BACKUP_PASSPHRASE") --output "$name.tar.gz.gpg"
+          rm -rf backup
+          ls -l "$name.tar.gz.gpg"
+
+      - name: Save
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ env.BACKUP_NAME }}
+          path: ${{ env.BACKUP_NAME }}.tar.gz.gpg
+          retention-days: 90
+          if-no-files-found: error
