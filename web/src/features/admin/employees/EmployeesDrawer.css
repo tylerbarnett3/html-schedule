@@ -1,0 +1,321 @@
+/* Employees drawer in the admin sidebar (admin design spec §4.2, rebuilt): Add Employee,
+   the employee rows, and the collapsed Archived group (D7). */
+.employees-drawer {
+  display: grid;
+  gap: var(--space-12);
+}
+
+.employees-add.btn {
+  width: 100%;
+  min-height: 44px;
+  font-size: 14px;
+}
+
+.employees-status {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-8);
+  padding: var(--space-10);
+}
+
+.employees-error {
+  color: var(--error-text);
+  font-size: 13px;
+  font-weight: 600;
+  text-align: center;
+}
+
+.employees-empty {
+  padding: 30px var(--space-20);
+  color: var(--muted);
+  font-size: 13px;
+  font-style: italic;
+  text-align: center;
+}
+
+.employees-list {
+  display: grid;
+  gap: var(--space-8);
+}
+
+.employees-list[hidden] {
+  display: none;
+}
+
+/* One employee. Top line: handle, swatch and name (the edit button), Archive. Below: the
+   stats, rate and login lines across the row; on touch screens, Move up / Move down at
+   their right. */
+.employee-row {
+  position: relative;
+  display: grid;
+  grid-template-columns: 22px minmax(0, 1fr) auto;
+  grid-template-areas:
+    "handle edit archive"
+    "handle meta meta";
+  align-items: center;
+  column-gap: 2px;
+  row-gap: 2px;
+  min-width: 0;
+  padding: var(--space-8) var(--space-8) var(--space-10) var(--space-4);
+  background: var(--surface-82);
+  border: 1px solid transparent;
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-item);
+  transition:
+    background 0.18s ease,
+    border-color 0.18s ease,
+    opacity 0.18s ease;
+}
+
+.employee-row:not([data-reorder="handle"]) {
+  grid-template-columns: minmax(0, 1fr) auto;
+  grid-template-areas:
+    "edit archive"
+    "meta meta";
+  padding-left: var(--space-10);
+}
+
+.employee-row[data-reorder="buttons"] {
+  grid-template-areas:
+    "edit archive"
+    "meta move";
+}
+
+.employee-row:hover {
+  background: var(--cream);
+  border-color: var(--border-hover);
+}
+
+.employee-row[data-dragging] {
+  opacity: 0.5;
+}
+
+/* Where a dragged employee will land: a clay line in the gap above or below the row. */
+.employee-row[data-drop]::after {
+  content: "";
+  position: absolute;
+  right: var(--space-8);
+  left: var(--space-8);
+  height: 3px;
+  background: var(--clay-600);
+  border-radius: var(--radius-pill);
+  pointer-events: none;
+}
+
+.employee-row[data-drop="before"]::after {
+  top: -6px;
+}
+
+.employee-row[data-drop="after"]::after {
+  bottom: -6px;
+}
+
+/* Controls other than the edit button sit above its stretched click area. */
+.employee-row-handle,
+.employee-row-archive,
+.employee-row-move {
+  position: relative;
+  z-index: 1;
+}
+
+.employee-row-handle {
+  grid-area: handle;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  align-self: stretch;
+  width: 22px;
+  min-height: 44px;
+  padding: 0;
+  color: var(--clay-600);
+  background: transparent;
+  border: none;
+  border-radius: var(--radius-sm);
+  cursor: grab;
+}
+
+.employee-row-handle:hover {
+  color: var(--clay-900);
+  background: rgba(76, 55, 37, 0.07);
+}
+
+.employee-row[data-dragging] .employee-row-handle {
+  cursor: grabbing;
+}
+
+.employee-row-edit {
+  grid-area: edit;
+  display: flex;
+  align-items: center;
+  gap: var(--space-6);
+  min-width: 0;
+  min-height: 32px;
+  padding: 0 var(--space-4) 0 2px;
+  color: var(--ink);
+  text-align: left;
+  background: transparent;
+  border: none;
+}
+
+/* The whole row opens the editor, like the old page; the focus ring goes round the row. */
+.employee-row-edit::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: var(--radius-md);
+}
+
+.employee-row-edit:focus-visible {
+  outline: none;
+}
+
+.employee-row-edit:focus-visible::before {
+  outline: 3px solid var(--focus-ring);
+  outline-offset: 2px;
+}
+
+.employee-row-swatch {
+  flex: none;
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  box-shadow: inset 0 0 0 1px rgba(33, 23, 15, 0.18);
+}
+
+.employee-row-name {
+  min-width: 0;
+  overflow: hidden;
+  font-size: 14px;
+  font-weight: 600;
+  line-height: 1.3;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.employee-row-archive.btn {
+  grid-area: archive;
+  justify-self: end;
+  min-height: 32px;
+  padding: var(--space-4) var(--space-8);
+}
+
+.employee-row-meta {
+  grid-area: meta;
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  min-width: 0;
+  padding-left: 20px;
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.35;
+  pointer-events: none;
+}
+
+.employee-row-line {
+  overflow-wrap: anywhere;
+}
+
+.employee-row-rate-line {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 2px var(--space-6);
+}
+
+.employee-row-login {
+  padding: 0 var(--space-6);
+  color: var(--clay-800);
+  font-size: 11px;
+  font-weight: 700;
+  background: rgba(76, 55, 37, 0.08);
+  border-radius: var(--radius-pill);
+}
+
+.employee-row-no-login {
+  color: var(--muted);
+  font-weight: 600;
+  background: transparent;
+  box-shadow: inset 0 0 0 1px var(--line);
+}
+
+.employee-row-move {
+  grid-area: move;
+  display: inline-flex;
+  gap: var(--space-4);
+}
+
+.employee-row-move-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  padding: 0;
+  color: var(--clay-800);
+  background: var(--surface-92);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+}
+
+.employee-row-move-btn:disabled {
+  opacity: 0.35;
+}
+
+/* Archived employees: a collapsed disclosure at the end of the drawer (D7). */
+.employees-archived {
+  display: grid;
+  gap: var(--space-8);
+  padding-top: var(--space-4);
+  border-top: 1px solid var(--line);
+}
+
+.employees-archived-toggle {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-8);
+  width: 100%;
+  min-height: 40px;
+  padding: var(--space-8) var(--space-12);
+  color: var(--clay-800);
+  font-size: 13px;
+  font-weight: 700;
+  text-align: left;
+  background: transparent;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+}
+
+.employees-archived-toggle:hover {
+  background: rgba(76, 55, 37, 0.06);
+  border-color: var(--border-hover);
+}
+
+.employees-archived-chevron {
+  font-size: 11px;
+  transition: transform 0.2s ease;
+}
+
+.employees-archived-toggle[aria-expanded="true"] .employees-archived-chevron {
+  transform: rotate(180deg);
+}
+
+.employee-row[data-archived] {
+  background: var(--surface-tint);
+}
+
+.employee-row[data-archived] .employee-row-name {
+  color: var(--clay-700);
+}
+
+@media (max-width: 768px) {
+  .employee-row-archive.btn {
+    min-height: 44px;
+  }
+
+  .employees-archived-toggle {
+    min-height: 44px;
+  }
+}

@@ -319,9 +319,63 @@ export type Database = {
       [_ in never]: never;
     };
     Functions: {
+      admin_add_days_off: { Args: { p_days: Json; p_delete_shift_ids?: string[] }; Returns: Json };
+      admin_add_shifts: { Args: { p_shifts: Json }; Returns: Json };
+      admin_close_days: { Args: { p_dates: string[] }; Returns: Json };
+      admin_convert_to_day_off: {
+        Args: {
+          p_delete_shift_ids?: string[];
+          p_employee_id: string;
+          p_off_date: string;
+          p_period: Database["public"]["Enums"]["day_period"];
+          p_shift_id: string;
+        };
+        Returns: Json;
+      };
+      admin_convert_to_shift: {
+        Args: {
+          p_employee_id: string;
+          p_end_time: string;
+          p_shift_date: string;
+          p_start_time: string;
+          p_time_off_id: string;
+        };
+        Returns: Json;
+      };
+      admin_delete_items: {
+        Args: { p_shift_ids?: string[]; p_time_off_ids?: string[] };
+        Returns: Json;
+      };
+      admin_undo: { Args: { p_change: Json }; Returns: undefined };
+      admin_update_day_off: {
+        Args: {
+          p_delete_shift_ids?: string[];
+          p_employee_id: string;
+          p_id: string;
+          p_off_date: string;
+          p_period: Database["public"]["Enums"]["day_period"];
+        };
+        Returns: Json;
+      };
+      admin_update_shift: {
+        Args: {
+          p_employee_id: string;
+          p_end_time: string;
+          p_id: string;
+          p_shift_date: string;
+          p_start_time: string;
+        };
+        Returns: Json;
+      };
+      approve_availability: { Args: { p_ids: string[] }; Returns: Json };
+      approve_time_off: { Args: { p_delete_shift_ids?: string[]; p_ids: string[] }; Returns: Json };
+      assert_admin: { Args: Record<PropertyKey, never>; Returns: undefined };
+      assert_open: { Args: { p_dates: string[] }; Returns: undefined };
       business_today: { Args: Record<PropertyKey, never>; Returns: string };
+      capture_delete_shifts: { Args: { p_ids: string[] }; Returns: Json };
       check_request_date: { Args: { p_date: string; p_employee_id: string }; Returns: undefined };
       current_employee_id: { Args: Record<PropertyKey, never>; Returns: string };
+      empty_change: { Args: Record<PropertyKey, never>; Returns: Json };
       is_admin: { Args: Record<PropertyKey, never>; Returns: boolean };
       is_staff: { Args: Record<PropertyKey, never>; Returns: boolean };
       periods_overlap: {
@@ -339,6 +393,9 @@ export type Database = {
         Args: { p_dates: string[]; p_period: Database["public"]["Enums"]["day_period"] };
         Returns: Json;
       };
+      save_employee: { Args: { p_employee: Json }; Returns: string };
+      save_shift_actuals: { Args: { p_plan: Json }; Returns: Json };
+      set_employee_order: { Args: { p_ids: string[] }; Returns: undefined };
     };
     Enums: {
       actual_status: "confirmed" | "adjusted" | "not-worked" | "unscheduled";

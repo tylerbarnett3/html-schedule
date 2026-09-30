@@ -1,0 +1,203 @@
+/* Payroll page (admin design spec §4.8), full width under the toolbar. */
+.payroll {
+  display: grid;
+  align-content: start;
+  gap: var(--space-18);
+  color: var(--ink);
+  background: var(--surface-main);
+}
+
+.payroll-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-16);
+}
+
+.payroll-title {
+  color: var(--clay-900);
+  font-size: 24px;
+  line-height: 1.15;
+  letter-spacing: -0.025em;
+}
+
+/* Summary strip: five cells with hairline dividers (the gaps show the border color). */
+.payroll-summary {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 1px;
+  overflow: hidden;
+  background: var(--line);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-md);
+}
+
+.payroll-stat {
+  min-width: 0;
+  padding: 13px 15px;
+  background: var(--stat-bg);
+}
+
+/* Clay rather than the old muted grey (4.3:1 on this background). */
+.payroll-stat dt {
+  color: var(--clay-700);
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.payroll-stat dd {
+  margin-top: 3px;
+  color: var(--clay-900);
+  font-size: 17px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+.payroll-command-bar {
+  display: flex;
+  justify-content: flex-end;
+}
+
+.payroll-list {
+  display: grid;
+  gap: var(--space-12);
+  border-radius: var(--radius-md);
+}
+
+.payroll-list:focus-visible {
+  outline-offset: 4px;
+}
+
+.payroll-empty {
+  padding: 42px var(--space-20);
+  text-align: center;
+  background: rgba(255, 252, 246, 0.6);
+  border: 1px dashed rgba(103, 78, 51, 0.28);
+  border-radius: var(--radius-md);
+}
+
+.payroll-empty strong {
+  color: var(--clay-900);
+}
+
+.payroll-status {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-16);
+  min-height: 320px;
+  padding: 30px var(--space-20);
+  text-align: center;
+}
+
+.payroll-error {
+  font-size: 14px;
+  font-style: italic;
+}
+
+/* Old values are still on screen because a refresh failed. */
+.payroll-outdated {
+  margin-top: var(--space-12);
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-8) var(--space-12);
+  padding: var(--space-8) var(--space-8) var(--space-8) var(--space-14);
+  color: var(--error-text);
+  font-size: 14px;
+  font-weight: 600;
+  line-height: 1.4;
+  background: var(--error-bg);
+  border: 1px solid var(--error-border);
+  border-radius: var(--radius-md);
+}
+
+/* Inputs and selects in the review cards and the add panel. */
+.payroll-input {
+  display: block;
+  width: 100%;
+  min-width: 0;
+  min-height: 40px;
+  padding: var(--space-8) var(--space-10);
+  color: var(--ink);
+  font-size: 13px;
+  background-color: var(--actual-input-bg);
+  border: 1px solid var(--line);
+  border-radius: 10px;
+}
+
+.payroll-input:focus-visible {
+  outline: none;
+  border-color: rgba(166, 119, 55, 0.86);
+  box-shadow: 0 0 0 3px rgba(216, 169, 79, 0.3);
+}
+
+.payroll-input:disabled {
+  color: var(--clay-700);
+  background-color: var(--actual-readonly-bg);
+  cursor: not-allowed;
+}
+
+.payroll-input::placeholder {
+  color: var(--muted);
+  opacity: 1;
+}
+
+select.payroll-input {
+  padding-right: 32px;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23352619' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
+  background-position: right 10px center;
+  background-repeat: no-repeat;
+  background-size: 16px;
+  -webkit-appearance: none;
+  appearance: none;
+}
+
+input[type="date"].payroll-input,
+input[type="time"].payroll-input {
+  -webkit-appearance: none;
+  appearance: none;
+}
+
+@media (max-width: 768px) {
+  .payroll-heading {
+    flex-direction: column;
+    align-items: stretch;
+    gap: var(--space-12);
+  }
+
+  .payroll-title {
+    font-size: 21px;
+  }
+
+  .payroll-heading .btn,
+  .payroll-command-bar .btn {
+    width: 100%;
+    min-height: 48px;
+  }
+
+  /* Two wide cells, then three. */
+  .payroll-summary {
+    grid-template-columns: repeat(6, minmax(0, 1fr));
+  }
+
+  .payroll-stat {
+    padding: var(--space-12);
+  }
+
+  .payroll-stat:nth-child(-n + 2) {
+    grid-column: span 3;
+  }
+
+  .payroll-stat:nth-child(n + 3) {
+    grid-column: span 2;
+  }
+
+  /* 16px keeps iOS from zooming into the field. */
+  .payroll-input {
+    min-height: 44px;
+    font-size: 16px;
+  }
+}

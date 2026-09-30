@@ -6,8 +6,11 @@ import {
   compareISODate,
   daysInclusive,
   defaultRange,
+  formatChipDate,
   formatDateList,
   formatDayLabel,
+  formatLongDate,
+  formatMonthDay,
   formatMonthLabel,
   formatRangeLabel,
   formatShortDate,
@@ -20,6 +23,7 @@ import {
   prevMonth,
   rangeDates,
   shiftRange,
+  timestampToBusinessDate,
   toDayNumber,
   todayInZone,
   weekdayHeaders,
@@ -285,4 +289,50 @@ describe("calendar labels", () => {
     expect(formatRangeLabel(range("2026-09-28", "2026-11-01"))).toEqual({ text: "Sep 28 - Nov 1", days: 35 });
     expect(formatRangeLabel(range("2026-02-20", "2026-03-26"))).toEqual({ text: "Feb 20 - Mar 26", days: 35 });
   });
+});
+
+describe("admin date labels", () => {
+  it("formats month and day", () => {
+    expect(formatMonthDay("2026-10-05")).toBe("Oct 5");
+    expect(formatMonthDay("2026-12-31")).toBe("Dec 31");
+  });
+
+  it("formats chip dates", () => {
+    expect(formatChipDate("2026-09-30")).toBe("Wed, Sep 30");
+    expect(formatChipDate("2026-10-05")).toBe("Mon, Oct 5");
+    expect(formatChipDate("2026-10-11")).toBe("Sun, Oct 11");
+    expect(formatChipDate("2027-01-01")).toBe("Fri, Jan 1");
+  });
+
+  it("formats long dates", () => {
+    expect(formatLongDate("2026-10-11")).toBe("Sunday, October 11, 2026");
+    expect(formatLongDate("2026-10-20")).toBe("Tuesday, October 20, 2026");
+    expect(formatLongDate("2028-02-29")).toBe("Tuesday, February 29, 2028");
+  });
+});
+
+describe("timestampToBusinessDate", () => {
+  it.each([
+    ["2026-09-29T14:03:12.123456+00:00", "2026-09-29"],
+    ["2026-09-30T02:30:00+00:00", "2026-09-29"],
+    ["2026-09-29T03:30:00Z", "2026-09-28"],
+    ["2026-09-29T04:00:00Z", "2026-09-29"],
+    ["2026-09-29 14:03:12.5+00", "2026-09-29"],
+    ["2026-09-30T00:30:00-04:00", "2026-09-30"],
+    ["2026-09-30T09:00:00+0900", "2026-09-29"],
+    ["2026-11-01T05:30:00+00:00", "2026-11-01"],
+  ])("%s -> %s in New York", (ts, expected) => {
+    expect(timestampToBusinessDate(ts)).toBe(expected);
+  });
+
+  it("uses another zone when given", () => {
+    expect(timestampToBusinessDate("2026-09-29T20:00:00Z", "Asia/Tokyo")).toBe("2026-09-30");
+  });
+
+  it.each([null, undefined, "", "garbage", "2026-09-29", "2026-09-29T14:03:12", "2026-02-30T12:00:00Z"])(
+    "%j -> null",
+    (ts) => {
+      expect(timestampToBusinessDate(ts)).toBeNull();
+    },
+  );
 });

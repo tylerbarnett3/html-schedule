@@ -79,6 +79,13 @@
   box-shadow: 0 12px 24px rgba(184, 66, 56, 0.22);
 }
 
+/* Approve / Save; cream text on the dark green gradient (7.3:1 and 6.47:1). */
+.btn-success {
+  background: var(--gradient-success);
+  color: var(--cream);
+  box-shadow: 0 12px 24px rgba(34, 84, 61, 0.22);
+}
+
 .btn-ghost {
   background: transparent;
   color: var(--clay-800);

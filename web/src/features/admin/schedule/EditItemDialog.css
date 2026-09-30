@@ -1,0 +1,65 @@
+/* Edit Shift / Edit Day Off / Approved Time Off (decisions C7, C8). */
+.edit-item-form {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-18);
+  padding-bottom: var(--space-4);
+}
+
+.edit-item-requested {
+  padding: var(--space-12) var(--space-14);
+  color: var(--clay-800);
+  font-size: 14px;
+  line-height: 1.45;
+  background: var(--surface-tint);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+}
+
+.edit-item-requested strong {
+  color: var(--clay-900);
+  font-weight: 700;
+}
+
+.edit-item-times {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--space-12);
+}
+
+.edit-item-messages:empty {
+  display: none;
+}
+
+/* Keep the "  - Name: 9:00 AM - 3:00 PM" indents of conflict lists. */
+.edit-item-messages .field-error {
+  white-space: pre-wrap;
+}
+
+/* Delete / Remove sits apart from Cancel and Save Changes. */
+.edit-item-dialog .modal-footer > .edit-item-delete {
+  margin-right: var(--space-16);
+}
+
+.edit-item-spinner .spinner-ring {
+  border-color: rgba(255, 250, 241, 0.28);
+  border-top-color: var(--gold-light);
+}
+
+.edit-item-dialog .btn[aria-disabled="true"] {
+  cursor: progress;
+  opacity: 0.8;
+}
+
+@media (max-width: 768px) {
+  .edit-item-times {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  /* On phones the buttons stack; the destructive one goes last, set apart. */
+  .edit-item-dialog .modal-footer > .edit-item-delete {
+    order: 1;
+    margin-top: var(--space-8);
+    margin-right: 0;
+  }
+}

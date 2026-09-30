@@ -1,0 +1,58 @@
+/* Add Employee / Edit Employee (admin design spec §4.4 D and E, rebuilt with Modal md). */
+.employee-dialog-form {
+  display: grid;
+  gap: var(--space-18);
+  padding-bottom: var(--space-4);
+}
+
+.employee-dialog-rates {
+  display: grid;
+  gap: var(--space-10);
+}
+
+.employee-dialog-rates-title {
+  color: var(--clay-900);
+  font-size: 16px;
+  font-weight: 700;
+}
+
+.employee-dialog-rates-loading {
+  display: flex;
+  justify-content: center;
+  padding: var(--space-16);
+}
+
+.employee-dialog-rates-error {
+  display: grid;
+  justify-items: start;
+  gap: var(--space-8);
+}
+
+.employee-dialog-error:focus {
+  outline: none;
+}
+
+.employee-dialog-error:focus-visible {
+  outline: 3px solid var(--focus-ring);
+  outline-offset: 2px;
+}
+
+.employee-dialog-message {
+  color: var(--ink);
+  font-size: 15px;
+  line-height: 1.5;
+}
+
+/* Delete sits apart on the left; Cancel and Save share the rest. */
+.employee-dialog .modal-footer > .employee-dialog-delete {
+  flex: 0 0 auto;
+  margin-right: var(--space-14);
+}
+
+/* Phones stack the footer; the destructive button goes last, after a gap. */
+@media (max-width: 768px) {
+  .employee-dialog .modal-footer > .employee-dialog-delete {
+    order: 1;
+    margin: var(--space-8) 0 0;
+  }
+}

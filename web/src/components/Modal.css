@@ -34,6 +34,10 @@
   max-width: 500px;
 }
 
+.modal-lg {
+  max-width: 860px;
+}
+
 .modal-header {
   display: flex;
   align-items: flex-start;
@@ -99,7 +103,8 @@
 
   .modal,
   .modal-sm,
-  .modal-md {
+  .modal-md,
+  .modal-lg {
     max-width: none;
     max-height: 100%;
     border-bottom: none;
@@ -108,7 +113,8 @@
   }
 
   /* Forms get the whole screen so the date grid and actions fit without juggling. */
-  .modal-md {
+  .modal-md,
+  .modal-lg {
     height: 100%;
   }
 
@@ -166,7 +172,8 @@
   .modal-overlay,
   .modal,
   .modal-sm,
-  .modal-md {
+  .modal-md,
+  .modal-lg {
     animation: none;
   }
 }

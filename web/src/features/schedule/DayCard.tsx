@@ -1,6 +1,8 @@
-import type { CSSProperties } from "react";
-import { formatShortDate } from "../../lib/dates";
+import { useRef, useState, type CSSProperties, type DragEvent } from "react";
+import { formatDayLabel, formatShortDate } from "../../lib/dates";
 import { BUSY_PENDING_COLOR, type DayCard as CalendarCard } from "../../lib/calendar";
+import { cardAction } from "../../lib/scheduleEditing";
+import { CALENDAR_DRAG_TYPES } from "../admin/dragTypes";
 import { employeeColor, shiftCardColors } from "./employeeColor";
 import "./DayCard.css";
 
@@ -9,9 +11,17 @@ export type CancellableCard = Extract<CalendarCard, { kind: "pending-time-off" |
 
 export interface DayCardProps {
   card: CalendarCard;
-  onCancel(card: CancellableCard): void;
+  /** Employee page: shows Cancel Request on the signed-in employee's own pending cards. */
+  onCancel?(card: CancellableCard): void;
   /** True while this card's cancel request is in flight. */
-  cancelling: boolean;
+  cancelling?: boolean;
+  /**
+   * Admin page: the card becomes a button that opens it (Edit, or the request review).
+   * Cards with nothing to open (approved availability) stay plain.
+   */
+  onOpen?(card: CalendarCard): void;
+  /** Admin page, mouse only: the card can be dragged onto another day. */
+  draggable?: boolean;
 }
 
 function cardDate(card: CalendarCard): string {
@@ -25,7 +35,9 @@ function cardDate(card: CalendarCard): string {
   }
 }
 
-export function DayCard({ card, onCancel, cancelling }: DayCardProps) {
+export function DayCard({ card, onCancel, cancelling = false, onOpen, draggable = false }: DayCardProps) {
+  const [dragging, setDragging] = useState(false);
+  const dragActive = useRef(false);
   let variant: string;
   let style: CSSProperties | undefined;
   switch (card.kind) {
@@ -47,12 +59,61 @@ export function DayCard({ card, onCancel, cancelling }: DayCardProps) {
   }
 
   const cancellable: CancellableCard | null =
-    (card.kind === "pending-time-off" || card.kind === "availability") && card.canCancel ? card : null;
+    onCancel && (card.kind === "pending-time-off" || card.kind === "availability") && card.canCancel ? card : null;
+  const openable = onOpen !== undefined && cardAction(card) !== null;
+  const canDrag = draggable && (card.kind === "shift" || card.kind === "time-off");
+
+  const classes = [
+    "day-card",
+    variant,
+    openable && "day-card-openable",
+    canDrag && "day-card-draggable",
+    dragging && "is-dragging",
+  ]
+    .filter(Boolean)
+    .join(" ");
+
+  const handleDragStart = (event: DragEvent<HTMLLIElement>) => {
+    // Only the calendar's own type is set (no text/plain), so the id can't be dropped into
+    // a text field and only day bodies light up (decision C3).
+    event.dataTransfer.setData(CALENDAR_DRAG_TYPES[card.kind === "shift" ? "shift" : "time-off"], card.row.id);
+    event.dataTransfer.effectAllowed = "move";
+    // Dim the card after the browser has taken its drag image (unless the drag already ended).
+    dragActive.current = true;
+    requestAnimationFrame(() => {
+      if (dragActive.current) setDragging(true);
+    });
+  };
+
+  const handleDragEnd = () => {
+    dragActive.current = false;
+    setDragging(false);
+  };
 
   return (
-    <li className={`day-card ${variant}`} style={style}>
-      <div className="day-card-name">{card.employee.name}</div>
-      <div className="day-card-label">{card.label}</div>
+    <li
+      className={classes}
+      style={style}
+      draggable={canDrag || undefined}
+      onDragStart={canDrag ? handleDragStart : undefined}
+      onDragEnd={canDrag ? handleDragEnd : undefined}
+    >
+      {openable ? (
+        <button
+          type="button"
+          className="day-card-open"
+          aria-label={`${card.employee.name}, ${card.label}, ${formatDayLabel(cardDate(card), "mobile")}`}
+          onClick={() => onOpen?.(card)}
+        >
+          <span className="day-card-name">{card.employee.name}</span>
+          <span className="day-card-label">{card.label}</span>
+        </button>
+      ) : (
+        <>
+          <div className="day-card-name">{card.employee.name}</div>
+          <div className="day-card-label">{card.label}</div>
+        </>
+      )}
       {cancellable ? (
         <button
           type="button"
@@ -60,7 +121,7 @@ export function DayCard({ card, onCancel, cancelling }: DayCardProps) {
           // aria-disabled rather than disabled, so focus stays put while the cancel runs.
           aria-disabled={cancelling || undefined}
           onClick={() => {
-            if (!cancelling) onCancel(cancellable);
+            if (!cancelling) onCancel?.(cancellable);
           }}
         >
           {cancelling ? "Cancelling..." : "Cancel Request"}

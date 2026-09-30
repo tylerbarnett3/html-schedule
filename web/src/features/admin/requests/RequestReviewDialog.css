@@ -1,0 +1,45 @@
+/* Request review dialog (admin design spec §4.4 C): the request on the pending card color
+   with dark text (the old white-on-yellow was 1.7:1). */
+.request-review-panel {
+  display: grid;
+  gap: var(--space-4);
+  padding: var(--space-16);
+  color: var(--chip-pending-text);
+  font-size: 15px;
+  background: var(--chip-pending);
+  border-radius: var(--radius-sm);
+}
+
+.request-review-name {
+  margin-bottom: var(--space-4);
+  font-size: 18px;
+  font-weight: 700;
+  overflow-wrap: anywhere;
+}
+
+.request-review-archived {
+  font-size: 15px;
+  font-weight: 500;
+}
+
+.request-review-requested {
+  margin-top: var(--space-4);
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.request-review-note {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-6) var(--space-8);
+  margin-top: var(--space-12);
+  color: var(--slate-600);
+  font-size: 14px;
+}
+
+.request-review-missing {
+  color: var(--muted);
+  font-size: 14px;
+  font-style: italic;
+}

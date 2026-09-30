@@ -30,7 +30,16 @@ export interface DatePickerProps {
   selected: readonly ISODate[];
   onToggle(date: ISODate): void;
   getDay(date: ISODate): DatePickerDay;
+  /**
+   * Which dates the month arrows and keyboard can reach. Left out, it is the employee
+   * request window (pickerBounds). null means no limit: the arrows always work and the
+   * keyboard looks at most a year either way for a day that can be picked.
+   */
+  bounds?: { min: ISODate; max: ISODate } | null;
 }
+
+/** How far the keyboard searches for a pickable day when the picker has no bounds. */
+const UNBOUNDED_SEARCH_DAYS = 366;
 
 const ARROW_STEPS: Readonly<Record<string, number>> = { ArrowLeft: -1, ArrowRight: 1, ArrowUp: -7, ArrowDown: 7 };
 
@@ -68,7 +77,7 @@ function ArrowIcon({ direction }: { direction: "left" | "right" }) {
  * keys move between days that can be picked (crossing months), Home/End jump to the
  * first/last pickable day of the month, Page Up/Down change month.
  */
-export function DatePicker({ month, onMonthChange, today, selected, onToggle, getDay }: DatePickerProps) {
+export function DatePicker({ month, onMonthChange, today, selected, onToggle, getDay, bounds }: DatePickerProps) {
   const labelId = useId();
   const gridRef = useRef<HTMLDivElement>(null);
   const [focusDate, setFocusDate] = useState<ISODate | null>(null);
@@ -83,8 +92,18 @@ export function DatePicker({ month, onMonthChange, today, selected, onToggle, ge
   const cells = days.map((date, i) => ({ date, label: dayLabels[i], ...getDay(date) }));
   const selectedSet = new Set(selected);
 
-  const canPrev = canGoPrevMonth(month, today);
-  const canNext = canGoNextMonth(month, today);
+  let canPrev: boolean;
+  let canNext: boolean;
+  if (bounds === undefined) {
+    canPrev = canGoPrevMonth(month, today);
+    canNext = canGoNextMonth(month, today);
+  } else if (bounds === null) {
+    canPrev = true;
+    canNext = true;
+  } else {
+    canPrev = month > monthOf(bounds.min);
+    canNext = nextMonth(month) <= monthOf(bounds.max);
+  }
 
   const enabledInMonth = cells.filter((cell) => !cell.disabled).map((cell) => cell.date);
   const tabbable =
@@ -102,7 +121,10 @@ export function DatePicker({ month, onMonthChange, today, selected, onToggle, ge
   // Next pickable day from `start`, stepping one day at a time in `direction`.
   // Days in other months are checked through getDay too, so conflicts are respected.
   const findEnabled = (start: ISODate, direction: 1 | -1, stayInMonth: boolean): ISODate | null => {
-    const { min, max } = pickerBounds(today);
+    const { min, max } =
+      bounds === undefined
+        ? pickerBounds(today)
+        : (bounds ?? { min: addDays(start, -UNBOUNDED_SEARCH_DAYS), max: addDays(start, UNBOUNDED_SEARCH_DAYS) });
     const first = compareISODate(start, min) < 0 ? min : compareISODate(start, max) > 0 ? max : start;
     for (let d = first; compareISODate(d, min) >= 0 && compareISODate(d, max) <= 0; d = addDays(d, direction)) {
       if (stayInMonth && monthOf(d) !== month) return null;
@@ -206,8 +228,11 @@ export function DatePicker({ month, onMonthChange, today, selected, onToggle, ge
               disabled={disabled}
               title={title}
               // Disabled buttons can't be focused, so a keyboard or screen reader user never
-              // meets the tooltip; the reason goes in the name too.
-              aria-label={[label, isToday && "today", disabled && title?.toLowerCase()].filter(Boolean).join(", ")}
+              // meets the tooltip; the reason goes in the name too. A closed day that can
+              // still be picked (to mark it closed) says so as well.
+              aria-label={[label, isToday && "today", (disabled || marker === "closed") && title?.toLowerCase()]
+                .filter(Boolean)
+                .join(", ")}
               aria-pressed={isSelected}
               tabIndex={date === tabbable ? 0 : -1}
               onClick={() => onToggle(date)}

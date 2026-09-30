@@ -81,7 +81,10 @@
   --gradient-clay: linear-gradient(135deg, var(--clay-800), var(--clay-600));
   --gradient-clay-hover: linear-gradient(135deg, var(--clay-900), var(--clay-700));
   --gradient-gold: linear-gradient(135deg, var(--gold), var(--gold-light));
-  --gradient-danger: linear-gradient(135deg, var(--red-deep), var(--red));
+  /* Ends darker than --red so cream button text keeps 4.5:1 across the gradient (5.21 / 4.75). */
+  --gradient-danger: linear-gradient(135deg, var(--red-deep), #c44536);
+  /* Cream text: 7.3 / 6.47. The old admin's #2f855f -> #3f9a6b failed with light text. */
+  --gradient-success: linear-gradient(135deg, #22543d, #276749);
   --gradient-header:
     linear-gradient(135deg, rgba(33, 23, 15, 0.94), rgba(76, 55, 37, 0.92)),
     radial-gradient(circle at 22% 20%, rgba(216, 169, 79, 0.52), transparent 22rem);
@@ -135,6 +138,68 @@
   /* Motion */
   --transition-lift: transform 0.18s ease, box-shadow 0.18s ease, background 0.18s ease, border-color 0.18s ease;
   --lift: translateY(-2px);
+
+  /* Admin page (admin design spec §3) */
+  --sidebar-width-admin: 300px;
+  --toolbar-bg: rgba(53, 38, 25, 0.94);
+  --toolbar-border-top: rgba(255, 255, 255, 0.08);
+  --toolbar-border-bottom: rgba(255, 255, 255, 0.1);
+  --on-dark-surface: rgba(255, 250, 241, 0.12);
+  --on-dark-surface-hover: rgba(255, 250, 241, 0.18);
+  --on-dark-border: rgba(255, 255, 255, 0.14);
+  --on-dark-muted: rgba(255, 250, 241, 0.64);
+  /* Count pill on the clay drawer headers: cream text needs a darker fill than the old
+     cream tint (3.3:1 at the gradient's light end); this gives 7.4:1 there. */
+  --on-clay-badge-bg: rgba(33, 23, 15, 0.35);
+  /* Save indicator on the dark toolbar; the error red is lighter than the old #f56565 (4.0:1). */
+  --status-saved: #48bb78;
+  --status-pending: #a0aec0;
+  --status-saving: #ecc94b;
+  --status-error: #ff8a80;
+  --gold-hover: #e4bc69;
+  --segmented-track-border: rgba(91, 65, 40, 0.12);
+  --segmented-active-shadow: 0 8px 18px rgba(58, 39, 21, 0.12);
+  --drop-target-bg: rgba(61, 126, 159, 0.12);
+  --drop-target-border: rgba(61, 126, 159, 0.55);
+  --add-day-bg: rgba(255, 250, 241, 0.72);
+  --add-day-border: rgba(132, 111, 82, 0.42);
+  --request-timeoff-text: #5f241f;
+  --request-availability-text: #234e52;
+  --pill-timeoff-bg: rgba(207, 84, 72, 0.14);
+  --pill-timeoff-text: #8f3028;
+  --pill-availability-bg: rgba(49, 151, 149, 0.16);
+  --pill-availability-text: #235f61;
+  --actual-card-header: #654a33;
+  --actual-card-header-muted: #eadcc9;
+  --actual-card-body: #fffaf3;
+  --actual-card-footer: #f2e7d8;
+  --actual-accent: #a67737;
+  --actual-input-bg: #fffdf8;
+  --actual-readonly-bg: #f3ebdf;
+  --actual-not-worked-header: #75453d;
+  --actual-not-worked-bg: #fffaf8;
+  --actual-not-worked-border: rgba(207, 84, 72, 0.38);
+  --actual-adjusted-bg: #fffbf2;
+  --status-confirmed: #cde5d4;
+  --status-adjusted: #f2d595;
+  --status-notworked: #f4d2cd;
+  --mini-btn-bg: #f7f0e5;
+  --mini-btn-hover: #fff8e9;
+  --mini-selected-bg: #ded2c0;
+  --mini-selected-border: #b9a486;
+  --mini-selected-hover-bg: #d6c7b1;
+  --mini-selected-hover-border: #aa9271;
+  --vacated-text: #8a2e24;
+  --vacated-selected-bg: #efd9d5;
+  --vacated-selected-border: #d3a8a1;
+  --vacated-selected-text: #7a3028;
+  --remove-text: #8f302b;
+  --stat-bg: rgba(247, 241, 231, 0.96);
+  --add-panel-bg: #fff9eb;
+  --add-panel-border: rgba(166, 119, 55, 0.42);
+  --savebar-bg: rgba(255, 250, 241, 0.98);
+  --savebar-border: rgba(91, 65, 40, 0.3);
+  --savebar-shadow: 0 10px 26px rgba(58, 39, 21, 0.11);
 
   /* Stacking */
   --z-sticky: 1;

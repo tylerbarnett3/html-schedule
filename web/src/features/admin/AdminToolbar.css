@@ -1,0 +1,228 @@
+/* Admin toolbar band under the header (admin design spec §4.1, D1, D12, D14-D16). */
+.admin-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-12);
+  padding: var(--space-12) var(--space-22);
+  background: var(--toolbar-bg);
+  border-top: 1px solid var(--toolbar-border-top);
+  border-bottom: 1px solid var(--toolbar-border-bottom);
+}
+
+.admin-toolbar-group {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  min-width: 0;
+}
+
+.admin-toolbar-status {
+  gap: var(--space-8) var(--space-12);
+}
+
+.admin-toolbar-actions {
+  gap: var(--space-10);
+  margin-left: auto;
+}
+
+/* The gold focus ring on the dark band: a cream outline reads better here. */
+.admin-toolbar :focus-visible {
+  outline-color: var(--gold-light);
+}
+
+/* Toolbar buttons and links (ToolbarButton, the Payroll and Employee view links). */
+.toolbar-btn {
+  display: inline-flex;
+  flex: 0 0 auto;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  min-height: 36px;
+  padding: var(--space-8) 13px;
+  font-size: 14px;
+  font-weight: 600;
+  line-height: 1;
+  letter-spacing: -0.01em;
+  white-space: nowrap;
+  text-decoration: none;
+  border: 1px solid transparent;
+  border-radius: var(--radius-pill);
+  transition: var(--transition-lift);
+}
+
+.toolbar-btn-icon {
+  display: inline-flex;
+  flex: 0 0 18px;
+  width: 18px;
+  height: 18px;
+}
+
+.toolbar-btn-icon svg {
+  width: 100%;
+  height: 100%;
+}
+
+.toolbar-btn:hover:not(:disabled) {
+  transform: var(--lift);
+}
+
+.toolbar-btn:active:not(:disabled) {
+  transform: none;
+}
+
+.toolbar-btn:disabled {
+  opacity: 0.5;
+}
+
+.toolbar-btn-on-dark {
+  color: var(--cream);
+  background: var(--on-dark-surface);
+  border-color: var(--on-dark-border);
+}
+
+.toolbar-btn-on-dark:hover:not(:disabled) {
+  background: var(--on-dark-surface-hover);
+}
+
+/* Undo with nothing to undo, or while an undo runs. Only aria-disabled, so it keeps focus;
+   it looks and holds still like a disabled button. */
+.toolbar-btn.admin-undo-btn[aria-disabled="true"] {
+  opacity: 0.5;
+  cursor: default;
+}
+
+.toolbar-btn.admin-undo-btn[aria-disabled="true"]:hover {
+  background: var(--on-dark-surface);
+  transform: none;
+}
+
+.toolbar-btn.admin-undo-btn[data-busy="true"] {
+  cursor: progress;
+}
+
+.toolbar-btn-cream {
+  color: var(--clay-900);
+  background: var(--cream);
+  box-shadow: 0 8px 18px rgba(0, 0, 0, 0.12);
+}
+
+.toolbar-btn-cream:hover:not(:disabled) {
+  background: var(--white);
+}
+
+.toolbar-btn-gold {
+  color: var(--clay-900);
+  background: var(--gold);
+  border-color: rgba(255, 255, 255, 0.22);
+  box-shadow: 0 8px 18px rgba(0, 0, 0, 0.14);
+}
+
+.toolbar-btn-gold:hover:not(:disabled) {
+  background: var(--gold-hover);
+}
+
+/* The page you're on: pressed in, and clicking it does nothing (D12). */
+.toolbar-btn-gold[aria-current="page"],
+.toolbar-btn-gold[aria-current="page"]:hover {
+  background: #c9973f;
+  border-color: rgba(33, 23, 15, 0.35);
+  box-shadow: inset 0 2px 6px rgba(33, 23, 15, 0.35);
+  transform: none;
+  cursor: default;
+}
+
+/* Count pill inside a toolbar button, e.g. pending requests. */
+.toolbar-btn-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 22px;
+  height: 22px;
+  margin: -4px -5px -4px 0;
+  padding: 0 var(--space-6);
+  color: var(--clay-950);
+  font-size: 12px;
+  font-weight: 800;
+  background: var(--gold-light);
+  border-radius: var(--radius-pill);
+}
+
+/* Saved / Saving… / Couldn't save (D1, D16). The D16 colors pass 4.5:1 on the bare band
+   (5.0 / 7.6 / 5.4) but not on the lighter on-dark fill (3.5 / 5.2 / 3.7), so the pill is
+   an outline only. That also keeps a status from looking like a button. */
+.admin-save-indicator {
+  display: inline-flex;
+  flex: 0 0 auto;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  min-height: 36px;
+  padding: var(--space-8) 13px;
+  color: var(--status-saved);
+  font-size: 14px;
+  font-weight: 600;
+  line-height: 1;
+  white-space: nowrap;
+  background: transparent;
+  border: 1px solid var(--on-dark-border);
+  border-radius: var(--radius-pill);
+}
+
+.admin-save-indicator[data-state="saving"] {
+  color: var(--status-saving);
+}
+
+.admin-save-indicator[data-state="error"] {
+  color: var(--status-error);
+}
+
+.admin-save-icon {
+  flex: 0 0 18px;
+  width: 18px;
+  height: 18px;
+}
+
+.admin-save-dot {
+  font-size: 10px;
+}
+
+/* Phones: one full-width column of 44px buttons. */
+@media (max-width: 768px) {
+  .admin-toolbar {
+    flex-direction: column;
+    align-items: stretch;
+    padding: var(--space-12);
+  }
+
+  .admin-toolbar-group {
+    flex-direction: column;
+    align-items: stretch;
+    width: 100%;
+    margin-left: 0;
+  }
+
+  .admin-toolbar-status,
+  .admin-toolbar-actions {
+    gap: var(--space-8);
+  }
+
+  .toolbar-btn,
+  .admin-save-indicator {
+    width: 100%;
+    min-height: 44px;
+  }
+}
+
+/* Forced colors (Windows High Contrast) drop the pressed-in look of the current page. */
+@media (forced-colors: active) {
+  .toolbar-btn-gold[aria-current="page"],
+  .toolbar-btn-gold[aria-current="page"]:hover {
+    color: HighlightText;
+    background: Highlight;
+    border-color: Highlight;
+    outline-color: CanvasText;
+    forced-color-adjust: none;
+  }
+}

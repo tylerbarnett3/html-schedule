@@ -1,4 +1,4 @@
-/* Month grid for the request dialogs (design spec §2.13). */
+/* Month grid for the request dialogs (design spec §2.13) and the admin Add dialog. */
 .date-picker-nav {
   display: flex;
   align-items: center;
@@ -113,6 +113,13 @@
   border-color: rgba(111, 144, 107, 0.22);
 }
 
+/* The admin's Closed mode can pick closed days (to mark them again): keep the sage tint. */
+.date-picker-day.is-closed:not(:disabled):not(.is-selected) {
+  color: #3f5a3c;
+  background: rgba(143, 174, 139, 0.22);
+  border-color: rgba(111, 144, 107, 0.4);
+}
+
 /* A dot under the number marks days I already asked for. */
 .date-picker-day.is-requested::after {
   content: "";
@@ -162,5 +169,26 @@
   .date-picker-day {
     min-height: 36px;
     border-radius: 10px;
+  }
+}
+
+/* Forced colors (Windows High Contrast) drop the clay fill of selected days and the
+   requested dot's color. */
+@media (forced-colors: active) {
+  .date-picker-day.is-selected:not(:disabled),
+  .date-picker-day.is-selected:hover:not(:disabled) {
+    color: HighlightText;
+    background: Highlight;
+    border-color: Highlight;
+    outline-color: CanvasText;
+    forced-color-adjust: none;
+  }
+
+  .date-picker-day.is-requested::after {
+    background: CanvasText;
+  }
+
+  .date-picker-day.is-selected:not(:disabled).is-requested::after {
+    background: HighlightText;
   }
 }

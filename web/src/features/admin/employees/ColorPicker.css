@@ -1,0 +1,232 @@
+/* Employee color: palette swatches, a custom color and a shift-card preview (D6). */
+.color-picker {
+  min-width: 0;
+  border: none;
+}
+
+.color-picker-legend {
+  margin-bottom: var(--space-8);
+}
+
+.color-picker-options {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-6);
+}
+
+.color-picker-swatch {
+  position: relative;
+  display: inline-flex;
+  width: 36px;
+  height: 36px;
+  cursor: pointer;
+}
+
+/* The native radio sits invisibly over the chip, so clicks, the arrow keys and screen
+   readers all use it directly. */
+.color-picker-radio {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  opacity: 0;
+  cursor: pointer;
+}
+
+.color-picker-chip {
+  width: 100%;
+  height: 100%;
+  border: 2px solid var(--white);
+  border-radius: 50%;
+  box-shadow: 0 0 0 1px var(--line);
+  pointer-events: none;
+  transition:
+    box-shadow 0.15s ease,
+    transform 0.15s ease;
+}
+
+.color-picker-swatch:hover .color-picker-chip {
+  transform: scale(1.06);
+}
+
+.color-picker-radio:checked + .color-picker-chip {
+  box-shadow:
+    0 0 0 2px var(--clay-900),
+    0 0 0 4px var(--white);
+}
+
+.color-picker-radio:focus-visible + .color-picker-chip {
+  outline: 3px solid var(--focus-ring);
+  outline-offset: 4px;
+}
+
+.color-picker-custom {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-6);
+  min-height: 36px;
+  padding: 0 var(--space-4) 0 var(--space-10);
+  background: var(--surface-92);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-pill);
+}
+
+.color-picker-custom-choice {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-6);
+  color: var(--clay-800);
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.color-picker-custom-radio {
+  width: 16px;
+  height: 16px;
+  margin: 0;
+  accent-color: var(--clay-700);
+  cursor: pointer;
+}
+
+.color-picker-input {
+  width: 32px;
+  height: 28px;
+  padding: 0;
+  background: transparent;
+  border: none;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+}
+
+.color-picker-input::-webkit-color-swatch-wrapper {
+  padding: 2px;
+}
+
+.color-picker-input::-webkit-color-swatch {
+  border: 1px solid var(--line);
+  border-radius: 8px;
+}
+
+.color-picker-input::-moz-color-swatch {
+  border: 1px solid var(--line);
+  border-radius: 8px;
+}
+
+.color-picker:disabled {
+  opacity: 0.7;
+}
+
+.color-picker-preview {
+  display: flex;
+  align-items: center;
+  gap: var(--space-12);
+  margin-top: var(--space-12);
+}
+
+/* A copy of the calendar's shift card (DayCard.css) so the preview matches it. */
+.color-picker-card {
+  position: relative;
+  flex: 0 0 150px;
+  overflow: hidden;
+  padding: var(--space-10) 11px;
+  color: var(--white);
+  border: 1px solid var(--chip-border);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-chip);
+}
+
+.color-picker-card::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: var(--chip-sheen);
+  pointer-events: none;
+}
+
+.color-picker-card-dark {
+  color: var(--chip-pending-text);
+}
+
+.color-picker-card-name,
+.color-picker-card-label {
+  position: relative;
+  display: block;
+}
+
+.color-picker-card-name {
+  margin-bottom: var(--space-4);
+  overflow: hidden;
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.color-picker-card-label {
+  font-size: 10px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.color-picker-summary {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+  min-width: 0;
+}
+
+.color-picker-hex {
+  font-variant-numeric: tabular-nums;
+}
+
+@media (max-width: 768px) {
+  .color-picker-swatch {
+    width: 40px;
+    height: 40px;
+  }
+
+  .color-picker-custom {
+    min-height: 40px;
+  }
+}
+
+@media (max-width: 480px) {
+  .color-picker-preview {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .color-picker-card {
+    flex-basis: auto;
+  }
+}
+
+/* Forced colors (Windows High Contrast) would blank the swatches and the preview, but they
+   are color samples, so keep their colors. The checked ring uses system colors to stay
+   visible on any theme. */
+@media (forced-colors: active) {
+  .color-picker-chip,
+  .color-picker-card,
+  .color-picker-input {
+    forced-color-adjust: none;
+  }
+
+  .color-picker-chip {
+    border-color: Canvas;
+    box-shadow: 0 0 0 1px CanvasText;
+  }
+
+  .color-picker-radio:checked + .color-picker-chip {
+    box-shadow:
+      0 0 0 1px Canvas,
+      0 0 0 4px Highlight;
+  }
+
+  .color-picker-radio:focus-visible + .color-picker-chip {
+    outline-color: CanvasText;
+  }
+}

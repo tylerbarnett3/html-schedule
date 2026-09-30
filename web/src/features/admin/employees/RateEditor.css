@@ -1,0 +1,115 @@
+/* Rate periods in Edit Employee (admin design spec §4.4 D, rebuilt). */
+.rate-editor {
+  display: grid;
+  gap: var(--space-12);
+}
+
+.rate-editor-empty {
+  padding: var(--space-18) var(--space-12);
+  color: var(--muted);
+  font-size: 13px;
+  font-style: italic;
+  text-align: center;
+}
+
+.rate-editor-list {
+  display: grid;
+  gap: var(--space-10);
+}
+
+.rate-editor-period {
+  min-width: 0;
+  padding: var(--space-12);
+  background: var(--surface-82);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-item);
+}
+
+.rate-editor-period-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-8);
+  margin-bottom: var(--space-10);
+}
+
+.rate-editor-period-title {
+  color: var(--clay-900);
+  font-size: 15px;
+  font-weight: 700;
+}
+
+/* Dates need more room than the rate; min-width 0 keeps the date inputs inside the card. */
+.rate-editor-fields,
+.rate-editor-new-fields {
+  display: grid;
+  grid-template-columns: minmax(0, 0.8fr) minmax(0, 1.1fr) minmax(0, 1.1fr);
+  gap: var(--space-10);
+}
+
+.rate-editor-new-fields {
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+}
+
+.rate-editor-label {
+  color: var(--clay-800);
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.rate-editor-control {
+  padding-right: var(--space-8);
+  padding-left: var(--space-10);
+}
+
+.rate-editor-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-8);
+}
+
+.rate-editor-new {
+  display: grid;
+  gap: var(--space-10);
+  padding: var(--space-12);
+  background: var(--add-panel-bg);
+  border: 1px solid var(--add-panel-border);
+  border-radius: var(--radius-md);
+}
+
+.rate-editor-new[hidden] {
+  display: none;
+}
+
+.rate-editor-new-intro {
+  color: var(--clay-800);
+  font-size: 13px;
+  line-height: 1.45;
+}
+
+.rate-editor-new-actions {
+  display: flex;
+  gap: var(--space-8);
+}
+
+@media (max-width: 768px) {
+  .rate-editor-fields,
+  .rate-editor-new-fields {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .rate-editor-actions > .btn {
+    flex: 1 1 100%;
+    min-height: 44px;
+  }
+
+  .rate-editor-new-actions > .btn {
+    flex: 1 1 0;
+    min-height: 44px;
+  }
+
+  .rate-editor-period-header .btn {
+    min-height: 40px;
+  }
+}

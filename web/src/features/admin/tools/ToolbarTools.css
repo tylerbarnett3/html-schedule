@@ -1,0 +1,11 @@
+/* Download PDF / Export Backup while they work ("Preparing PDF…"). The button is only
+   aria-disabled so focus stays on it; keep the label readable and the pill still. */
+.toolbar-btn.toolbar-tools-busy {
+  cursor: progress;
+  opacity: 0.8;
+}
+
+.toolbar-btn.toolbar-tools-busy:hover {
+  background: var(--cream);
+  transform: none;
+}

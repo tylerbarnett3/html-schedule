@@ -67,3 +67,11 @@
   font-size: 13px;
   font-weight: 600;
 }
+
+/* Forced colors (Windows High Contrast) replace the clay fill with the page background, so
+   a checked box would look empty. Draw the check in the system highlight instead. */
+@media (forced-colors: active) {
+  .checkbox-input::before {
+    background: Highlight;
+  }
+}

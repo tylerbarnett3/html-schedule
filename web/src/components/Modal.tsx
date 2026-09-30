@@ -17,8 +17,10 @@ export interface ModalProps {
   /** Overrides aria-labelledby (defaults to the rendered title). */
   labelledBy?: string;
   describedBy?: string;
-  /** sm for short confirmations; md for forms. md is a full-height sheet on phones. */
-  size?: "sm" | "md";
+  /** sm for short confirmations; md for forms; lg (860px) for two-column forms. md and lg are full-height sheets on phones. */
+  size?: "sm" | "md" | "lg";
+  /** "alertdialog" for messages that need an answer before going on. */
+  role?: "dialog" | "alertdialog";
   footer?: ReactNode;
   children?: ReactNode;
   className?: string;
@@ -27,10 +29,13 @@ export interface ModalProps {
 const FOCUSABLE =
   'a[href], button:not([disabled]), input:not([disabled]):not([type="hidden"]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])';
 
+// Tab stops only: a negative tabIndex (e.g. the unchosen segments of a SegmentedControl's
+// roving tabindex) is focusable by script but skipped by Tab, so it is neither the first
+// focus nor an end of the focus trap.
 function focusableIn(container: HTMLElement | null): HTMLElement[] {
   if (!container) return [];
   return Array.from(container.querySelectorAll<HTMLElement>(FOCUSABLE)).filter(
-    (el) => !el.closest("[inert]") && el.getClientRects().length > 0,
+    (el) => el.tabIndex >= 0 && !el.closest("[inert]") && el.getClientRects().length > 0,
   );
 }
 
@@ -96,6 +101,7 @@ export function Modal({
   labelledBy,
   describedBy,
   size = "md",
+  role = "dialog",
   footer,
   children,
   className,
@@ -182,7 +188,7 @@ export function Modal({
       <div
         ref={dialogRef}
         className={classes}
-        role="dialog"
+        role={role}
         aria-modal="true"
         aria-labelledby={labelledBy ?? titleId}
         aria-describedby={describedBy}

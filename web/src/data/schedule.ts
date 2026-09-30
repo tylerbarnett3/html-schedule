@@ -55,14 +55,15 @@ export function toTimeOffSource(source: string): TimeOffSource {
   return source === "assigned" ? "assigned" : "request";
 }
 
-function withSource<R extends { source: string }>(row: R): Omit<R, "source"> & { source: TimeOffSource } {
+/** A time_off row with its source narrowed from string to TimeOffSource. */
+export function toTimeOffRow<R extends { source: string }>(row: R): Omit<R, "source"> & { source: TimeOffSource } {
   return { ...row, source: toTimeOffSource(row.source) };
 }
 
-const EMPLOYEE_COLUMNS = "id, name, color, display_order, archived";
-const SHIFT_COLUMNS = "id, employee_id, shift_date, start_time, end_time";
-const TIME_OFF_COLUMNS = "id, employee_id, off_date, period, status, source, requested_at";
-const AVAILABILITY_COLUMNS = "id, employee_id, available_date, period, status, requested_at";
+export const EMPLOYEE_COLUMNS = "id, name, color, display_order, archived";
+export const SHIFT_COLUMNS = "id, employee_id, shift_date, start_time, end_time";
+export const TIME_OFF_COLUMNS = "id, employee_id, off_date, period, status, source, requested_at";
+export const AVAILABILITY_COLUMNS = "id, employee_id, available_date, period, status, requested_at";
 
 // A signal that never aborts, for callers outside react-query.
 const noSignal = () => new AbortController().signal;
@@ -126,7 +127,7 @@ export async function fetchCalendarData(
         .abortSignal(signal),
     ),
   ]);
-  return { shifts, timeOff: timeOff.map(withSource), availability };
+  return { shifts, timeOff: timeOff.map(toTimeOffRow), availability };
 }
 
 /** Every closed day; the table is small, and the date picker looks a year ahead. */
@@ -177,7 +178,7 @@ export async function fetchMyRequests(
         .abortSignal(signal),
     ),
   ]);
-  return { timeOff: timeOff.map(withSource), availability };
+  return { timeOff: timeOff.map(toTimeOffRow), availability };
 }
 
 export function useEmployees(): UseQueryResult<Employee[]> {

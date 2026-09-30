@@ -1,0 +1,249 @@
+/* Requests drawer (admin design spec §4.2): Pending / Approved tabs and the request cards.
+   The old page meant each card to carry a colored left stripe and tint by kind, but a later
+   rule hid them; they are restored here. */
+
+.requests-tabs {
+  display: flex;
+  gap: var(--space-4);
+  margin-bottom: var(--space-12);
+  padding: var(--space-4);
+  background: var(--sand);
+  border-radius: var(--radius-pill);
+}
+
+.requests-tab {
+  flex: 1 1 0;
+  min-width: 0;
+  min-height: 36px;
+  padding: var(--space-8) var(--space-12);
+  color: var(--clay-800);
+  font-size: 13px;
+  font-weight: 600;
+  white-space: nowrap;
+  background: transparent;
+  border: none;
+  border-radius: var(--radius-pill);
+  transition: background 0.18s ease;
+}
+
+.requests-tab:hover {
+  background: rgba(255, 252, 246, 0.6);
+}
+
+.requests-tab[aria-selected="true"] {
+  color: var(--cream);
+  background: var(--gradient-clay);
+}
+
+/* A nested scroller, as on the old page. The padding keeps card shadows and focus rings
+   from being cut off at its edges. */
+.requests-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-8);
+  max-height: 400px;
+  margin: 0 -4px;
+  padding: 2px 4px 4px;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+
+.requests-empty,
+.requests-status {
+  padding: 30px var(--space-20);
+  color: var(--muted);
+  font-size: 13px;
+  font-style: italic;
+  text-align: center;
+}
+
+.requests-status {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-12);
+  padding: var(--space-20) var(--space-10);
+  font-style: normal;
+}
+
+.requests-status-error {
+  color: var(--error-text);
+  font-weight: 600;
+}
+
+.request-card {
+  padding: var(--space-12);
+  border-left: 4px solid;
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-item);
+}
+
+.request-card-time-off {
+  color: var(--request-timeoff-text);
+  background: #fff4f1;
+  border-left-color: var(--red);
+}
+
+.request-card-availability {
+  color: var(--request-availability-text);
+  background: #ecfbf8;
+  border-left-color: #319795;
+}
+
+/* Name above the request date: side by side, the old 198px row wrapped every name. */
+.request-card-head {
+  margin-bottom: var(--space-8);
+}
+
+.request-card-name {
+  font-size: 15px;
+  font-weight: 700;
+  line-height: 1.3;
+  overflow-wrap: anywhere;
+}
+
+.request-card-archived {
+  font-size: 13px;
+  font-weight: 500;
+}
+
+.request-card-requested {
+  margin-top: 2px;
+  font-size: 12px;
+  font-weight: 500;
+}
+
+.request-card-detail {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-4) var(--space-8);
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.request-pill {
+  display: inline-flex;
+  align-items: center;
+  padding: 3px var(--space-8);
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  border-radius: var(--radius-pill);
+}
+
+.request-card-time-off .request-pill {
+  color: var(--pill-timeoff-text);
+  background: var(--pill-timeoff-bg);
+}
+
+.request-card-availability .request-pill {
+  color: var(--pill-availability-text);
+  background: var(--pill-availability-bg);
+}
+
+.request-group-days {
+  display: grid;
+  gap: 2px;
+  margin-top: var(--space-6);
+  padding-left: var(--space-12);
+  font-size: 13px;
+  font-weight: 600;
+  list-style: disc;
+}
+
+.request-flags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-6);
+  margin-top: var(--space-8);
+}
+
+.request-flag {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px var(--space-8);
+  color: var(--clay-900);
+  font-size: 11px;
+  font-weight: 700;
+  background: rgba(76, 55, 37, 0.1);
+  border-radius: var(--radius-pill);
+}
+
+.request-flag-inline {
+  margin-left: var(--space-6);
+  vertical-align: 1px;
+}
+
+/* The closed-day banner's green, darkened for small text. */
+.request-flag-closed {
+  color: #2f4a2c;
+  background: rgba(94, 127, 90, 0.2);
+}
+
+.request-card-approved {
+  margin-top: var(--space-6);
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.request-card-actions {
+  display: flex;
+  gap: var(--space-8);
+  margin-top: var(--space-10);
+}
+
+.request-card-actions-stacked {
+  flex-direction: column;
+}
+
+.request-card-actions .request-action {
+  flex: 1 1 0;
+  min-width: 0;
+  min-height: 36px;
+  font-size: 13px;
+  white-space: normal;
+}
+
+.request-card .request-action-remove {
+  color: var(--remove-text);
+  background: rgba(255, 252, 246, 0.7);
+  border-color: rgba(143, 48, 43, 0.3);
+}
+
+/* Busy: aria-disabled keeps focus on the button, so dim it by hand. */
+.request-action[aria-disabled="true"] {
+  opacity: 0.6;
+  cursor: progress;
+  box-shadow: none;
+}
+
+.request-action[aria-disabled="true"]:hover {
+  transform: none;
+}
+
+.request-action .spinner .spinner-ring {
+  width: 14px;
+  height: 14px;
+  border-width: 2px;
+  border-color: currentColor;
+  border-top-color: transparent;
+}
+
+@media (max-width: 768px) {
+  .requests-tab,
+  .request-card-actions .request-action {
+    min-height: 44px;
+  }
+}
+
+/* Forced colors (Windows High Contrast) drop the clay fill of the selected tab. */
+@media (forced-colors: active) {
+  .requests-tab[aria-selected="true"] {
+    color: HighlightText;
+    background: Highlight;
+    outline-color: CanvasText;
+    forced-color-adjust: none;
+  }
+}

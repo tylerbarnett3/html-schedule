@@ -1,0 +1,101 @@
+/* Save bar (admin design spec §4.8). Sticky works because .app-frame clips with overflow: clip
+   rather than hiding overflow, so the window is the scroll container (D13). */
+.payroll-savebar {
+  position: sticky;
+  bottom: 12px;
+  z-index: 8;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-16);
+  margin-top: var(--space-4);
+  padding: var(--space-14) var(--space-16);
+  background: var(--savebar-bg);
+  border: 1px solid var(--savebar-border);
+  border-radius: var(--radius-md);
+  box-shadow: var(--savebar-shadow);
+  -webkit-backdrop-filter: blur(12px);
+  backdrop-filter: blur(12px);
+}
+
+.payroll-savebar-copy {
+  min-width: 0;
+  color: var(--clay-700);
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+.payroll-savebar-title,
+.payroll-savebar-description {
+  display: block;
+}
+
+.payroll-savebar-title {
+  color: var(--clay-900);
+}
+
+.payroll-savebar-error {
+  margin-top: var(--space-6);
+  padding: var(--space-6) var(--space-10);
+  color: var(--error-text);
+  font-weight: 600;
+  background: var(--error-bg);
+  border: 1px solid var(--error-border);
+  border-radius: 10px;
+}
+
+.payroll-savebar-error:empty {
+  display: none;
+}
+
+.payroll-savebar-actions {
+  display: flex;
+  flex: none;
+  align-items: center;
+  gap: var(--space-8);
+}
+
+@media (max-width: 768px) {
+  .payroll-savebar {
+    flex-direction: column;
+    align-items: stretch;
+    padding: 13px var(--space-12);
+  }
+
+  .payroll-savebar-actions .btn {
+    flex: 1;
+    min-height: 48px;
+  }
+}
+
+/* While saving, the buttons are only aria-disabled (focus stays on Save), so dim them here. */
+.payroll-savebar-actions .btn[aria-disabled="true"],
+.payroll-savebar-actions .btn[aria-disabled="true"]:hover {
+  opacity: 0.55;
+  box-shadow: none;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.payroll-savebar-actions .btn-secondary[aria-disabled="true"]:hover {
+  background: var(--sand);
+}
+
+.payroll-savebar-actions .btn-success[aria-disabled="true"],
+.payroll-savebar-actions .btn-success[aria-disabled="true"]:hover {
+  opacity: 0.8;
+  cursor: progress;
+}
+
+/* Status text takes focus after Save or Cancel turns the buttons off (PayrollPage). */
+.payroll-savebar-copy:focus-visible {
+  outline-offset: 4px;
+  border-radius: 6px;
+}
+
+/* A control that gets focus scrolls clear of the stuck bar (WCAG 2.4.11). The bar measures
+   itself into --payroll-savebar-space (PayrollSaveBar.tsx); it also sets --toast-bottom,
+   which lifts desktop toasts just above it (phones show toasts at the top). */
+:root:has(.payroll-savebar) {
+  scroll-padding-bottom: var(--payroll-savebar-space, 120px);
+}

@@ -2,6 +2,6 @@
   color: var(--slate-600);
   font-size: 16px;
   line-height: 1.5;
-  white-space: pre-line;
+  white-space: pre-wrap;
   overflow-wrap: anywhere;
 }

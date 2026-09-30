@@ -101,7 +101,7 @@ function dateParts(d: ISODate): { year: number; month: number; day: number } {
 }
 
 /** 'Oct 5' */
-function formatMonthDay(d: ISODate): string {
+export function formatMonthDay(d: ISODate): string {
   const { month, day } = dateParts(d);
   return `${MONTH_SHORT[month - 1]} ${day}`;
 }
@@ -109,6 +109,43 @@ function formatMonthDay(d: ISODate): string {
 /** 'Oct 5, 2026' */
 export function formatShortDate(d: ISODate): string {
   return `${formatMonthDay(d)}, ${dateParts(d).year}`;
+}
+
+/** 'Mon, Oct 5' (selected-date chips, request lines, toasts). */
+export function formatChipDate(d: ISODate): string {
+  return `${WEEKDAY_SHORT[weekdayOf(d)]}, ${formatMonthDay(d)}`;
+}
+
+/** 'Sunday, October 11, 2026' */
+export function formatLongDate(d: ISODate): string {
+  const { year, month, day } = dateParts(d);
+  return `${WEEKDAY_LONG[weekdayOf(d)]}, ${MONTH_LONG[month - 1]} ${day}, ${year}`;
+}
+
+// Postgres timestamptz as PostgREST sends it ('2026-09-29T14:03:12.123456+00:00'), or with a
+// space instead of the T. The offset is required: without one the moment depends on the device.
+const TIMESTAMP_PATTERN =
+  /^(\d{4}-\d{2}-\d{2})[T ](\d{2}:\d{2}(?::\d{2})?)(?:\.(\d+))?(?:(Z)|([+-]\d{2})(?::?(\d{2}))?)$/i;
+
+/**
+ * The business-day date of a timestamp: '2026-09-30T02:30:00+00:00' was still
+ * Sep 29 in New York. Null for missing or unreadable values.
+ */
+export function timestampToBusinessDate(
+  ts: string | null | undefined,
+  timeZone: string = BUSINESS_TIME_ZONE,
+): ISODate | null {
+  const match = ts ? TIMESTAMP_PATTERN.exec(ts.trim()) : null;
+  if (!match) return null;
+  const [, date, time, fraction, utc, offsetHours, offsetMinutes = "00"] = match;
+  // Date.parse rolls impossible dates over (Feb 30 becomes Mar 2).
+  if (!isISODate(date)) return null;
+  // Rebuilt in the one form every engine parses: milliseconds at most, and a '+HH:MM' offset.
+  const millis = fraction ? `.${fraction.slice(0, 3)}` : "";
+  const offset = utc ? "Z" : `${offsetHours}:${offsetMinutes}`;
+  const ms = Date.parse(`${date}T${time}${millis}${offset}`);
+  if (!Number.isFinite(ms)) return null;
+  return todayInZone(timeZone, new Date(ms));
 }
 
 /** 'Oct 5, 2026, Oct 6, 2026' (the old page's list format); '' when empty. */

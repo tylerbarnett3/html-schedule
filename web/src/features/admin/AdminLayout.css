@@ -1,0 +1,39 @@
+/* Admin page layout under the toolbar: the 300px sidebar beside the schedule (D5), stacked
+   at 1024px and below. Payroll uses .admin-area on its own, full width. */
+.admin-main {
+  display: grid;
+  grid-template-columns: var(--sidebar-width-admin) minmax(0, 1fr);
+  background: var(--surface-main);
+}
+
+.admin-area {
+  min-width: 0;
+  padding: clamp(18px, 3vw, 34px);
+}
+
+/* Stand-in text while a section is still being built. */
+.admin-placeholder {
+  padding: 30px var(--space-20);
+  color: var(--muted);
+  font-size: 14px;
+  font-style: italic;
+  text-align: center;
+}
+
+@media (max-width: 1024px) {
+  .admin-main {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+@media (max-width: 768px) {
+  .admin-area {
+    padding: var(--space-12);
+  }
+}
+
+@media (max-width: 480px) {
+  .admin-area {
+    padding: var(--space-10) var(--space-8) var(--space-14);
+  }
+}

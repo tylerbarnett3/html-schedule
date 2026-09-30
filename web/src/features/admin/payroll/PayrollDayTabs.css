@@ -1,0 +1,95 @@
+/* Day tabs, 7 columns by 2 rows (admin design spec §4.8). */
+.payroll-tabs {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  grid-auto-rows: minmax(62px, auto);
+  gap: 7px;
+}
+
+.payroll-tab {
+  min-width: 0;
+  min-height: 62px;
+  padding: 9px var(--space-8);
+  color: var(--clay-700);
+  text-align: center;
+  background: rgba(255, 252, 246, 0.72);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+  transition:
+    background 0.18s ease,
+    border-color 0.18s ease;
+}
+
+.payroll-tab:hover {
+  background: var(--cream);
+  border-color: rgba(166, 119, 55, 0.58);
+}
+
+.payroll-tab-active,
+.payroll-tab-active:hover {
+  color: var(--cream);
+  background: var(--clay-800);
+  border-color: var(--clay-700);
+}
+
+.payroll-tab-day,
+.payroll-tab-progress {
+  display: block;
+}
+
+.payroll-tab-day {
+  font-size: 13px;
+  font-weight: 800;
+  white-space: nowrap;
+}
+
+.payroll-tab-progress {
+  margin-top: var(--space-4);
+  font-size: 11px;
+  font-variant-numeric: tabular-nums;
+}
+
+.payroll-tab-active .payroll-tab-progress {
+  color: rgba(255, 250, 241, 0.86);
+}
+
+@media (max-width: 768px) {
+  .payroll-tabs {
+    grid-auto-rows: minmax(56px, auto);
+    gap: var(--space-4);
+  }
+
+  .payroll-tab {
+    min-height: 56px;
+    padding: var(--space-8) 3px;
+  }
+
+  .payroll-tab-day {
+    font-size: 11px;
+  }
+
+  /* Weekday over the day number. */
+  .payroll-tab-day > span {
+    display: block;
+  }
+
+  .payroll-tab-progress {
+    font-size: 10px;
+  }
+}
+
+/* Forced colors (Windows High Contrast) drop the clay fill of the selected day. */
+@media (forced-colors: active) {
+  .payroll-tab-active,
+  .payroll-tab-active:hover {
+    color: HighlightText;
+    background: Highlight;
+    border-color: Highlight;
+    outline-color: CanvasText;
+    forced-color-adjust: none;
+  }
+
+  .payroll-tab-active .payroll-tab-progress {
+    color: HighlightText;
+  }
+}

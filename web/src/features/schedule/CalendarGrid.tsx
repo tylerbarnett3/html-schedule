@@ -1,24 +1,49 @@
+import { useEffect, useRef, useState, type DragEvent, type ReactNode } from "react";
 import { useMediaQuery } from "../../data/useMediaQuery";
-import { calendarCellCount, type CalendarDay } from "../../lib/calendar";
+import { calendarCellCount, type CalendarDay, type DayCard as CalendarCard } from "../../lib/calendar";
 import { formatDayLabel, weekdayHeaders } from "../../lib/dates";
+import type { ISODate } from "../../lib/types";
+import { CALENDAR_DRAG_TYPES, calendarDragKind, type CalendarDragKind } from "../admin/dragTypes";
 import { DayCard, type CancellableCard } from "./DayCard";
 import "./CalendarGrid.css";
 
 /** Phones get a one-column agenda list instead of the 7-column grid. */
 const MOBILE_QUERY = "(max-width: 768px)";
 
+/** Admin page: cards can be dragged onto another day. */
+export interface CalendarDragAndDrop {
+  canDrag(card: CalendarCard): boolean;
+  onDrop(drop: { kind: CalendarDragKind; id: string; date: ISODate }): void;
+}
+
 export interface CalendarGridProps {
   days: readonly CalendarDay[];
   /** The rows for these dates are still loading: empty days show a placeholder, not "No shifts". */
   loading?: boolean;
-  onCancel(card: CancellableCard): void;
+  /** Employee page: Cancel Request on the signed-in employee's own pending cards. */
+  onCancel?(card: CancellableCard): void;
   /** Row ids of the requests whose cancellation is in flight. */
-  cancellingIds: ReadonlySet<string>;
+  cancellingIds?: ReadonlySet<string>;
+  /** Admin page: cards open on click (see DayCard). */
+  onOpenCard?(card: CalendarCard): void;
+  /** Admin page: extra controls at the end of each day, e.g. "+ Add" or "Reopen day". */
+  renderDayFooter?(day: CalendarDay): ReactNode;
+  /** Admin page: drag and drop between days (leave out on touch screens). */
+  dragAndDrop?: CalendarDragAndDrop;
 }
 
 const CLOSED_LETTERS = ["C", "L", "O", "S", "E", "D"];
+const NOT_CANCELLING: ReadonlySet<string> = new Set();
 
-export function CalendarGrid({ days, loading = false, onCancel, cancellingIds }: CalendarGridProps) {
+export function CalendarGrid({
+  days,
+  loading = false,
+  onCancel,
+  cancellingIds = NOT_CANCELLING,
+  onOpenCard,
+  renderDayFooter,
+  dragAndDrop,
+}: CalendarGridProps) {
   const mobile = useMediaQuery(MOBILE_QUERY);
   const start = days.length > 0 ? days[0].date : null;
   // Blank cells complete the last week row on the grid; the agenda list has none.
@@ -46,6 +71,9 @@ export function CalendarGrid({ days, loading = false, onCancel, cancellingIds }:
             loading={loading}
             onCancel={onCancel}
             cancellingIds={cancellingIds}
+            onOpenCard={onOpenCard}
+            footer={renderDayFooter ? renderDayFooter(day) : null}
+            dragAndDrop={dragAndDrop}
           />
         ))}
         {Array.from({ length: fillers }, (_, i) => (
@@ -60,13 +88,26 @@ interface CalendarDayCellProps {
   day: CalendarDay;
   mobile: boolean;
   loading: boolean;
-  onCancel(card: CancellableCard): void;
+  onCancel?(card: CancellableCard): void;
   cancellingIds: ReadonlySet<string>;
+  onOpenCard?(card: CalendarCard): void;
+  footer: ReactNode;
+  dragAndDrop?: CalendarDragAndDrop;
 }
 
-function CalendarDayCell({ day, mobile, loading, onCancel, cancellingIds }: CalendarDayCellProps) {
+function CalendarDayCell({
+  day,
+  mobile,
+  loading,
+  onCancel,
+  cancellingIds,
+  onOpenCard,
+  footer,
+  dragAndDrop,
+}: CalendarDayCellProps) {
   const fullLabel = formatDayLabel(day.date, "mobile");
   const classes = ["calendar-day", day.isToday ? "calendar-day-today" : null].filter(Boolean).join(" ");
+  const drop = useDayDropTarget(day.date, dragAndDrop);
 
   return (
     <li className={classes} data-date={day.date}>
@@ -89,7 +130,7 @@ function CalendarDayCell({ day, mobile, loading, onCancel, cancellingIds }: Cale
           </span>
         ) : null}
       </h3>
-      <div className="calendar-day-body">
+      <div className={drop.over ? "calendar-day-body is-drop-target" : "calendar-day-body"} {...drop.handlers}>
         {day.closed ? (
           <p className="calendar-closed">
             <span className="calendar-closed-letters" aria-hidden="true">
@@ -107,6 +148,8 @@ function CalendarDayCell({ day, mobile, loading, onCancel, cancellingIds }: Cale
                 card={card}
                 onCancel={onCancel}
                 cancelling={cancellingIds.has(card.row.id)}
+                onOpen={onOpenCard}
+                draggable={dragAndDrop?.canDrag(card)}
               />
             ))}
           </ul>
@@ -120,7 +163,82 @@ function CalendarDayCell({ day, mobile, loading, onCancel, cancellingIds }: Cale
           // The old page left empty desktop days blank; screen readers still get the text.
           <p className={mobile ? "calendar-empty" : "visually-hidden"}>No shifts scheduled</p>
         )}
+        {footer ? <div className="calendar-day-footer">{footer}</div> : null}
       </div>
     </li>
   );
+}
+
+type DropHandlers = {
+  onDragEnter?(event: DragEvent<HTMLDivElement>): void;
+  onDragOver?(event: DragEvent<HTMLDivElement>): void;
+  onDragLeave?(event: DragEvent<HTMLDivElement>): void;
+  onDrop?(event: DragEvent<HTMLDivElement>): void;
+};
+
+/**
+ * A day body as a drop zone for calendar cards only (decision C3): other drags (an
+ * employee row, text, files) get no highlight and can't be dropped. Entering and leaving
+ * the cards inside fires enter/leave pairs, so a counter decides when the drag has left.
+ */
+function useDayDropTarget(
+  date: ISODate,
+  dragAndDrop: CalendarDragAndDrop | undefined,
+): { over: boolean; handlers: DropHandlers } {
+  const [over, setOver] = useState(false);
+  const depth = useRef(0);
+
+  // A drag that ends elsewhere (Escape, or dropped outside the page) may never send the
+  // matching dragleave; clear the highlight when any drag ends.
+  useEffect(() => {
+    if (!over) return;
+    const reset = () => {
+      depth.current = 0;
+      setOver(false);
+    };
+    window.addEventListener("dragend", reset);
+    window.addEventListener("drop", reset);
+    return () => {
+      window.removeEventListener("dragend", reset);
+      window.removeEventListener("drop", reset);
+    };
+  }, [over]);
+
+  if (!dragAndDrop) return { over: false, handlers: {} };
+
+  const kindOf = (event: DragEvent<HTMLDivElement>) => calendarDragKind(Array.from(event.dataTransfer.types));
+
+  return {
+    over,
+    handlers: {
+      onDragEnter(event) {
+        if (!kindOf(event)) return;
+        event.preventDefault();
+        depth.current += 1;
+        setOver(true);
+      },
+      onDragOver(event) {
+        if (!kindOf(event)) {
+          event.dataTransfer.dropEffect = "none";
+          return;
+        }
+        event.preventDefault();
+        event.dataTransfer.dropEffect = "move";
+      },
+      onDragLeave(event) {
+        if (!kindOf(event)) return;
+        depth.current = Math.max(0, depth.current - 1);
+        if (depth.current === 0) setOver(false);
+      },
+      onDrop(event) {
+        const kind = kindOf(event);
+        depth.current = 0;
+        setOver(false);
+        if (!kind) return;
+        event.preventDefault();
+        const id = event.dataTransfer.getData(CALENDAR_DRAG_TYPES[kind]);
+        if (id) dragAndDrop.onDrop({ kind, id, date });
+      },
+    },
+  };
 }

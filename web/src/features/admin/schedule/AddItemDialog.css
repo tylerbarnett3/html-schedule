@@ -1,0 +1,269 @@
+/* Add Shift / Add Day Off / Add Closed Day (admin design spec §4.4 A, decision D4): the form
+   beside the date picker at 900px and wider, one column below that. The Modal makes it a
+   full-height sheet on phones. */
+.add-item-form {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--space-18);
+  padding-bottom: var(--space-4);
+}
+
+.add-item-main,
+.add-item-dates {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-18);
+  min-width: 0;
+}
+
+@media (min-width: 900px) {
+  .add-item-form {
+    grid-template-columns: minmax(0, 1fr) minmax(300px, 360px);
+    column-gap: var(--space-26);
+    align-items: start;
+  }
+
+  .add-item-messages {
+    grid-column: 1 / -1;
+  }
+}
+
+.add-item-hint {
+  padding: var(--space-12) var(--space-14);
+  color: var(--clay-800);
+  font-size: 14px;
+  line-height: 1.45;
+  background: var(--surface-tint);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+}
+
+/* Employee(s): checkbox cards in a scrolling box (old .shift-employee-picker). */
+.add-item-employees {
+  min-width: 0;
+  margin: 0;
+  padding: 0;
+  border: none;
+}
+
+.add-item-employees > legend {
+  margin-bottom: var(--space-6);
+  padding: 0;
+}
+
+.add-item-employee-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+  gap: var(--space-8);
+  max-height: 220px;
+  padding: var(--space-8);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  background: rgba(255, 252, 246, 0.7);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-md);
+}
+
+.add-item-employee {
+  min-height: 44px;
+  padding: 9px var(--space-10);
+  background: var(--add-day-bg);
+  border: 1px solid rgba(91, 65, 40, 0.1);
+  border-radius: var(--radius-sm);
+  transition:
+    background 0.2s,
+    border-color 0.2s,
+    box-shadow 0.2s;
+}
+
+.add-item-employee:hover {
+  box-shadow: 0 8px 16px rgba(58, 39, 21, 0.08);
+}
+
+.add-item-employee:has(input:checked) {
+  background: #fffaf1;
+  border-color: rgba(216, 169, 79, 0.48);
+  box-shadow: 0 8px 16px rgba(58, 39, 21, 0.08);
+}
+
+.add-item-employee-name {
+  display: block;
+  overflow: hidden;
+  color: var(--ink);
+  font-size: 14px;
+  font-weight: 700;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.add-item-empty,
+.add-item-loading {
+  padding: var(--space-18) var(--space-12);
+  color: var(--muted);
+  font-size: 13px;
+  font-style: italic;
+  text-align: center;
+  background: rgba(255, 252, 246, 0.7);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-md);
+}
+
+.add-item-times {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--space-12);
+}
+
+/* Quick Shifts: chips that fill both time inputs (old .quick-shift-*). */
+.add-item-quick {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-10);
+  margin-top: -6px;
+}
+
+.add-item-quick-title {
+  color: var(--clay-800);
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.add-item-quick-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-8);
+}
+
+.add-item-quick-chip {
+  min-height: 34px;
+  padding: var(--space-8) var(--space-12);
+  color: var(--clay-800);
+  font-size: 13px;
+  font-weight: 700;
+  background: var(--surface-92);
+  border: 1px solid rgba(91, 65, 40, 0.18);
+  border-radius: var(--radius-pill);
+  transition:
+    background 0.15s ease,
+    border-color 0.15s ease;
+}
+
+.add-item-quick-chip:hover {
+  background: var(--hover-cream);
+  border-color: rgba(216, 169, 79, 0.62);
+}
+
+/* Selected Dates: chips like the request dialog's, labelled 'Wed, Sep 30'. */
+.add-item-selected {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-10);
+  min-height: 60px;
+  padding: 15px;
+  background: var(--surface-82);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-md);
+}
+
+.add-item-selected:focus-visible {
+  outline: 3px solid var(--focus-ring);
+  outline-offset: 2px;
+}
+
+.add-item-empty-dates {
+  color: var(--slate-500);
+  font-size: 13px;
+}
+
+.add-item-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-8);
+}
+
+.add-item-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-4);
+  min-height: 32px;
+  padding: var(--space-4) var(--space-4) var(--space-4) var(--space-12);
+  color: var(--cream);
+  font-size: 13px;
+  font-weight: 600;
+  white-space: nowrap;
+  background: var(--gradient-clay);
+  border-radius: var(--radius-pill);
+}
+
+.add-item-chip-remove {
+  display: inline-flex;
+  flex: 0 0 auto;
+  align-items: center;
+  justify-content: center;
+  width: 26px;
+  height: 26px;
+  padding: 0;
+  color: var(--white);
+  font-size: 18px;
+  font-weight: 600;
+  line-height: 1;
+  background: transparent;
+  border: none;
+  border-radius: var(--radius-pill);
+  transition: background 0.15s ease;
+}
+
+.add-item-chip-remove:hover {
+  background: rgba(255, 250, 241, 0.2);
+}
+
+.add-item-chip-remove:focus-visible {
+  outline: 2px solid var(--cream);
+  outline-offset: 0;
+  box-shadow: 0 0 0 4px var(--focus-ring);
+}
+
+.add-item-messages:empty {
+  display: none;
+}
+
+/* Keep the "  - Name: 9:00 AM - 3:00 PM" indents of conflict lists. */
+.add-item-messages .field-error {
+  white-space: pre-wrap;
+}
+
+.add-item-spinner .spinner-ring {
+  border-color: rgba(255, 250, 241, 0.28);
+  border-top-color: var(--gold-light);
+}
+
+.add-item-dialog .btn[aria-disabled="true"] {
+  cursor: progress;
+  opacity: 0.8;
+}
+
+@media (max-width: 768px) {
+  .add-item-times {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .add-item-chip {
+    min-height: 36px;
+    font-size: 14px;
+  }
+
+  .add-item-chip-remove {
+    width: 32px;
+    height: 32px;
+  }
+
+  .add-item-quick-chip {
+    min-height: 44px;
+  }
+}
+
+@media (max-width: 480px) {
+  .add-item-employee-list {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}

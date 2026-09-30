@@ -1,6 +1,7 @@
 // Parts of the day a time-off or availability request can cover.
 
-import type { DayPeriod } from "./types";
+import { timeToMinutes } from "./time";
+import type { DayPeriod, PgTime } from "./types";
 
 /** In display and sort order. */
 export const DAY_PERIODS: readonly DayPeriod[] = ["full-day", "morning", "evening"];
@@ -39,4 +40,20 @@ export function formatPeriod(p: DayPeriod): "Full Day" | "Morning" | "Evening" {
 export function periodSortValue(p: DayPeriod): 0 | 1 | 2 {
   const period = normalizePeriod(p);
   return period === "full-day" ? 0 : period === "morning" ? 1 : 2;
+}
+
+/** Morning is open until 5pm; evening starts at 5pm. */
+export const EVENING_START_MINUTES = 17 * 60;
+
+/**
+ * Whether time off for this part of the day takes out a shift. Only the shift's start
+ * counts (the old page's rule): a full day covers every shift, morning covers starts
+ * before 5pm, evening covers starts from 5pm. A malformed start is covered only by a full day.
+ */
+export function periodCoversShiftStart(period: DayPeriod, start: PgTime | null | undefined): boolean {
+  const normalized = normalizePeriod(period);
+  if (normalized === "full-day") return true;
+  const minutes = timeToMinutes(start);
+  if (minutes === null) return false;
+  return normalized === "morning" ? minutes < EVENING_START_MINUTES : minutes >= EVENING_START_MINUTES;
 }

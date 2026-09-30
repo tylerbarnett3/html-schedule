@@ -7,6 +7,7 @@ import {
 import { isISODate } from "../lib/dates";
 import { supabase, type DayPeriod } from "../lib/supabase";
 import type { ISODate, RequestResult, TimeOff } from "../lib/types";
+import { errorFields, NETWORK_ERROR } from "./errors";
 import { fetchAll, toError, toTimeOffSource } from "./schedule";
 
 export type RequestKind = "time-off" | "availability";
@@ -114,17 +115,6 @@ export function useCancelAvailability(): UseMutationResult<CancelResult, Error, 
 }
 
 export const NO_REQUEST_ACCESS_MESSAGE = "Your login can't submit requests. Ask your manager.";
-
-// Chrome, Firefox, Safari and Node word a failed fetch differently.
-const NETWORK_ERROR = /failed to fetch|fetch failed|networkerror|load failed|network request failed/i;
-
-function errorFields(error: unknown): { message: string; code: string } {
-  if (typeof error !== "object" || error === null) return { message: "", code: "" };
-  return {
-    message: "message" in error && typeof error.message === "string" ? error.message : "",
-    code: "code" in error && typeof error.code === "string" ? error.code : "",
-  };
-}
 
 /** Plain-language message for a failed submit. */
 export function requestErrorMessage(error: unknown, kind: RequestKind): string {

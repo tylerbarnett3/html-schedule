@@ -1,4 +1,5 @@
 import type { ReactNode } from "react";
+import { Link, useMatch } from "react-router";
 import { useAuth } from "../lib/auth";
 import { useSignOut } from "./useSignOut";
 import "./AppHeader.css";
@@ -11,9 +12,13 @@ export interface AppHeaderProps {
 export function AppHeader({ actions }: AppHeaderProps) {
   const auth = useAuth();
   const { signingOut, signOut } = useSignOut();
+  const onSchedulePage = useMatch("/") !== null;
 
   const accountName =
     auth.status === "signed-in" ? (auth.profile.employee?.name ?? (auth.profile.isAdmin ? "Admin" : null)) : null;
+  // An admin who is also an employee lands on their own schedule; this is their way to the
+  // admin page (AM2). Admins without an employee record never see "/".
+  const showAdminLink = auth.status === "signed-in" && auth.profile.isAdmin && onSchedulePage;
 
   return (
     <header className="app-header">
@@ -23,6 +28,11 @@ export function AppHeader({ actions }: AppHeaderProps) {
             <span className="visually-hidden">Signed in as </span>
             {accountName}
           </span>
+          {showAdminLink ? (
+            <Link to="/admin" className="app-header-link">
+              Admin
+            </Link>
+          ) : null}
           <button type="button" className="app-header-signout" onClick={signOut} disabled={signingOut}>
             Sign out
           </button>

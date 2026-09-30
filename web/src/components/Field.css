@@ -1,0 +1,95 @@
+/* Shared form fields for the admin dialogs (admin design spec §4.4): a label over a
+   paper-colored control, with an optional hint and an inline error. */
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-6);
+  min-width: 0;
+}
+
+.field-label {
+  color: var(--clay-800);
+  font-size: 15px;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+}
+
+/* 16px text keeps iOS from zooming when the control is tapped. */
+.field-control {
+  width: 100%;
+  min-width: 0;
+  min-height: 44px;
+  padding: var(--space-10) var(--space-12);
+  color: var(--ink);
+  font-size: 16px;
+  line-height: 1.2;
+  background-color: var(--surface-92);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+  box-shadow: var(--shadow-inset);
+  transition:
+    border-color 0.18s ease,
+    box-shadow 0.18s ease;
+}
+
+.field-control:focus-visible {
+  outline: none;
+  border-color: var(--focus-ring);
+  box-shadow: var(--focus-glow);
+}
+
+.field-control:disabled {
+  color: var(--muted);
+  background-color: var(--surface-tint);
+  cursor: not-allowed;
+}
+
+.field-control::placeholder {
+  color: var(--muted);
+  opacity: 1;
+}
+
+select.field-control {
+  padding-right: 40px;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23352619' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
+  background-position: right 12px center;
+  background-repeat: no-repeat;
+  background-size: 18px;
+  appearance: none;
+}
+
+/* WebKit gives date and time inputs an inner height of their own; keep them in line. */
+input[type="date"].field-control,
+input[type="time"].field-control {
+  display: block;
+  -webkit-appearance: none;
+  appearance: none;
+}
+
+textarea.field-control {
+  min-height: 88px;
+  resize: vertical;
+}
+
+.field-control[aria-invalid="true"] {
+  border-color: var(--error-border);
+}
+
+.field-hint {
+  color: var(--muted);
+  font-size: 13px;
+  line-height: 1.4;
+}
+
+.field-error {
+  padding: var(--space-10) var(--space-12);
+  color: var(--error-text);
+  font-size: 14px;
+  font-weight: 600;
+  line-height: 1.45;
+  white-space: pre-line;
+  overflow-wrap: anywhere;
+  background: var(--error-bg);
+  border: 1px solid var(--error-border);
+  border-radius: var(--radius-sm);
+}

@@ -108,6 +108,22 @@
   gap: var(--space-8);
 }
 
+/* Admin page: "+ Add" / "Reopen day" after the day's cards. */
+.calendar-day-footer {
+  display: flex;
+  flex-direction: column;
+  margin-top: var(--space-8);
+}
+
+/* Admin page: a card is being dragged over this day. An outline (not a border) so nothing
+   moves (admin design spec §7). */
+.calendar-day-body.is-drop-target {
+  background: var(--drop-target-bg);
+  border-radius: var(--radius-md);
+  outline: 2px dashed var(--drop-target-border);
+  outline-offset: -4px;
+}
+
 /* Stand-in cards for a day whose rows are still loading. */
 .calendar-skeleton {
   display: flex;

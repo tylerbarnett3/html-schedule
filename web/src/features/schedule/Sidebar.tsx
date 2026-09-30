@@ -1,9 +1,10 @@
-import { useId, useState } from "react";
+import { useState, type ReactNode } from "react";
 import { Button } from "../../components/Button";
 import { Checkbox } from "../../components/Checkbox";
 import { Spinner } from "../../components/Spinner";
 import type { Employee } from "../../lib/types";
 import { employeeColor } from "./employeeColor";
+import { SidebarDrawer } from "./SidebarDrawer";
 import "./Sidebar.css";
 
 export interface SidebarProps {
@@ -17,6 +18,11 @@ export interface SidebarProps {
   onToggleEmployee(id: string, selected: boolean): void;
   onSelectAll(): void;
   onClearAll(): void;
+  /** Extra sections (usually drawers) between the toggles and the employee filter. */
+  beforeFilter?: ReactNode;
+  /** Extra sections after the employee filter. */
+  afterFilter?: ReactNode;
+  className?: string;
 }
 
 export function Sidebar({
@@ -29,8 +35,10 @@ export function Sidebar({
   onToggleEmployee,
   onSelectAll,
   onClearAll,
+  beforeFilter,
+  afterFilter,
+  className,
 }: SidebarProps) {
-  const drawerId = useId();
   const [open, setOpen] = useState(false);
 
   const total = employees?.length ?? 0;
@@ -39,7 +47,7 @@ export function Sidebar({
   const filtered = employees !== undefined && shown < total;
 
   return (
-    <aside className="sidebar" aria-label="Calendar options">
+    <aside className={["sidebar", className].filter(Boolean).join(" ")} aria-label="Calendar options">
       <div className="sidebar-section">
         <Checkbox
           label="Show Time Off"
@@ -54,71 +62,59 @@ export function Sidebar({
           onChange={(event) => onShowAvailabilityChange(event.target.checked)}
         />
       </div>
-      <div className="sidebar-section">
-        <h2 className="sidebar-drawer-heading">
-          <button
-            type="button"
-            className="sidebar-drawer-toggle"
-            aria-expanded={open}
-            aria-controls={drawerId}
-            onClick={() => setOpen((value) => !value)}
-          >
-            <span className="sidebar-drawer-title">Filter by Employee</span>
-            {filtered ? (
-              <span className="sidebar-drawer-count">
-                {shown} of {total}
-                <span className="visually-hidden"> shown</span>
-              </span>
-            ) : null}
-            <span className="sidebar-drawer-chevron" aria-hidden="true">
-              ▼
-            </span>
-          </button>
-        </h2>
-        <div id={drawerId} className="sidebar-drawer" data-open={open}>
-          <div className="sidebar-drawer-inner">
-            <div className="sidebar-drawer-content">
-              <div className="sidebar-filter-actions">
-                <Button variant="secondary" className="sidebar-filter-action" onClick={onSelectAll}>
-                  Select All
-                </Button>
-                <Button variant="secondary" className="sidebar-filter-action" onClick={onClearAll}>
-                  Clear All
-                </Button>
-              </div>
-              {employees === undefined ? (
-                <div className="sidebar-filter-loading">
-                  <Spinner size="sm" label="Loading employees..." />
-                </div>
-              ) : employees.length === 0 ? (
-                <p className="sidebar-filter-empty">No employees</p>
-              ) : (
-                <ul className="sidebar-filter-list">
-                  {employees.map((employee) => (
-                    <li key={employee.id}>
-                      <Checkbox
-                        className="sidebar-filter-item"
-                        checked={selectedIds.has(employee.id)}
-                        onChange={(event) => onToggleEmployee(employee.id, event.target.checked)}
-                        label={
-                          <span className="sidebar-filter-label">
-                            <span
-                              className="sidebar-swatch"
-                              aria-hidden="true"
-                              style={{ background: employeeColor(employee.color) }}
-                            />
-                            <span className="sidebar-filter-name">{employee.name}</span>
-                          </span>
-                        }
-                      />
-                    </li>
-                  ))}
-                </ul>
-              )}
-            </div>
-          </div>
+      {beforeFilter}
+      <SidebarDrawer
+        title="Filter by Employee"
+        open={open}
+        onOpenChange={setOpen}
+        badge={
+          filtered ? (
+            <>
+              {shown} of {total}
+              <span className="visually-hidden"> shown</span>
+            </>
+          ) : null
+        }
+      >
+        <div className="sidebar-filter-actions">
+          <Button variant="secondary" className="sidebar-filter-action" onClick={onSelectAll}>
+            Select All
+          </Button>
+          <Button variant="secondary" className="sidebar-filter-action" onClick={onClearAll}>
+            Clear All
+          </Button>
         </div>
-      </div>
+        {employees === undefined ? (
+          <div className="sidebar-filter-loading">
+            <Spinner size="sm" label="Loading employees..." />
+          </div>
+        ) : employees.length === 0 ? (
+          <p className="sidebar-filter-empty">No employees</p>
+        ) : (
+          <ul className="sidebar-filter-list">
+            {employees.map((employee) => (
+              <li key={employee.id}>
+                <Checkbox
+                  className="sidebar-filter-item"
+                  checked={selectedIds.has(employee.id)}
+                  onChange={(event) => onToggleEmployee(employee.id, event.target.checked)}
+                  label={
+                    <span className="sidebar-filter-label">
+                      <span
+                        className="sidebar-swatch"
+                        aria-hidden="true"
+                        style={{ background: employeeColor(employee.color) }}
+                      />
+                      <span className="sidebar-filter-name">{employee.name}</span>
+                    </span>
+                  }
+                />
+              </li>
+            ))}
+          </ul>
+        )}
+      </SidebarDrawer>
+      {afterFilter}
     </aside>
   );
 }

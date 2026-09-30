@@ -1,0 +1,68 @@
+/* "Payroll output" card (admin design spec §4.8). */
+.payroll-output {
+  overflow: hidden;
+  background: var(--surface-86);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-md);
+}
+
+.payroll-output-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-16);
+  padding: var(--space-14) var(--space-16);
+  border-bottom: 1px solid var(--line);
+}
+
+.payroll-output-title {
+  color: var(--clay-900);
+  font-size: 15px;
+  line-height: 1.3;
+}
+
+.payroll-output-description {
+  margin-top: 3px;
+  color: var(--clay-700);
+  font-size: 12px;
+  line-height: 1.4;
+}
+
+.payroll-output-header .btn {
+  flex: none;
+}
+
+.payroll-output-text {
+  min-height: 52px;
+  padding: var(--space-14) var(--space-16) var(--space-16);
+  color: var(--clay-900);
+  font-family: inherit;
+  font-size: 13px;
+  font-variant-numeric: tabular-nums;
+  line-height: 1.6;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  background: var(--actual-input-bg);
+}
+
+.payroll-output-text:focus-visible {
+  outline-offset: -3px;
+}
+
+@media (max-width: 768px) {
+  .payroll-output-header {
+    flex-direction: column;
+    align-items: stretch;
+    gap: var(--space-10);
+  }
+
+  .payroll-output-header .btn {
+    width: 100%;
+    min-height: 44px;
+  }
+
+  .payroll-output-text {
+    padding: var(--space-12) var(--space-14) var(--space-14);
+    font-size: 12px;
+  }
+}

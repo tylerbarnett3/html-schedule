@@ -11,7 +11,7 @@ import { createPortal } from "react-dom";
 import { ToastContext, type ToastApi, type ToastTone } from "./useToast";
 import "./Toast.css";
 
-type ToastItem = { id: number; message: string; tone: ToastTone };
+type ToastItem = { id: number; message: string; tone: ToastTone; title?: string };
 
 const MAX_VISIBLE = 4;
 const DURATION_MS: Record<ToastTone, number> = { success: 5000, info: 5000, error: 8000 };
@@ -28,9 +28,10 @@ export function ToastProvider({ children }: { children: ReactNode }) {
 
   const api = useMemo<ToastApi>(
     () => ({
-      show(message, tone = "info") {
+      show(message, tone = "info", options) {
         const id = nextId.current++;
-        setToasts((current) => [...current.slice(-(MAX_VISIBLE - 1)), { id, message, tone }]);
+        const toast: ToastItem = { id, message, tone, title: options?.title };
+        setToasts((current) => [...current.slice(-(MAX_VISIBLE - 1)), toast]);
       },
     }),
     [],
@@ -67,6 +68,9 @@ function Toast({ toast, onDismiss }: { toast: ToastItem; onDismiss(id: number): 
     };
   }, [paused, toast.id, onDismiss]);
 
+  // Screen readers hear "Error: …" first; the icon alone says it only visually.
+  const prefix = TONE_PREFIX[toast.tone] ? <span className="visually-hidden">{TONE_PREFIX[toast.tone]}</span> : null;
+
   const handleBlur = (event: FocusEvent<HTMLDivElement>) => {
     if (!event.currentTarget.contains(event.relatedTarget)) setPaused(false);
   };
@@ -82,10 +86,18 @@ function Toast({ toast, onDismiss }: { toast: ToastItem; onDismiss(id: number): 
       <span className="toast-icon" aria-hidden="true">
         {toast.tone === "success" ? "✓" : toast.tone === "error" ? "!" : "i"}
       </span>
-      <p className="toast-message">
-        {TONE_PREFIX[toast.tone] ? <span className="visually-hidden">{TONE_PREFIX[toast.tone]}</span> : null}
-        {toast.message}
-      </p>
+      <div className="toast-text">
+        {toast.title ? (
+          <p className="toast-title">
+            {prefix}
+            {toast.title}
+          </p>
+        ) : null}
+        <p className="toast-message">
+          {toast.title ? null : prefix}
+          {toast.message}
+        </p>
+      </div>
       <button
         type="button"
         className="toast-dismiss"

@@ -1,0 +1,88 @@
+/* Inline "Add work that was not on the schedule" panel (admin design spec §4.8). */
+.payroll-add {
+  padding: var(--space-16);
+  background: var(--add-panel-bg);
+  border: 1px solid var(--add-panel-border);
+  border-radius: var(--radius-md);
+}
+
+.payroll-add-title {
+  margin-bottom: var(--space-12);
+  color: var(--clay-900);
+  font-size: 16px;
+}
+
+.payroll-add-grid {
+  display: grid;
+  grid-template-columns: 1.15fr 1fr 0.8fr 0.8fr 1.4fr;
+  align-items: end;
+  gap: var(--space-10);
+}
+
+.payroll-add-field {
+  display: grid;
+  gap: 5px;
+  min-width: 0;
+}
+
+.payroll-add-field label {
+  color: var(--clay-800);
+  font-size: 11px;
+  font-weight: 800;
+}
+
+.payroll-add-error {
+  margin-top: var(--space-12);
+  padding: var(--space-10) var(--space-12);
+  color: var(--error-text);
+  font-size: 13px;
+  line-height: 1.45;
+  background: var(--error-bg);
+  border: 1px solid var(--error-border);
+  border-radius: 10px;
+}
+
+.payroll-add-error:empty {
+  display: none;
+}
+
+.payroll-add-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-8);
+  margin-top: var(--space-12);
+}
+
+@media (max-width: 1120px) {
+  .payroll-add-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .payroll-add-note {
+    grid-column: 1 / -1;
+  }
+}
+
+@media (max-width: 768px) {
+  .payroll-add {
+    padding: var(--space-14) var(--space-12);
+  }
+
+  .payroll-add-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .payroll-add-note {
+    grid-column: auto;
+  }
+
+  .payroll-add-actions {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .payroll-add-actions .btn {
+    min-height: 48px;
+  }
+}

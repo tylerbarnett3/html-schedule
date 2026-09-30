@@ -24,6 +24,57 @@
   position: relative;
 }
 
+/* Admin page: the whole card is a button that opens it. The button takes the card's
+   padding so every pixel of the card is clickable. */
+.day-card-openable {
+  padding: 0;
+  transition: var(--transition-lift);
+}
+
+.day-card-openable:hover {
+  transform: var(--lift);
+}
+
+.day-card-open {
+  position: relative;
+  display: block;
+  width: 100%;
+  padding: var(--space-10) 11px;
+  color: inherit;
+  text-align: left;
+  background: transparent;
+  border: none;
+  border-radius: inherit;
+  cursor: pointer;
+}
+
+.day-card-open .day-card-name,
+.day-card-open .day-card-label {
+  display: block;
+}
+
+/* The card clips overflow, so the ring goes inside it, in the card's own text color (cream
+   on dark chips, ink on yellow and pale ones) so it always shows. */
+.day-card-open:focus-visible {
+  outline: 3px solid currentColor;
+  outline-offset: -5px;
+}
+
+/* Mouse users can drag shifts and assigned days off onto another day (decision C3). */
+.day-card-draggable,
+.day-card-draggable .day-card-open {
+  cursor: grab;
+}
+
+.day-card-draggable:active,
+.day-card-draggable:active .day-card-open {
+  cursor: grabbing;
+}
+
+.day-card.is-dragging {
+  opacity: 0.5;
+}
+
 .day-card-name {
   margin-bottom: var(--space-4);
   font-size: 12px;
@@ -144,6 +195,14 @@
     border-radius: var(--radius-sm);
   }
 
+  .day-card-openable {
+    padding: 0;
+  }
+
+  .day-card-open {
+    padding: var(--space-8);
+  }
+
   .day-card-cancel {
     padding: var(--space-4) var(--space-6);
   }
@@ -153,6 +212,14 @@
   .day-card {
     padding: 13px var(--space-14);
     border-radius: var(--radius-sm);
+  }
+
+  .day-card-openable {
+    padding: 0;
+  }
+
+  .day-card-open {
+    padding: 13px var(--space-14);
   }
 
   .day-card-name {

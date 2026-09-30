@@ -1,0 +1,126 @@
+/* Pay period bar (admin design spec §4.8 "Week bar"). */
+.payroll-period {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-16);
+  padding: var(--space-14) var(--space-16);
+  background: var(--surface-86);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-md);
+}
+
+.payroll-period-arrow {
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  justify-content: center;
+  width: 42px;
+  height: 42px;
+  padding: 0;
+  color: var(--clay-800);
+  background: var(--cream);
+  border: 1px solid var(--line);
+  border-radius: 50%;
+  transition: var(--transition-lift);
+}
+
+.payroll-period-arrow:hover:not(:disabled) {
+  background: var(--mini-btn-hover);
+  border-color: rgba(166, 119, 55, 0.66);
+}
+
+.payroll-period-arrow:disabled {
+  opacity: 0.5;
+}
+
+.payroll-period-copy {
+  width: min(100%, 360px);
+  min-width: 0;
+  text-align: center;
+}
+
+.payroll-period-fields {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--space-10);
+  text-align: left;
+}
+
+.payroll-period-field {
+  min-width: 0;
+}
+
+.payroll-period-field label {
+  display: block;
+  margin-bottom: var(--space-4);
+  color: var(--clay-700);
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.035em;
+  text-transform: uppercase;
+}
+
+.payroll-period-input {
+  display: block;
+  width: 100%;
+  min-width: 0;
+  min-height: 36px;
+  padding: 7px 9px;
+  color: var(--clay-900);
+  font-size: 12px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  background: var(--actual-input-bg);
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  -webkit-appearance: none;
+  appearance: none;
+}
+
+.payroll-period-input:focus-visible {
+  outline: none;
+  border-color: rgba(166, 119, 55, 0.86);
+  box-shadow: 0 0 0 3px rgba(216, 169, 79, 0.3);
+}
+
+/* End follows Start. Clay text instead of the old muted grey (4.1:1 on this background). */
+.payroll-period-input[readonly] {
+  color: var(--clay-700);
+  background: var(--actual-readonly-bg);
+  cursor: default;
+}
+
+.payroll-period-input:disabled {
+  opacity: 0.6;
+}
+
+.payroll-period-progress {
+  min-height: 1.4em;
+  margin-top: var(--space-6);
+  color: var(--clay-700);
+  font-size: 12px;
+}
+
+@media (max-width: 768px) {
+  .payroll-period {
+    padding: var(--space-12);
+    gap: var(--space-10);
+  }
+
+  .payroll-period-arrow {
+    width: 44px;
+    height: 44px;
+  }
+
+  .payroll-period-fields {
+    grid-template-columns: minmax(0, 1fr);
+    gap: var(--space-6);
+  }
+
+  /* 16px keeps iOS from zooming into the field. */
+  .payroll-period-input {
+    min-height: 44px;
+    font-size: 16px;
+  }
+}

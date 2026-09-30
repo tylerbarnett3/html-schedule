@@ -64,6 +64,7 @@
   white-space: nowrap;
 }
 
+.app-header-link,
 .app-header-signout {
   flex: 0 0 auto;
   min-height: 34px;
@@ -77,6 +78,13 @@
   transition: var(--transition-lift);
 }
 
+.app-header-link {
+  display: inline-flex;
+  align-items: center;
+  text-decoration: none;
+}
+
+.app-header-link:hover,
 .app-header-signout:hover:not(:disabled) {
   background: rgba(255, 250, 241, 0.2);
   border-color: rgba(255, 250, 241, 0.5);
@@ -102,6 +110,7 @@
     margin: 0 -6px var(--space-12) 0;
   }
 
+  .app-header-link,
   .app-header-signout {
     min-height: 40px;
   }

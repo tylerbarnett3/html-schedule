@@ -1,0 +1,5 @@
+/* The admin sidebar is the employee sidebar (Sidebar.css) in a 300px column (D5; the
+   column width is set by .admin-main in AdminLayout.css). */
+.admin-sidebar {
+  min-width: 0;
+}

@@ -3,7 +3,9 @@ import {
   DAY_PERIODS,
   formatPeriod,
   isDayPeriod,
+  EVENING_START_MINUTES,
   normalizePeriod,
+  periodCoversShiftStart,
   PERIOD_OPTION_LABELS,
   periodsConflict,
   periodSortValue,
@@ -72,5 +74,33 @@ describe("labels and order", () => {
       (a, b) => periodSortValue(a) - periodSortValue(b),
     );
     expect(sorted).toEqual(["full-day", "morning", "evening"]);
+  });
+});
+
+describe("periodCoversShiftStart", () => {
+  it.each<[DayPeriod, string | null, boolean]>([
+    // spec-calendar-shifts §8.2
+    ["full-day", "23:00", true],
+    ["full-day", null, true],
+    ["morning", "16:59", true],
+    ["morning", "17:00:00", false],
+    ["morning", null, false],
+    ["evening", "17:00", true],
+    ["evening", "16:59:59", false],
+    // spec-requests §5 (timeOffCoversShiftStart)
+    ["full-day", "23:00:00", true],
+    ["morning", "16:59:00", true],
+    ["morning", "17:00:00", false],
+    ["morning", "00:00", true],
+    ["evening", "12:00:00", false],
+    ["morning", "", false],
+    ["evening", "", false],
+    ["full-day", "", true],
+  ])("(%s, %j) -> %s", (period, start, expected) => {
+    expect(periodCoversShiftStart(period, start)).toBe(expected);
+  });
+
+  it("splits the day at 5pm", () => {
+    expect(EVENING_START_MINUTES).toBe(1020);
   });
 });

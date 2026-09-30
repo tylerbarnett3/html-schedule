@@ -1,0 +1,99 @@
+/* The admin calendar area (the .admin-main grid is in AdminLayout.css). Loading, error and
+   out-of-date states match the employee page (SchedulePage.css). */
+.admin-schedule-calendar {
+  position: relative;
+}
+
+/* A new range is loading: the previous one stays visible, dimmed. */
+.admin-schedule-calendar-busy .calendar {
+  opacity: 0.55;
+  transition: opacity 0.2s ease;
+}
+
+.admin-schedule-refreshing {
+  position: absolute;
+  top: var(--space-8);
+  left: 50%;
+  z-index: var(--z-sticky);
+  display: flex;
+  padding: var(--space-8);
+  background: var(--surface-96);
+  border-radius: var(--radius-pill);
+  box-shadow: var(--shadow-card);
+  transform: translateX(-50%);
+}
+
+.admin-schedule-outdated {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-8) var(--space-12);
+  margin-bottom: var(--space-12);
+  padding: var(--space-8) var(--space-8) var(--space-8) var(--space-14);
+  color: var(--error-text);
+  font-size: 14px;
+  font-weight: 600;
+  line-height: 1.4;
+  background: var(--error-bg);
+  border: 1px solid var(--error-border);
+  border-radius: var(--radius-md);
+}
+
+.admin-schedule-status {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-16);
+  min-height: 320px;
+  padding: 30px var(--space-20);
+  text-align: center;
+}
+
+.admin-schedule-error {
+  font-size: 14px;
+  font-style: italic;
+}
+
+/* "+ Add" at the end of every open day (old .add-shift-btn, admin design spec §4.3). */
+.admin-day-add {
+  width: 100%;
+  min-height: 32px;
+  padding: var(--space-6);
+  color: var(--clay-700);
+  font-size: 13px;
+  font-weight: 800;
+  line-height: 1.2;
+  background: var(--add-day-bg);
+  border: 1px dashed var(--add-day-border);
+  border-radius: var(--radius-pill);
+  transition: var(--transition-lift);
+}
+
+.admin-day-add:hover {
+  background: var(--cream);
+  border-color: var(--clay-600);
+  transform: var(--lift);
+}
+
+/* "Reopen day" under the CLOSED block (was white on green at 2.43:1). */
+.admin-day-reopen {
+  width: 100%;
+}
+
+.admin-day-reopen[aria-disabled="true"] {
+  cursor: progress;
+  opacity: 0.8;
+}
+
+@media (max-width: 768px) {
+  .admin-day-add {
+    min-height: 44px;
+    border-radius: var(--radius-sm);
+  }
+
+  .admin-day-reopen {
+    min-height: 44px;
+  }
+}

@@ -33,11 +33,11 @@ insert into public.admins (user_id) values ('00000000-0000-0000-0000-00000000a00
 
 insert into public.employees (id, name, color, display_order, archived) values
     ('e0000000-0000-0000-0000-000000000001', 'Avery Lane',    '#7F6C50', 0, false),
-    ('e0000000-0000-0000-0000-000000000002', 'Jordan Price',  '#2F855A', 1, false),
+    ('e0000000-0000-0000-0000-000000000002', 'Jordan Price',  '#147C44', 1, false),
     ('e0000000-0000-0000-0000-000000000003', 'Mia Chen',      '#2B6CB0', 2, false),
     ('e0000000-0000-0000-0000-000000000004', 'Sam Rivera',    '#B7791F', 3, false),
     ('e0000000-0000-0000-0000-000000000005', 'Taylor Brooks', '#9F7AEA', 4, false),
-    ('e0000000-0000-0000-0000-000000000006', 'Nora Patel',    '#C05621', 5, false),
+    ('e0000000-0000-0000-0000-000000000006', 'Nora Patel',    '#B84A1E', 5, false),
     ('e0000000-0000-0000-0000-000000000007', 'Eli Morgan',    '#319795', 6, false),
     ('e0000000-0000-0000-0000-000000000008', 'Grace Kim',     '#D53F8C', 7, false),
     ('e0000000-0000-0000-0000-000000000009', 'Leo Bennett',   '#4A5568', 8, false),
@@ -80,6 +80,8 @@ select 'e0000000-0000-0000-0000-000000000010', d::date, '10:00', '16:00'
 from generate_series(current_date - 21, current_date - 1, interval '3 days') as d;
 
 insert into public.closed_days (closed_date) values (current_date + 9), (current_date + 30);
+-- Closing a day deletes its shifts, so closed days start with none.
+delete from public.shifts where shift_date in (select closed_date from public.closed_days);
 
 -- Time off. Inserted without a login, so the request rules don't apply here.
 insert into public.time_off (employee_id, off_date, period, status, source, requested_at) values
@@ -103,3 +105,88 @@ insert into public.availability (employee_id, available_date, period, status, re
     ('e0000000-0000-0000-0000-000000000001', current_date + 2,  'full-day', 'approved', now() - interval '6 days'),
     ('e0000000-0000-0000-0000-000000000005', current_date + 6,  'evening',  'pending',  now() - interval '2 days'),
     ('e0000000-0000-0000-0000-000000000002', current_date + 6,  'morning',  'approved', now() - interval '3 days');
+
+-- Pay rates. Jordan got a raise 29 days ago; Leo has no rate yet.
+insert into public.employee_rates (employee_id, rate, start_date, end_date) values
+    ('e0000000-0000-0000-0000-000000000001', 16.00, null, null),
+    ('e0000000-0000-0000-0000-000000000002', 15.50, null, current_date - 30),
+    ('e0000000-0000-0000-0000-000000000002', 16.50, current_date - 29, null),
+    ('e0000000-0000-0000-0000-000000000003', 15.00, null, null),
+    ('e0000000-0000-0000-0000-000000000004', 17.25, null, null),
+    ('e0000000-0000-0000-0000-000000000005', 15.00, null, null),
+    ('e0000000-0000-0000-0000-000000000006', 18.00, null, null),
+    ('e0000000-0000-0000-0000-000000000007', 15.50, null, null),
+    ('e0000000-0000-0000-0000-000000000008', 16.25, null, null),
+    ('e0000000-0000-0000-0000-000000000010', 14.50, null, null);
+
+-- Payroll actuals in the last two weeks (the default pay period).
+-- Avery: two shifts confirmed as scheduled.
+insert into public.shift_actuals (shift_id, employee_id, work_date, start_time, end_time, status, note)
+select s.id, s.employee_id, s.shift_date, s.start_time, s.end_time, 'confirmed', ''
+from public.shifts s
+where s.employee_id = 'e0000000-0000-0000-0000-000000000001'
+  and s.shift_date between current_date - 12 and current_date - 3
+order by s.shift_date desc
+limit 2;
+
+-- Mia covered one of Jordan's shifts (on a day Mia wasn't scheduled) and stayed 15 minutes late.
+insert into public.shift_actuals (shift_id, employee_id, work_date, start_time, end_time, status, note)
+select s.id, 'e0000000-0000-0000-0000-000000000003', s.shift_date, s.start_time,
+    s.end_time + interval '15 minutes', 'adjusted', 'Mia covered for Jordan'
+from public.shifts s
+where s.employee_id = 'e0000000-0000-0000-0000-000000000002'
+  and s.shift_date between current_date - 12 and current_date - 3
+  and not exists (
+      select 1 from public.shifts m
+      where m.employee_id = 'e0000000-0000-0000-0000-000000000003' and m.shift_date = s.shift_date
+  )
+order by s.shift_date desc
+limit 1;
+
+-- Sam missed a shift.
+insert into public.shift_actuals (shift_id, employee_id, work_date, start_time, end_time, status, note)
+select s.id, s.employee_id, s.shift_date, null, null, 'not-worked', 'Called out sick'
+from public.shifts s
+where s.employee_id = 'e0000000-0000-0000-0000-000000000004'
+  and s.shift_date between current_date - 12 and current_date - 3
+order by s.shift_date desc
+limit 1;
+
+-- Eli worked two unscheduled hours.
+insert into public.shift_actuals (shift_id, employee_id, work_date, start_time, end_time, status, note) values
+    (null, 'e0000000-0000-0000-0000-000000000007', current_date - 2, '10:00', '12:00', 'unscheduled', 'Kiln unloading');
+
+-- Taylor's shift 8 days ago was confirmed and then deleted, which leaves an orphaned actual.
+insert into public.shift_actuals (shift_id, employee_id, work_date, start_time, end_time, status, note)
+select s.id, s.employee_id, s.shift_date, s.start_time, s.end_time, 'confirmed'::public.actual_status, ''
+from public.shifts s
+where s.employee_id = 'e0000000-0000-0000-0000-000000000005' and s.shift_date = current_date - 8
+union all
+select null, 'e0000000-0000-0000-0000-000000000005', current_date - 8, '12:00'::time, '18:00'::time, 'confirmed', ''
+where not exists (
+    select 1 from public.shifts s
+    where s.employee_id = 'e0000000-0000-0000-0000-000000000005' and s.shift_date = current_date - 8
+);
+delete from public.shifts
+where employee_id = 'e0000000-0000-0000-0000-000000000005' and shift_date = current_date - 8;
+
+-- More requests for the admin Requests drawer.
+insert into public.time_off (employee_id, off_date, period, status, source, requested_at) values
+    -- Eli asked for three days at once (same requested_at), so they show as one group
+    ('e0000000-0000-0000-0000-000000000007', current_date + 22, 'full-day', 'pending', 'request', now() - interval '2 days'),
+    ('e0000000-0000-0000-0000-000000000007', current_date + 23, 'full-day', 'pending', 'request', now() - interval '2 days'),
+    ('e0000000-0000-0000-0000-000000000007', current_date + 24, 'full-day', 'pending', 'request', now() - interval '2 days'),
+    -- a request whose date has already passed
+    ('e0000000-0000-0000-0000-000000000005', current_date - 2,  'full-day', 'pending', 'request', now() - interval '12 days'),
+    -- from before Pat was archived
+    ('e0000000-0000-0000-0000-000000000010', current_date + 15, 'full-day', 'pending', 'request', now() - interval '20 days');
+
+insert into public.availability (employee_id, available_date, period, status, requested_at) values
+    -- on a closed day
+    ('e0000000-0000-0000-0000-000000000009', current_date + 9,  'evening',  'pending',  now() - interval '4 days'),
+    -- after the default 35-day range
+    ('e0000000-0000-0000-0000-000000000004', current_date + 40, 'full-day', 'pending',  now() - interval '1 day');
+
+-- Avery's approved request was reviewed a day after it was sent.
+update public.time_off set reviewed_at = requested_at + interval '1 day'
+where employee_id = 'e0000000-0000-0000-0000-000000000001' and off_date = current_date + 5 and status = 'approved';
