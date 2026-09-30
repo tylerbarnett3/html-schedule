@@ -1,6 +1,7 @@
 // Turns the loaded rows into what each calendar day shows, in display order.
 
 import { rangeDates } from "./dates";
+import { NO_HOURS, specialHoursOn, type Hours, type HoursData } from "./hours";
 import { formatPeriod, periodSortValue } from "./periods";
 import { compareTimes, formatShiftTime } from "./time";
 import type { Availability, DateRange, Employee, ISODate, Shift, TimeOff } from "./types";
@@ -34,6 +35,8 @@ export interface CalendarDay {
   closed: boolean;
   isToday: boolean;
   cards: DayCard[];
+  /** Hours to show after the date: set only on open days whose hours differ from the standard (specialHoursOn). */
+  specialHours: Hours | null;
 }
 
 export interface CalendarInput {
@@ -48,6 +51,8 @@ export interface CalendarInput {
   showTimeOff: boolean;
   showAvailability: boolean;
   meId: string | null;
+  /** Business hours; missing means no day shows special hours. */
+  hours?: HoursData;
 }
 
 /** 'DAY OFF', 'MORNING OFF', or 'PENDING TIME OFF - EVENING'. */
@@ -164,9 +169,11 @@ function compareAvailability(a: Placed<Availability>, b: Placed<Availability>): 
  * One entry per date in the range. Within a day: pending time off (oldest request
  * first), shifts (by start time), approved time off, then availability (by name).
  * Closed days show no cards. Rows for employees missing from `employees` are skipped.
+ * Open days whose custom hours differ from the standard carry them in specialHours.
  */
 export function buildCalendarDays(input: CalendarInput): CalendarDay[] {
   const { closedDays, selectedEmployeeIds, showTimeOff, showAvailability, meId, today } = input;
+  const hours = input.hours ?? NO_HOURS;
   const employeesById = new Map(input.employees.map((e) => [e.id, e]));
 
   function place<T extends { employee_id: string }>(rows: readonly T[] | undefined): Placed<T>[] {
@@ -186,7 +193,13 @@ export function buildCalendarDays(input: CalendarInput): CalendarDay[] {
 
   return rangeDates(input.range).map((date): CalendarDay => {
     const closed = closedDays.has(date);
-    const day: CalendarDay = { date, closed, isToday: date === today, cards: [] };
+    const day: CalendarDay = {
+      date,
+      closed,
+      isToday: date === today,
+      cards: [],
+      specialHours: specialHoursOn(date, hours, closedDays),
+    };
     if (closed) return day;
 
     const timeOff = showTimeOff ? place(timeOffByDate.get(date)) : [];

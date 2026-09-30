@@ -1,6 +1,7 @@
 // Payroll reads and the actuals save. Reading is plain table access (admins only, by RLS);
 // the save goes through save_shift_actuals (migration 004), which writes in one transaction
-// and stamps actualized_at and work_date on the server.
+// and stamps actualized_at and work_date on the server. The hours employees logged for the
+// period's shifts (hour_logs, migration 006) are read alongside.
 
 import {
   keepPreviousData,
@@ -11,6 +12,7 @@ import {
   type UseQueryResult,
 } from "@tanstack/react-query";
 import type { Json } from "../lib/database.types";
+import type { HourLog } from "../lib/hourLogs";
 import type { ActualsSavePlan, ShiftActual } from "../lib/payroll";
 import { supabase } from "../lib/supabase";
 import type { DateRange, Shift } from "../lib/types";
@@ -18,11 +20,12 @@ import { ADMIN_NETWORK_MODE, invalidateAdminData, waitForRefresh } from "./admin
 import { fetchAll, SHIFT_COLUMNS, toError } from "./schedule";
 
 const ACTUAL_COLUMNS = "id, shift_id, employee_id, work_date, start_time, end_time, status, note, actualized_at";
+const LOG_COLUMNS = "shift_id, employee_id, start_time, end_time, note, updated_at";
 
 // Ids go into the URL (?shift_id=in.(...)), so long lists are read in pieces.
 const CHUNK_SIZE = 100;
 
-export type PayrollData = { shifts: Shift[]; actuals: ShiftActual[] };
+export type PayrollData = { shifts: Shift[]; actuals: ShiftActual[]; logs: HourLog[] };
 
 export async function fetchPayrollPeriod(period: DateRange, signal: AbortSignal): Promise<PayrollData> {
   const [shifts, actuals] = await Promise.all([
@@ -69,7 +72,25 @@ export async function fetchPayrollPeriod(period: DateRange, signal: AbortSignal)
     );
     for (const row of rows) byId.set(row.id, row);
   }
-  return { shifts, actuals: [...byId.values()] };
+
+  // Logs are keyed by shift (they have no date of their own).
+  const shiftIds = shifts.map((shift) => shift.id);
+  const logs: HourLog[] = [];
+  for (let i = 0; i < shiftIds.length; i += CHUNK_SIZE) {
+    const ids = shiftIds.slice(i, i + CHUNK_SIZE);
+    logs.push(
+      ...(await fetchAll((from, to) =>
+        supabase
+          .from("hour_logs")
+          .select(LOG_COLUMNS)
+          .in("shift_id", ids)
+          .order("shift_id")
+          .range(from, to)
+          .abortSignal(signal),
+      )),
+    );
+  }
+  return { shifts, actuals: [...byId.values()], logs };
 }
 
 export function usePayrollPeriod(period: DateRange): UseQueryResult<PayrollData> {

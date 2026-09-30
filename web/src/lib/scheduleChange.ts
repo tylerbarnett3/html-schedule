@@ -9,6 +9,7 @@ import type { ISODate } from "./types";
 
 export type ShiftRow = Tables<"shifts">;
 export type TimeOffRow = Tables<"time_off">;
+export type CustomHoursRow = Tables<"custom_hours">;
 
 export interface RowChange<T> {
   before: T;
@@ -24,12 +25,17 @@ export interface ActualLink {
 export interface ScheduleChange {
   /** When the server made the change (its transaction time); null for changes the page builds. */
   made_at: string | null;
-  inserted: { shifts: ShiftRow[]; time_off: TimeOffRow[]; closed_days: ISODate[] };
-  updated: { shifts: RowChange<ShiftRow>[]; time_off: RowChange<TimeOffRow>[] };
+  inserted: { shifts: ShiftRow[]; time_off: TimeOffRow[]; closed_days: ISODate[]; custom_hours: CustomHoursRow[] };
+  updated: {
+    shifts: RowChange<ShiftRow>[];
+    time_off: RowChange<TimeOffRow>[];
+    custom_hours: RowChange<CustomHoursRow>[];
+  };
   deleted: {
     shifts: ShiftRow[];
     time_off: TimeOffRow[];
     closed_days: ISODate[];
+    custom_hours: CustomHoursRow[];
     actual_links: ActualLink[];
   };
 }
@@ -37,9 +43,9 @@ export interface ScheduleChange {
 export function emptyChange(): ScheduleChange {
   return {
     made_at: null,
-    inserted: { shifts: [], time_off: [], closed_days: [] },
-    updated: { shifts: [], time_off: [] },
-    deleted: { shifts: [], time_off: [], closed_days: [], actual_links: [] },
+    inserted: { shifts: [], time_off: [], closed_days: [], custom_hours: [] },
+    updated: { shifts: [], time_off: [], custom_hours: [] },
+    deleted: { shifts: [], time_off: [], closed_days: [], custom_hours: [], actual_links: [] },
   };
 }
 
@@ -48,11 +54,14 @@ export function isEmptyChange(c: ScheduleChange): boolean {
     c.inserted.shifts.length === 0 &&
     c.inserted.time_off.length === 0 &&
     c.inserted.closed_days.length === 0 &&
+    c.inserted.custom_hours.length === 0 &&
     c.updated.shifts.length === 0 &&
     c.updated.time_off.length === 0 &&
+    c.updated.custom_hours.length === 0 &&
     c.deleted.shifts.length === 0 &&
     c.deleted.time_off.length === 0 &&
     c.deleted.closed_days.length === 0 &&
+    c.deleted.custom_hours.length === 0 &&
     c.deleted.actual_links.length === 0
   );
 }
@@ -72,6 +81,7 @@ function hasStrings(row: JsonObject, keys: readonly string[]): boolean {
 // Only the columns the page reads are checked; the rest travel back to admin_undo untouched.
 const SHIFT_KEYS = ["id", "employee_id", "shift_date", "start_time", "end_time", "updated_at"] as const;
 const TIME_OFF_KEYS = ["id", "employee_id", "off_date", "period", "status", "source", "updated_at"] as const;
+const CUSTOM_HOURS_KEYS = ["hours_date", "open_time", "close_time", "updated_at"] as const;
 
 function isShiftRow(value: unknown): value is ShiftRow {
   return isObject(value) && hasStrings(value, SHIFT_KEYS);
@@ -79,6 +89,10 @@ function isShiftRow(value: unknown): value is ShiftRow {
 
 function isTimeOffRow(value: unknown): value is TimeOffRow {
   return isObject(value) && hasStrings(value, TIME_OFF_KEYS);
+}
+
+function isCustomHoursRow(value: unknown): value is CustomHoursRow {
+  return isObject(value) && hasStrings(value, CUSTOM_HOURS_KEYS) && isISODate(value.hours_date);
 }
 
 function isActualLink(value: unknown): value is ActualLink {
@@ -107,6 +121,14 @@ function list<T>(parent: JsonObject, key: string, isItem: (value: unknown) => va
   return items;
 }
 
+/**
+ * The hours lists (migration 005): a change from a database without them has no key, which
+ * reads as []. A key that is there is checked like any other list.
+ */
+function optionalList<T>(parent: JsonObject, key: string, isItem: (value: unknown) => value is T): T[] {
+  return parent[key] === undefined ? [] : list(parent, key, isItem);
+}
+
 /** Checks the shape of an admin_* result; throws "Unexpected response from the server." otherwise. */
 export function parseScheduleChange(data: Json | null): ScheduleChange {
   if (!isObject(data)) throw new Error(UNEXPECTED);
@@ -120,15 +142,18 @@ export function parseScheduleChange(data: Json | null): ScheduleChange {
       shifts: list(inserted, "shifts", isShiftRow),
       time_off: list(inserted, "time_off", isTimeOffRow),
       closed_days: list(inserted, "closed_days", isISODate),
+      custom_hours: optionalList(inserted, "custom_hours", isCustomHoursRow),
     },
     updated: {
       shifts: list(updated, "shifts", rowChangeGuard(isShiftRow)),
       time_off: list(updated, "time_off", rowChangeGuard(isTimeOffRow)),
+      custom_hours: optionalList(updated, "custom_hours", rowChangeGuard(isCustomHoursRow)),
     },
     deleted: {
       shifts: list(deleted, "shifts", isShiftRow),
       time_off: list(deleted, "time_off", isTimeOffRow),
       closed_days: list(deleted, "closed_days", isISODate),
+      custom_hours: optionalList(deleted, "custom_hours", isCustomHoursRow),
       actual_links: list(deleted, "actual_links", isActualLink),
     },
   };
@@ -143,15 +168,18 @@ export function toChangeJson(c: ScheduleChange): Json {
       shifts: c.inserted.shifts,
       time_off: c.inserted.time_off,
       closed_days: c.inserted.closed_days,
+      custom_hours: c.inserted.custom_hours,
     },
     updated: {
       shifts: c.updated.shifts.map(pair),
       time_off: c.updated.time_off.map(pair),
+      custom_hours: c.updated.custom_hours.map(pair),
     },
     deleted: {
       shifts: c.deleted.shifts,
       time_off: c.deleted.time_off,
       closed_days: c.deleted.closed_days,
+      custom_hours: c.deleted.custom_hours,
       actual_links: c.deleted.actual_links.map(({ actual_id, shift_id }) => ({ actual_id, shift_id })),
     },
   };
@@ -159,8 +187,9 @@ export function toChangeJson(c: ScheduleChange): Json {
 
 /**
  * The part of a close-days change that undo can reverse: what it took off the days it newly
- * closed. Rows it took off days that were closed already stay deleted: they don't belong on
- * a closed day, and admin_undo won't put rows back on one.
+ * closed (shifts, time off, payroll links and custom hours). Rows it took off days that were
+ * closed already stay deleted: they don't belong on a closed day, and admin_undo won't put
+ * rows back on one.
  */
 export function undoableCloseChange(change: ScheduleChange): ScheduleChange {
   const closed = new Set(change.inserted.closed_days);
@@ -172,14 +201,8 @@ export function undoableCloseChange(change: ScheduleChange): ScheduleChange {
       ...change.deleted,
       shifts,
       time_off: change.deleted.time_off.filter((t) => closed.has(t.off_date)),
+      custom_hours: change.deleted.custom_hours.filter((h) => closed.has(h.hours_date)),
       actual_links: change.deleted.actual_links.filter((link) => shiftIds.has(link.shift_id)),
     },
   };
-}
-
-/** Reopening is a plain delete, so the page builds its change itself: undo closes the days again. */
-export function reopenChange(dates: readonly ISODate[]): ScheduleChange {
-  const change = emptyChange();
-  change.deleted.closed_days = [...dates];
-  return change;
 }

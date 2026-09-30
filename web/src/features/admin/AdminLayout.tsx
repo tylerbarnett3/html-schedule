@@ -2,6 +2,7 @@ import { Outlet } from "react-router";
 import { AppHeader } from "../../app/AppHeader";
 import { AdminToolbar } from "./AdminToolbar";
 import { AdminViewProvider } from "./AdminViewProvider";
+import { ExportBackupButton } from "./tools/ExportBackupButton";
 import { UndoProvider } from "./undo/UndoProvider";
 import "./AdminLayout.css";
 
@@ -13,7 +14,7 @@ export function AdminLayout() {
   return (
     <AdminViewProvider>
       <UndoProvider>
-        <AppHeader />
+        <AppHeader corner={<ExportBackupButton />} />
         <AdminToolbar />
         <Outlet />
       </UndoProvider>

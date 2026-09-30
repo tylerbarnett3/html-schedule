@@ -36,6 +36,7 @@
 
   /* Inline error messages */
   --error-text: #8f2e25;
+  --success-text: #276749; /* about 6.5:1 on the paper surfaces */
   --error-bg: rgba(207, 84, 72, 0.1);
   --error-border: rgba(207, 84, 72, 0.28);
 
@@ -151,11 +152,6 @@
   /* Count pill on the clay drawer headers: cream text needs a darker fill than the old
      cream tint (3.3:1 at the gradient's light end); this gives 7.4:1 there. */
   --on-clay-badge-bg: rgba(33, 23, 15, 0.35);
-  /* Save indicator on the dark toolbar; the error red is lighter than the old #f56565 (4.0:1). */
-  --status-saved: #48bb78;
-  --status-pending: #a0aec0;
-  --status-saving: #ecc94b;
-  --status-error: #ff8a80;
   --gold-hover: #e4bc69;
   --segmented-track-border: rgba(91, 65, 40, 0.12);
   --segmented-active-shadow: 0 8px 18px rgba(58, 39, 21, 0.12);

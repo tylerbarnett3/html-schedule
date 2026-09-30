@@ -196,19 +196,19 @@ describe("requestResultMessage", () => {
 
   it("reports availability results", () => {
     expect(requestResultMessage("availability", { submitted: some, skipped: ["2026-10-06"] })).toEqual({
-      text: "Availability request submitted. Skipped dates that were closed or already had overlapping availability: Oct 6, 2026",
+      text: "Availability submitted. Skipped dates that were closed or already had overlapping availability: Oct 6, 2026",
       closeDialog: true,
     });
     expect(requestResultMessage("availability", { submitted: some, skipped: [] })).toEqual({
-      text: "Availability request submitted! Your manager will review it shortly.",
+      text: "Availability submitted!",
       closeDialog: true,
     });
     expect(requestResultMessage("availability", { submitted: [], skipped: ["2026-10-06"] })).toEqual({
-      text: "No new availability requests were submitted. These dates were closed or already had overlapping availability: Oct 6, 2026",
+      text: "No new availability was submitted. These dates were closed or already had overlapping availability: Oct 6, 2026",
       closeDialog: false,
     });
     expect(requestResultMessage("availability", { submitted: [], skipped: [] })).toEqual({
-      text: "No availability requests were submitted.",
+      text: "No availability was submitted.",
       closeDialog: false,
     });
   });

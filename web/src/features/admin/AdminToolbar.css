@@ -1,4 +1,4 @@
-/* Admin toolbar band under the header (admin design spec §4.1, D1, D12, D14-D16). */
+/* Admin toolbar band under the header (admin design spec §4.1, D12, D14, D15). */
 .admin-toolbar {
   display: flex;
   flex-wrap: wrap;
@@ -133,60 +133,6 @@
   cursor: default;
 }
 
-/* Count pill inside a toolbar button, e.g. pending requests. */
-.toolbar-btn-badge {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  min-width: 22px;
-  height: 22px;
-  margin: -4px -5px -4px 0;
-  padding: 0 var(--space-6);
-  color: var(--clay-950);
-  font-size: 12px;
-  font-weight: 800;
-  background: var(--gold-light);
-  border-radius: var(--radius-pill);
-}
-
-/* Saved / Saving… / Couldn't save (D1, D16). The D16 colors pass 4.5:1 on the bare band
-   (5.0 / 7.6 / 5.4) but not on the lighter on-dark fill (3.5 / 5.2 / 3.7), so the pill is
-   an outline only. That also keeps a status from looking like a button. */
-.admin-save-indicator {
-  display: inline-flex;
-  flex: 0 0 auto;
-  align-items: center;
-  justify-content: center;
-  gap: 7px;
-  min-height: 36px;
-  padding: var(--space-8) 13px;
-  color: var(--status-saved);
-  font-size: 14px;
-  font-weight: 600;
-  line-height: 1;
-  white-space: nowrap;
-  background: transparent;
-  border: 1px solid var(--on-dark-border);
-  border-radius: var(--radius-pill);
-}
-
-.admin-save-indicator[data-state="saving"] {
-  color: var(--status-saving);
-}
-
-.admin-save-indicator[data-state="error"] {
-  color: var(--status-error);
-}
-
-.admin-save-icon {
-  flex: 0 0 18px;
-  width: 18px;
-  height: 18px;
-}
-
-.admin-save-dot {
-  font-size: 10px;
-}
 
 /* Phones: one full-width column of 44px buttons. */
 @media (max-width: 768px) {
@@ -208,8 +154,7 @@
     gap: var(--space-8);
   }
 
-  .toolbar-btn,
-  .admin-save-indicator {
+  .toolbar-btn {
     width: 100%;
     min-height: 44px;
   }

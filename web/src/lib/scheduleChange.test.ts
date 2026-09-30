@@ -4,7 +4,6 @@ import {
   emptyChange,
   isEmptyChange,
   parseScheduleChange,
-  reopenChange,
   toChangeJson,
   undoableCloseChange,
   type ScheduleChange,
@@ -36,18 +35,38 @@ const timeOff = {
   wix_id: "wix-1",
 };
 
-// What admin_update_day_off plus a covered shift deletion sends back.
+const customHours = {
+  hours_date: "2026-10-31",
+  open_time: "09:00:00",
+  close_time: "17:00:00",
+  created_at: "2026-09-29T15:00:00.123456+00:00",
+  updated_at: "2026-09-29T15:00:00.123456+00:00",
+};
+
+// Every list filled: admin_update_day_off plus a covered shift deletion, and hours changes.
 const sample: Json = {
   made_at: "2026-09-29T15:05:00+00:00",
-  inserted: { shifts: [shift], time_off: [], closed_days: ["2026-10-09"] },
+  inserted: {
+    shifts: [shift],
+    time_off: [],
+    closed_days: ["2026-10-09"],
+    custom_hours: [{ ...customHours, hours_date: "2026-11-02" }],
+  },
   updated: {
     shifts: [],
     time_off: [{ before: timeOff, after: { ...timeOff, off_date: "2026-10-07", updated_at: "2026-09-29T15:05:00+00:00" } }],
+    custom_hours: [
+      {
+        before: customHours,
+        after: { ...customHours, close_time: "13:00:00", updated_at: "2026-09-29T15:05:00+00:00" },
+      },
+    ],
   },
   deleted: {
     shifts: [{ ...shift, id: "5a1f0000-0000-4000-8000-000000000003" }],
     time_off: [timeOff],
     closed_days: ["2026-10-30"],
+    custom_hours: [{ ...customHours, hours_date: "2026-10-09", open_time: "12:00:00" }],
     actual_links: [{ actual_id: "ac000000-0000-4000-8000-000000000001", shift_id: "5a1f0000-0000-4000-8000-000000000003" }],
   },
 };
@@ -84,6 +103,68 @@ describe("parseScheduleChange", () => {
     expect(change.deleted.actual_links).toEqual([
       { actual_id: "ac000000-0000-4000-8000-000000000001", shift_id: "5a1f0000-0000-4000-8000-000000000003" },
     ]);
+  });
+
+  it("reads custom hours rows exactly as sent", () => {
+    const change = parseScheduleChange(sample);
+    expect(change.inserted.custom_hours).toEqual([{ ...customHours, hours_date: "2026-11-02" }]);
+    expect(change.updated.custom_hours[0].before).toEqual(customHours);
+    expect(change.updated.custom_hours[0].after.close_time).toBe("13:00:00");
+    expect(change.deleted.custom_hours[0].created_at).toBe("2026-09-29T15:00:00.123456+00:00");
+    expect(change.deleted.custom_hours[0].open_time).toBe("12:00:00");
+  });
+
+  it("reads a change without the hours lists as having none (a database before migration 005)", () => {
+    let old: Json = sample;
+    for (const path of [
+      ["inserted", "custom_hours"],
+      ["updated", "custom_hours"],
+      ["deleted", "custom_hours"],
+    ]) {
+      old = withoutKey(old, path);
+    }
+    const change = parseScheduleChange(old);
+    expect(change.inserted.custom_hours).toEqual([]);
+    expect(change.updated.custom_hours).toEqual([]);
+    expect(change.deleted.custom_hours).toEqual([]);
+    expect(change.inserted.shifts).toEqual([shift]);
+    expect(parseScheduleChange(withoutKey(sample, ["updated", "custom_hours"])).updated.custom_hours).toEqual([]);
+  });
+
+  it.each([
+    [["inserted", "custom_hours"]],
+    [["updated", "custom_hours"]],
+    [["deleted", "custom_hours"]],
+  ])("rejects %j when it is there but isn't an array", (path) => {
+    for (const value of [{}, null, "2026-10-31"]) {
+      expect(() => parseScheduleChange(replaced(sample, path, value))).toThrow("Unexpected response from the server.");
+    }
+  });
+
+  it("rejects bad custom hours rows", () => {
+    const bad = [
+      { ...customHours, hours_date: "10/31/2026" },
+      { ...customHours, hours_date: "2026-02-30" },
+      { ...customHours, open_time: null },
+      { ...customHours, close_time: 1700 },
+      { ...customHours, updated_at: undefined },
+      "2026-10-31",
+    ];
+    for (const row of bad) {
+      expect(() => parseScheduleChange(replaced(sample, ["inserted", "custom_hours"], [row]))).toThrow(
+        "Unexpected response from the server.",
+      );
+      expect(() => parseScheduleChange(replaced(sample, ["deleted", "custom_hours"], [row]))).toThrow(
+        "Unexpected response from the server.",
+      );
+    }
+    expect(() =>
+      parseScheduleChange(replaced(sample, ["updated", "custom_hours"], [{ before: customHours, after: null }])),
+    ).toThrow("Unexpected response from the server.");
+    const badBefore = { before: { ...customHours, hours_date: "10/31/2026" }, after: customHours };
+    expect(() => parseScheduleChange(replaced(sample, ["updated", "custom_hours"], [badBefore]))).toThrow(
+      "Unexpected response from the server.",
+    );
   });
 
   it("reads the empty change", () => {
@@ -153,9 +234,27 @@ describe("toChangeJson", () => {
     expect(json).toEqual(sample);
     expect(parseScheduleChange(JSON.parse(JSON.stringify(json)) as Json)).toEqual(change);
   });
+
+  it("always sends all twelve lists", () => {
+    expect(toChangeJson(emptyChange())).toEqual({
+      made_at: null,
+      inserted: { shifts: [], time_off: [], closed_days: [], custom_hours: [] },
+      updated: { shifts: [], time_off: [], custom_hours: [] },
+      deleted: { shifts: [], time_off: [], closed_days: [], custom_hours: [], actual_links: [] },
+    });
+  });
+
+  it("sends only before and after for updated custom hours", () => {
+    const change = parseScheduleChange(sample);
+    const entry = { ...change.updated.custom_hours[0], extra: "dropped" };
+    change.updated.custom_hours = [entry];
+    const json = toChangeJson(change);
+    expect(json).toMatchObject({ updated: { custom_hours: [{ before: customHours }] } });
+    expect(JSON.stringify(json)).not.toContain("dropped");
+  });
 });
 
-describe("isEmptyChange and reopenChange", () => {
+describe("isEmptyChange", () => {
   it("sees any list with an entry as a change", () => {
     expect(isEmptyChange(emptyChange())).toBe(true);
     const change: ScheduleChange = emptyChange();
@@ -163,19 +262,14 @@ describe("isEmptyChange and reopenChange", () => {
     expect(isEmptyChange(change)).toBe(false);
   });
 
-  it("builds a reopen change that undo closes again", () => {
-    const dates = ["2026-10-09", "2026-10-30"];
-    const change = reopenChange(dates);
-    expect(change.deleted.closed_days).toEqual(dates);
-    expect(change.deleted.closed_days).not.toBe(dates);
-    expect(isEmptyChange(change)).toBe(false);
-    expect(isEmptyChange(reopenChange([]))).toBe(true);
-    expect(toChangeJson(change)).toEqual({
-      made_at: null,
-      inserted: { shifts: [], time_off: [], closed_days: [] },
-      updated: { shifts: [], time_off: [] },
-      deleted: { shifts: [], time_off: [], closed_days: dates, actual_links: [] },
-    });
+  it("sees an hours-only change as a change", () => {
+    const inserted = emptyChange();
+    inserted.inserted.custom_hours.push(customHours);
+    const updated = emptyChange();
+    updated.updated.custom_hours.push({ before: customHours, after: { ...customHours, close_time: "13:00:00" } });
+    const deleted = emptyChange();
+    deleted.deleted.custom_hours.push(customHours);
+    for (const change of [inserted, updated, deleted]) expect(isEmptyChange(change)).toBe(false);
   });
 });
 
@@ -196,6 +290,10 @@ describe("undoableCloseChange", () => {
       { actual_id: "ac000000-0000-4000-8000-00000000000a", shift_id: kept.id },
       { actual_id: "ac000000-0000-4000-8000-00000000000b", shift_id: cleared.id },
     ];
+    change.deleted.custom_hours = [
+      { ...customHours, hours_date: "2026-10-05" },
+      { ...customHours, hours_date: "2026-10-06" },
+    ];
     return change;
   };
 
@@ -206,6 +304,7 @@ describe("undoableCloseChange", () => {
     expect(change.deleted.shifts.map((s) => s.id)).toEqual(["5a1f0000-0000-4000-8000-00000000000a"]);
     expect(change.deleted.time_off.map((t) => t.off_date)).toEqual(["2026-10-05"]);
     expect(change.deleted.actual_links.map((l) => l.actual_id)).toEqual(["ac000000-0000-4000-8000-00000000000a"]);
+    expect(change.deleted.custom_hours).toEqual([{ ...customHours, hours_date: "2026-10-05" }]);
   });
 
   it("leaves nothing to undo when every day was closed already", () => {

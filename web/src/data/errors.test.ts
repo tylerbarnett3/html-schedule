@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { adminErrorCode, adminErrorMessage, errorFields, isInfoOutcome, type AdminErrorCode } from "./errors";
+import { adminErrorCode, adminErrorMessage, errorFields, type AdminErrorCode } from "./errors";
 
 // Shaped like the PostgrestError objects supabase-js returns.
 function pgError(message: string, code: string, details = "") {
@@ -19,6 +19,7 @@ describe("adminErrorCode", () => {
     ["undo_stale", "P0001", "undo_stale"],
     ["duplicate_name", "23505", "duplicate_name"],
     ["invalid_input", "22023", "invalid_input"],
+    ["hours_in_effect", "P0001", "hours_in_effect"],
   ])("reads the %s token before its SQLSTATE", (message, code, expected) => {
     expect(adminErrorCode(pgError(message, code))).toBe(expected);
   });
@@ -85,23 +86,9 @@ describe("adminErrorMessage", () => {
 
   it("leaves the rest to the caller", () => {
     expect(adminErrorMessage(pgError("closed_day", "P0001", "2026-10-09"), fallback)).toBe(fallback);
+    expect(adminErrorMessage(pgError("hours_in_effect", "P0001", "2026-08-01"), fallback)).toBe(fallback);
     expect(adminErrorMessage(pgError("duplicate key", "23505"), fallback)).toBe(fallback);
     expect(adminErrorMessage(undefined, fallback)).toBe(fallback);
-  });
-});
-
-describe("isInfoOutcome", () => {
-  it("is true only for the outcomes shown as info toasts", () => {
-    expect(isInfoOutcome(pgError("undo_stale", "P0001"))).toBe(true);
-    expect(isInfoOutcome(pgError("request_not_pending", "P0002"))).toBe(true);
-  });
-
-  it("is false for real save failures", () => {
-    expect(isInfoOutcome(new TypeError("Failed to fetch"))).toBe(false);
-    expect(isInfoOutcome(pgError("not_found", "P0002"))).toBe(false);
-    expect(isInfoOutcome(pgError("closed_day", "P0001", "2026-10-09"))).toBe(false);
-    expect(isInfoOutcome(pgError("duplicate key", "23505"))).toBe(false);
-    expect(isInfoOutcome(null)).toBe(false);
   });
 });
 

@@ -83,6 +83,30 @@ export type Database = {
         };
         Relationships: [];
       };
+      custom_hours: {
+        Row: {
+          close_time: string;
+          created_at: string;
+          hours_date: string;
+          open_time: string;
+          updated_at: string;
+        };
+        Insert: {
+          close_time: string;
+          created_at?: string;
+          hours_date: string;
+          open_time: string;
+          updated_at?: string;
+        };
+        Update: {
+          close_time?: string;
+          created_at?: string;
+          hours_date?: string;
+          open_time?: string;
+          updated_at?: string;
+        };
+        Relationships: [];
+      };
       employee_rates: {
         Row: {
           created_at: string;
@@ -159,6 +183,44 @@ export type Database = {
           wix_id?: string | null;
         };
         Relationships: [];
+      };
+      hour_logs: {
+        Row: {
+          created_at: string;
+          employee_id: string;
+          end_time: string;
+          note: string;
+          shift_id: string;
+          start_time: string;
+          updated_at: string;
+        };
+        Insert: {
+          created_at?: string;
+          employee_id: string;
+          end_time: string;
+          note?: string;
+          shift_id: string;
+          start_time: string;
+          updated_at?: string;
+        };
+        Update: {
+          created_at?: string;
+          employee_id?: string;
+          end_time?: string;
+          note?: string;
+          shift_id?: string;
+          start_time?: string;
+          updated_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "hour_logs_employee_id_fkey";
+            columns: ["employee_id"];
+            isOneToOne: false;
+            referencedRelation: "employees";
+            referencedColumns: ["id"];
+          },
+        ];
       };
       shift_actuals: {
         Row: {
@@ -314,6 +376,36 @@ export type Database = {
           },
         ];
       };
+      weekly_hours: {
+        Row: {
+          close_time: string;
+          created_at: string;
+          id: string;
+          open_time: string;
+          starts_on: string | null;
+          updated_at: string;
+          weekday: number;
+        };
+        Insert: {
+          close_time: string;
+          created_at?: string;
+          id?: string;
+          open_time: string;
+          starts_on?: string | null;
+          updated_at?: string;
+          weekday: number;
+        };
+        Update: {
+          close_time?: string;
+          created_at?: string;
+          id?: string;
+          open_time?: string;
+          starts_on?: string | null;
+          updated_at?: string;
+          weekday?: number;
+        };
+        Relationships: [];
+      };
     };
     Views: {
       [_ in never]: never;
@@ -346,6 +438,11 @@ export type Database = {
         Args: { p_shift_ids?: string[]; p_time_off_ids?: string[] };
         Returns: Json;
       };
+      admin_set_custom_hours: {
+        Args: { p_close_time: string; p_dates: string[]; p_open_time: string };
+        Returns: Json;
+      };
+      admin_set_standard_hours: { Args: { p_dates: string[] }; Returns: Json };
       admin_undo: { Args: { p_change: Json }; Returns: undefined };
       admin_update_day_off: {
         Args: {
@@ -376,8 +473,30 @@ export type Database = {
       check_request_date: { Args: { p_date: string; p_employee_id: string }; Returns: undefined };
       current_employee_id: { Args: Record<PropertyKey, never>; Returns: string };
       empty_change: { Args: Record<PropertyKey, never>; Returns: Json };
+      hour_log_refusal: {
+        Args: { p_employee_id: string; p_shift: Database["public"]["Tables"]["shifts"]["Row"] };
+        Returns: string;
+      };
       is_admin: { Args: Record<PropertyKey, never>; Returns: boolean };
       is_staff: { Args: Record<PropertyKey, never>; Returns: boolean };
+      lock_loggable_shift: { Args: { p_shift_id: string }; Returns: string };
+      log_shift_hours: {
+        Args: { p_end: string; p_note: string; p_shift_id: string; p_start: string };
+        Returns: undefined;
+      };
+      my_loggable_shifts: {
+        Args: Record<PropertyKey, never>;
+        Returns: {
+          end_time: string;
+          logged_at: string;
+          logged_end: string;
+          logged_note: string;
+          logged_start: string;
+          shift_date: string;
+          shift_id: string;
+          start_time: string;
+        }[];
+      };
       periods_overlap: {
         Args: {
           a: Database["public"]["Enums"]["day_period"];
@@ -385,6 +504,7 @@ export type Database = {
         };
         Returns: boolean;
       };
+      remove_hour_log: { Args: { p_shift_id: string }; Returns: boolean };
       request_availability: {
         Args: { p_dates: string[]; p_period: Database["public"]["Enums"]["day_period"] };
         Returns: Json;
@@ -395,6 +515,7 @@ export type Database = {
       };
       save_employee: { Args: { p_employee: Json }; Returns: string };
       save_shift_actuals: { Args: { p_plan: Json }; Returns: Json };
+      save_weekly_hours: { Args: { p_hours: Json }; Returns: undefined };
       set_employee_order: { Args: { p_ids: string[] }; Returns: undefined };
     };
     Enums: {

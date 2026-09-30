@@ -1,0 +1,171 @@
+/* Log My Hours: a list of shifts to log, then one shift's form. The Modal makes it a
+   full-height sheet on phones. */
+.log-hours-intro {
+  margin-bottom: var(--space-14);
+  color: var(--muted);
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+.log-hours-intro:focus {
+  outline: none;
+}
+
+.log-hours-list {
+  display: grid;
+  gap: var(--space-8);
+  padding: 0;
+  list-style: none;
+}
+
+.log-hours-shift {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 2px var(--space-12);
+  align-items: baseline;
+  width: 100%;
+  min-height: 44px;
+  padding: var(--space-12) var(--space-14);
+  color: var(--clay-900);
+  font: inherit;
+  text-align: left;
+  background: var(--surface-82);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-item);
+  cursor: pointer;
+  transition: var(--transition-lift);
+}
+
+.log-hours-shift:hover {
+  border-color: var(--clay-700);
+  transform: var(--lift);
+}
+
+.log-hours-shift:focus-visible {
+  outline: 3px solid var(--focus-ring);
+  outline-offset: 2px;
+}
+
+.log-hours-shift-date {
+  font-size: 15px;
+  font-weight: 700;
+}
+
+.log-hours-shift-scheduled {
+  grid-column: 1;
+  color: var(--muted);
+  font-size: 13px;
+  font-variant-numeric: tabular-nums;
+}
+
+/* "Not logged yet" / "Logged 11:05 AM - 9:10 PM", on the right of the date. */
+.log-hours-shift-status {
+  grid-row: 1 / span 2;
+  grid-column: 2;
+  align-self: center;
+  color: var(--muted);
+  font-size: 13px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+}
+
+.log-hours-shift.is-logged .log-hours-shift-status {
+  color: var(--success-text);
+}
+
+.log-hours-empty {
+  padding: var(--space-18) var(--space-12);
+  color: var(--clay-800);
+  font-size: 15px;
+  font-weight: 600;
+  text-align: center;
+}
+
+.log-hours-status {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-12);
+  min-height: 120px;
+  padding: var(--space-18) var(--space-12);
+  text-align: center;
+}
+
+.log-hours-error {
+  color: var(--error-text);
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.log-hours-form {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-18);
+  padding-bottom: var(--space-4);
+}
+
+.log-hours-chosen-date {
+  color: var(--clay-800);
+  font-size: 15px;
+  font-weight: 700;
+  line-height: 1.4;
+}
+
+.log-hours-chosen-scheduled {
+  color: var(--muted);
+  font-size: 14px;
+  font-variant-numeric: tabular-nums;
+}
+
+.log-hours-times {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--space-12);
+}
+
+/* The hint sits right under the times it explains. */
+.log-hours-overnight {
+  margin-top: calc(var(--space-8) - var(--space-18));
+}
+
+.log-hours-messages:empty {
+  display: none;
+}
+
+.log-hours-spinner .spinner-ring {
+  border-color: rgba(255, 250, 241, 0.28);
+  border-top-color: var(--gold-light);
+}
+
+.log-hours-dialog .btn[aria-disabled="true"] {
+  cursor: progress;
+  opacity: 0.8;
+}
+
+/* Phones: the status goes under the scheduled times. */
+@media (max-width: 480px) {
+  .log-hours-shift {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .log-hours-shift-status {
+    grid-row: auto;
+    grid-column: 1;
+    text-align: left;
+  }
+}
+
+@media (max-width: 380px) {
+  .log-hours-times {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+@media (forced-colors: active) {
+  .log-hours-shift {
+    border-color: ButtonText;
+  }
+}

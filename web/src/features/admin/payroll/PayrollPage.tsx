@@ -8,6 +8,7 @@ import { adminErrorMessage } from "../../../data/errors";
 import { usePayrollPeriod, useSaveActuals } from "../../../data/payroll";
 import { useClosedDays, useEmployees } from "../../../data/schedule";
 import { rangeDates } from "../../../lib/dates";
+import { hourLogsByShift, type HourLog } from "../../../lib/hourLogs";
 import {
   buildPristineRows,
   findInvalidRow,
@@ -41,6 +42,7 @@ import "./PayrollPage.css";
 
 const NO_ROWS: readonly DraftRow[] = [];
 const NO_CLOSED_DAYS: ReadonlySet<ISODate> = new Set();
+const NO_LOGS: ReadonlyMap<string, HourLog> = new Map();
 const SAVE_ERROR = "There was an error saving your changes.";
 
 /**
@@ -128,6 +130,14 @@ export function PayrollPage() {
     [employeesById],
   );
   const activeEmployees = useMemo(() => (employees ?? []).filter((e) => !e.archived), [employees]);
+
+  const logsByShift = useMemo(() => (data ? hourLogsByShift(data.logs) : NO_LOGS), [data]);
+  /** Who logged a shift's hours, when that isn't its scheduled employee. */
+  const loggedBy = (row: DraftRow): string | null => {
+    if (row.kind !== "scheduled") return null;
+    const log = logsByShift.get(row.shift.id);
+    return log && log.employee_id !== row.shift.employee_id ? nameOf(log.employee_id) : null;
+  };
 
   const summary = useMemo(() => summarize(pristine, today), [pristine, today]);
   const lines = useMemo(
@@ -366,6 +376,8 @@ export function PayrollPage() {
                 row={row}
                 pristine={draft.pristineByKey.get(row.key)}
                 ownerName={nameOf(rowOwnerId(row))}
+                log={row.kind === "scheduled" ? (logsByShift.get(row.shift.id) ?? null) : null}
+                loggedBy={loggedBy(row)}
                 employees={employees}
                 today={today}
                 idPrefix={id}

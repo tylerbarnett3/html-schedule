@@ -1,15 +1,13 @@
 import type { MouseEvent } from "react";
 import { Link, NavLink, useMatch } from "react-router";
 import { useAuth } from "../../lib/auth";
-import { RequestsToolbarButton } from "./requests/RequestsToolbarButton";
-import { SaveIndicator } from "./SaveIndicator";
 import { ToolbarTools } from "./tools/ToolbarTools";
 import { UndoButton } from "./undo/UndoButton";
 import "./AdminToolbar.css";
 
 /**
- * The dark band under the header on every admin page. On Payroll it drops Undo, Requests and
- * Download PDF (D14); those components hide themselves there.
+ * The dark band under the header on every admin page. On Payroll it drops Undo and Download
+ * PDF (D14). Export Backup sits in the header's top left corner instead (ExportBackupButton).
  */
 export function AdminToolbar() {
   const auth = useAuth();
@@ -23,12 +21,12 @@ export function AdminToolbar() {
 
   return (
     <section className="admin-toolbar" aria-label="Admin toolbar">
-      <div className="admin-toolbar-group admin-toolbar-status">
-        <UndoButton />
-        <SaveIndicator />
-      </div>
+      {onPayroll ? null : (
+        <div className="admin-toolbar-group admin-toolbar-status">
+          <UndoButton />
+        </div>
+      )}
       <div className="admin-toolbar-group admin-toolbar-actions">
-        <RequestsToolbarButton />
         <ToolbarTools />
         <NavLink to="/admin/payroll" className="toolbar-btn toolbar-btn-gold" title="Review payroll" onClick={stayOnPayroll}>
           <span className="toolbar-btn-icon" aria-hidden="true">

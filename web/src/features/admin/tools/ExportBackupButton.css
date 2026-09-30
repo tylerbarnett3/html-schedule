@@ -1,0 +1,53 @@
+/* Export Backup: a round icon button in the header's top left corner, styled like Sign out. */
+.export-backup-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 34px;
+  height: 34px;
+  padding: 0;
+  color: var(--cream);
+  background: rgba(255, 250, 241, 0.1);
+  border: 1px solid rgba(255, 250, 241, 0.32);
+  border-radius: 50%;
+  cursor: pointer;
+  transition: var(--transition-lift);
+}
+
+.export-backup-btn svg {
+  width: 18px;
+  height: 18px;
+}
+
+.export-backup-btn:hover:not([aria-disabled="true"]) {
+  background: rgba(255, 250, 241, 0.2);
+  border-color: rgba(255, 250, 241, 0.5);
+  transform: var(--lift);
+}
+
+.export-backup-btn:focus-visible {
+  outline: 3px solid var(--gold-light);
+  outline-offset: 2px;
+}
+
+.export-backup-btn[aria-disabled="true"] {
+  cursor: progress;
+}
+
+.export-backup-spinner .spinner-ring {
+  border-color: rgba(255, 250, 241, 0.28);
+  border-top-color: var(--gold-light);
+}
+
+@media (max-width: 768px) {
+  .export-backup-btn {
+    width: 40px;
+    height: 40px;
+  }
+}
+
+@media (forced-colors: active) {
+  .export-backup-btn {
+    border-color: ButtonText;
+  }
+}

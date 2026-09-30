@@ -25,6 +25,7 @@ export type AdminErrorCode =
   | "undo_stale"
   | "duplicate_name"
   | "invalid_input"
+  | "hours_in_effect"
   | "duplicate" // 23505
   | "check_failed" // 23514
   | "overlap" // 23P01
@@ -45,6 +46,7 @@ const TOKENS: readonly AdminErrorCode[] = [
   "undo_stale",
   "duplicate_name",
   "invalid_input",
+  "hours_in_effect", // save_weekly_hours: removing a set that has started (migration 005)
 ];
 
 // Several tokens share a SQLSTATE (day_off_overlap is 23P01, duplicate_name is 23505), so the
@@ -82,19 +84,8 @@ export function adminErrorMessage(error: unknown, fallback: string): string {
   return MESSAGES[adminErrorCode(error)] ?? fallback;
 }
 
-// Rejections the admin pages report as information, not failures: nothing the admin saved
-// was lost. A stale undo is dropped from the stack (§6); a request someone else already
-// reviewed just refreshes the drawer (R10).
-const INFO_OUTCOMES: ReadonlySet<AdminErrorCode> = new Set<AdminErrorCode>(["undo_stale", "request_not_pending"]);
-
 /**
  * Codes a calendar edit reports as info rather than failure: the row was changed or removed
- * elsewhere and the page has been refreshed. The calendar mutations carry them as
- * `meta.infoCodes`, so the Save indicator agrees with the toast.
+ * elsewhere and the page has been refreshed.
  */
 export const SCHEDULE_INFO_CODES: readonly AdminErrorCode[] = ["not_found"];
-
-/** True when a failed write is shown as an info toast rather than an error (the Save indicator ignores it). */
-export function isInfoOutcome(error: unknown): boolean {
-  return INFO_OUTCOMES.has(adminErrorCode(error));
-}

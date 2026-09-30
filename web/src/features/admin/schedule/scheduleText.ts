@@ -8,8 +8,16 @@ import {
   SCHEDULE_INFO_CODES,
   type AdminErrorCode,
 } from "../../../data/errors";
-import { formatChipDate, formatMonthDay, isISODate } from "../../../lib/dates";
+import { formatChipDate, formatMonthDay, formatShortDate, isISODate } from "../../../lib/dates";
+import {
+  formatHoursRange,
+  HOURS_MESSAGES,
+  type DayHoursState,
+  type Hours,
+  type HoursChoice,
+} from "../../../lib/hours";
 import { isDayPeriod } from "../../../lib/periods";
+import type { ScheduleChange } from "../../../lib/scheduleChange";
 import { buildPendingBlockMessage, removedShiftsText } from "../../../lib/scheduleEditing";
 import type { DayPeriod, Employee, ISODate } from "../../../lib/types";
 
@@ -45,11 +53,115 @@ export const shiftMovedText = (date: ISODate): string => `Shift moved to ${forma
 export const dayOffMovedText = (date: ISODate, removed: number): string =>
   withRemovedShifts(`Day off moved to ${formatChipDate(date)}`, removed);
 /**
- * Marking days closed that all were closed already (the Closed type lets them be picked):
+ * Marking days closed that all were closed already (Hours → Closed lets them be picked):
  * an info toast instead of "0 days marked closed".
  */
 export const alreadyClosedText = (n: number): string =>
   n === 1 ? "That day is already closed." : "Those days are already closed.";
+
+// ---------------------------------------------------------------------------
+// Business hours for single dates (Day Hours dialog, Add → Hours, Reopen day)
+
+export const HOURS_UPDATED_TITLE = "Hours Updated";
+const HOURS_FALLBACK = "Couldn't save the hours. Please try again.";
+
+function uniqueDates(dates: readonly ISODate[]): ISODate[] {
+  return [...new Set(dates)];
+}
+
+/** 'Oct 31' for one date, '3 days' for more (unique dates). */
+function whichDays(dates: readonly ISODate[], format: (date: ISODate) => string): string {
+  const unique = uniqueDates(dates);
+  return unique.length === 1 ? format(unique[0]) : plural(unique.length, "day");
+}
+
+/** 'Set custom hours for Oct 31' | 'Set custom hours for 3 days' (unique dates) */
+export function customHoursLabel(dates: readonly ISODate[]): string {
+  return `Set custom hours for ${whichDays(dates, formatMonthDay)}`;
+}
+
+/** 'Set standard hours for Oct 31' | 'Set standard hours for 3 days' */
+export function standardHoursLabel(dates: readonly ISODate[]): string {
+  return `Set standard hours for ${whichDays(dates, formatMonthDay)}`;
+}
+
+/** 'Sat, Oct 31: 9:00 AM - 5:00 PM' | '3 days: 9:00 AM - 5:00 PM' */
+export function customHoursText(dates: readonly ISODate[], hours: Hours): string {
+  return `${whichDays(dates, formatChipDate)}: ${formatHoursRange(hours)}`;
+}
+
+/** 'Sat, Oct 31: standard hours' | '3 days: standard hours' */
+export function standardHoursText(dates: readonly ISODate[]): string {
+  return `${whichDays(dates, formatChipDate)}: standard hours`;
+}
+
+export const REOPENED_TITLE = "Business Day Reopened";
+
+/** The undo label and the success toast for an hours write that changed something. */
+export interface HoursSaveText {
+  label: string;
+  title: string;
+  message: string;
+}
+
+/**
+ * Words for a non-empty change from setting dates to custom hours (`hours`) or to standard
+ * hours (`hours` null), picked from what the change did, so the same result reads the same
+ * from Day Hours, Add → Hours and Reopen day:
+ * - custom hours stored or changed: "Set custom hours for …" / "Sat, Oct 31: 9:00 AM - 5:00 PM";
+ * - one day reopened with no custom hours stored: "Reopen Oct 9" / "Business Day Reopened";
+ * - otherwise: "Set standard hours for …" / "Sat, Oct 31: standard hours". Custom hours equal
+ *   to a day's standard hours count as standard (REQUIREMENTS §2), so the server stores none.
+ */
+export function hoursSaveText(dates: readonly ISODate[], change: ScheduleChange, hours: Hours | null): HoursSaveText {
+  const unique = uniqueDates(dates);
+  if (hours !== null && (change.inserted.custom_hours.length > 0 || change.updated.custom_hours.length > 0)) {
+    return { label: customHoursLabel(unique), title: HOURS_UPDATED_TITLE, message: customHoursText(unique, hours) };
+  }
+  if (unique.length === 1 && change.deleted.closed_days.length > 0) {
+    return { label: reopenLabel(unique[0]), title: REOPENED_TITLE, message: formatShortDate(unique[0]) };
+  }
+  return { label: standardHoursLabel(unique), title: HOURS_UPDATED_TITLE, message: standardHoursText(unique) };
+}
+
+/** Custom hours the days already had: an info toast, never a fake success. */
+export function sameHoursText(n: number): string {
+  return n === 1 ? "That day already has those hours." : "Those days already have those hours.";
+}
+
+/** Standard hours on days that already had them. */
+export function alreadyStandardText(n: number): string {
+  return n === 1 ? "That day already has standard hours." : "Those days already have standard hours.";
+}
+
+/** A failed hours write: the time check, else the shared admin messages. */
+export function hoursErrorMessage(error: unknown): string {
+  return adminErrorCode(error) === "check_failed" ? HOURS_MESSAGES.order : adminErrorMessage(error, HOURS_FALLBACK);
+}
+
+/** The hint under the Day Hours choice: what saving it does to this day. */
+export function dayHoursHint(choice: HoursChoice, state: DayHoursState, standard: Hours | null): string {
+  if (choice === "closed") {
+    return state.kind === "closed"
+      ? "This day is closed."
+      : "Closing deletes this day's shifts and time off. Payroll records and availability are kept.";
+  }
+  const base = standard
+    ? `Standard hours for this day: ${formatHoursRange(standard)}.`
+    : "No standard hours are set yet.";
+  return state.kind === "closed" ? `Reopens the day. ${base}` : base;
+}
+
+const ADD_HOURS_HINTS: Readonly<Record<HoursChoice, string>> = {
+  standard: "Pick the days to put back on standard hours. Closed days are reopened.",
+  custom: "Pick the days that get these hours. Closed days are reopened.",
+  closed: "Pick the days to close. Their shifts and time off are deleted; payroll records and availability are kept.",
+};
+
+/** The hint for Add → Hours. */
+export function addHoursHint(choice: HoursChoice): string {
+  return ADD_HOURS_HINTS[choice];
+}
 
 // ---------------------------------------------------------------------------
 // Errors (§9 calendar-ui item 6)

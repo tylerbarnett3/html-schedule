@@ -40,12 +40,14 @@ export interface RequestDialogProps {
 const COPY = {
   "time-off": {
     title: "Request Time Off",
+    submitLabel: "Submit Request",
     periodLabel: "Time Off Needed",
     conflictTitle: "Already requested",
     conflictError: "One or more selected dates already has a conflicting time-off request for that part of the day.",
   },
   availability: {
-    title: "Request Availability",
+    title: "Add Availability",
+    submitLabel: "Submit",
     periodLabel: "Available For",
     conflictTitle: "Availability already marked",
     conflictError: "One or more selected dates already has overlapping availability.",
@@ -252,7 +254,7 @@ function RequestDialogForm({ kind, onClose, employee, today }: Omit<RequestDialo
             Submitting...
           </>
         ) : (
-          "Submit Request"
+          copy.submitLabel
         )}
       </Button>
     </>

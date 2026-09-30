@@ -4,6 +4,7 @@ import { Button } from "../../components/Button";
 import { Spinner } from "../../components/Spinner";
 import { useConfirm } from "../../components/useConfirm";
 import { useToast } from "../../components/useToast";
+import { useHoursData } from "../../data/hours";
 import { requestErrorMessage, useCancelAvailability, useCancelTimeOff } from "../../data/requests";
 import { useCalendarData, useClosedDays, useEmployees } from "../../data/schedule";
 import { useBusinessToday } from "../../data/useBusinessToday";
@@ -12,8 +13,10 @@ import { useAuth } from "../../lib/auth";
 import { buildCalendarDays } from "../../lib/calendar";
 import { defaultRange, formatShortDate } from "../../lib/dates";
 import type { DateRange, ISODate } from "../../lib/types";
+import { BusinessHoursDrawer } from "./BusinessHoursDrawer";
 import { CalendarGrid } from "./CalendarGrid";
 import type { CancellableCard } from "./DayCard";
+import { LogHoursDialog } from "./LogHoursDialog";
 import { PeriodNav } from "./PeriodNav";
 import { RequestDialog, type RequestDialogKind } from "./RequestDialog";
 import { Sidebar } from "./Sidebar";
@@ -56,6 +59,7 @@ export function SchedulePage() {
   const [showAvailability, setShowAvailability] = usePersistentState(SHOW_AVAILABILITY_KEY, true);
   const [hiddenIds, setHiddenIds] = usePersistentState<string[]>(HIDDEN_EMPLOYEES_KEY, [], isStringArray);
   const [dialog, setDialog] = useState<RequestDialogKind | null>(null);
+  const [logHoursOpen, setLogHoursOpen] = useState(false);
   // Rows whose cancel is in flight. Each row is independent, so several can run at once.
   const [cancellingIds, setCancellingIds] = useState<ReadonlySet<string>>(() => new Set());
   const cancelling = useRef(new Set<string>());
@@ -63,6 +67,8 @@ export function SchedulePage() {
   const employeesQuery = useEmployees();
   const calendarQuery = useCalendarData(range);
   const closedQuery = useClosedDays();
+  // Hours never block the calendar: a failed read builds the days without them.
+  const hours = useHoursData();
   const cancelTimeOff = useCancelTimeOff();
   const cancelAvailability = useCancelAvailability();
 
@@ -76,11 +82,14 @@ export function SchedulePage() {
   }, [employees, hiddenIds]);
 
   const meId = employee?.id ?? null;
+  const hoursReady = hours.ready;
+  const hoursData = hours.data;
   // While a new range loads, calendarData still holds the previous range's rows. The grid
   // shows the new range's dates right away (so they match the period heading): days the
-  // old rows cover keep their cards, the rest show a loading placeholder.
+  // old rows cover keep their cards, the rest show a loading placeholder. The days also wait
+  // for the hours (loaded or failed), so the headers don't change after the first paint.
   const days = useMemo(() => {
-    if (!employees || !calendarData || !closedDays) return null;
+    if (!employees || !calendarData || !closedDays || !hoursReady) return null;
     return buildCalendarDays({
       range,
       today,
@@ -93,8 +102,21 @@ export function SchedulePage() {
       showTimeOff,
       showAvailability,
       meId,
+      hours: hoursData,
     });
-  }, [range, today, employees, calendarData, closedDays, selectedIds, showTimeOff, showAvailability, meId]);
+  }, [
+    range,
+    today,
+    employees,
+    calendarData,
+    closedDays,
+    hoursReady,
+    hoursData,
+    selectedIds,
+    showTimeOff,
+    showAvailability,
+    meId,
+  ]);
 
   const toggleEmployee = (id: string, selected: boolean) => {
     const known = new Set((employees ?? []).map((e) => e.id));
@@ -106,6 +128,7 @@ export function SchedulePage() {
   };
 
   const closeDialog = useCallback(() => setDialog(null), []);
+  const closeLogHours = useCallback(() => setLogHoursOpen(false), []);
 
   const setCancelling = (id: string, running: boolean) => {
     if (running) cancelling.current.add(id);
@@ -120,11 +143,11 @@ export function SchedulePage() {
     const date = isTimeOff ? card.row.off_date : card.row.available_date;
     const when = formatShortDate(date);
     const confirmed = await confirm({
-      title: "Cancel request?",
+      title: isTimeOff ? "Cancel request?" : "Cancel availability?",
       message: isTimeOff
         ? `Cancel your ${card.row.period} time-off request for ${when}?`
         : `Cancel your ${card.row.period} availability for ${when}?`,
-      confirmLabel: "Cancel request",
+      confirmLabel: isTimeOff ? "Cancel request" : "Cancel availability",
       cancelLabel: "Keep it",
       tone: "danger",
     });
@@ -135,9 +158,10 @@ export function SchedulePage() {
       // Resolves after the calendar has been refetched (see src/data/requests.ts).
       const { deleted } = await (isTimeOff ? cancelTimeOff : cancelAvailability).mutateAsync({ id });
       if (deleted) {
-        toast.show(isTimeOff ? "Time-off request cancelled." : "Availability request cancelled.", "success");
+        toast.show(isTimeOff ? "Time-off request cancelled." : "Availability cancelled.", "success");
       } else {
-        toast.show("This request was already reviewed or removed.", "info");
+        const what = isTimeOff ? "This request" : "This availability";
+        toast.show(`${what} was already reviewed or removed.`, "info");
       }
     } catch (error) {
       toast.show(cancelErrorMessage(error), "error");
@@ -156,7 +180,10 @@ export function SchedulePage() {
           Request Time Off
         </Button>
         <Button variant="gold" onClick={() => setDialog("availability")}>
-          Request Availability
+          Add Availability
+        </Button>
+        <Button variant="gold" onClick={() => setLogHoursOpen(true)}>
+          Log My Hours
         </Button>
       </>
     );
@@ -172,8 +199,11 @@ export function SchedulePage() {
 
   const queries = [employeesQuery, calendarQuery, closedQuery];
   const failed = queries.filter((query) => query.isError && query.data === undefined);
-  // A refetch (after a request, or on focus) that failed keeps the old rows on screen.
-  const outdated = queries.filter((query) => query.isError && query.data !== undefined);
+  // A refetch (after a request, or on focus) that failed keeps the old rows on screen. That
+  // includes the hours, whose first failed read doesn't count as failed (see above).
+  const outdated = [...queries, hours.weekly, hours.custom].filter(
+    (query) => query.isError && query.data !== undefined,
+  );
   const busy = calendarQuery.isPlaceholderData;
 
   let content: ReactNode;
@@ -219,6 +249,13 @@ export function SchedulePage() {
           onToggleEmployee={toggleEmployee}
           onSelectAll={() => setHiddenIds([])}
           onClearAll={() => setHiddenIds((employees ?? []).map((e) => e.id))}
+          afterFilter={
+            <BusinessHoursDrawer
+              sets={hours.weekly.data}
+              failed={hours.weekly.isError && hours.weekly.data === undefined}
+              today={today}
+            />
+          }
         />
         <main className="schedule-area">
           <PeriodNav range={range} onRangeChange={setRange} />
@@ -250,6 +287,9 @@ export function SchedulePage() {
           employee={employee}
           today={today}
         />
+      ) : null}
+      {employee && !employee.archived ? (
+        <LogHoursDialog open={logHoursOpen} onClose={closeLogHours} employee={employee} />
       ) : null}
     </>
   );

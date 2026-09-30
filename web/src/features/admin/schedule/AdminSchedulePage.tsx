@@ -6,12 +6,13 @@ import { useAlert } from "../../../components/useAlert";
 import { useConfirm } from "../../../components/useConfirm";
 import { useToast } from "../../../components/useToast";
 import { invalidateAdminData } from "../../../data/adminKeys";
-import { fetchEditingRows, useReopenDays, useUpdateDayOff, useUpdateShift } from "../../../data/adminSchedule";
+import { fetchEditingRows, useSetStandardHours, useUpdateDayOff, useUpdateShift } from "../../../data/adminSchedule";
 import { adminErrorMessage } from "../../../data/errors";
+import { useHoursData } from "../../../data/hours";
 import { useCalendarData, useClosedDays, useEmployees } from "../../../data/schedule";
 import { useMediaQuery } from "../../../data/useMediaQuery";
 import { buildCalendarDays, type CalendarDay, type DayCard } from "../../../lib/calendar";
-import { formatDayLabel, formatShortDate } from "../../../lib/dates";
+import { formatDayLabel } from "../../../lib/dates";
 import { isEmptyChange } from "../../../lib/scheduleChange";
 import {
   canDragCard,
@@ -28,13 +29,14 @@ import { RequestReviewDialog } from "../requests/RequestReviewDialog";
 import { useAdminView } from "../useAdminView";
 import { useUndo } from "../undo/useUndo";
 import { AddItemDialog } from "./AddItemDialog";
+import { DayHoursDialog } from "./DayHoursDialog";
 import { EditItemDialog } from "./EditItemDialog";
 import { confirmPayrollHours, confirmShiftDeletion, keepFocusOnDay } from "./scheduleConfirms";
 import {
   ALREADY_REMOVED,
   dayOffMovedText,
   failureTone,
-  reopenLabel,
+  hoursSaveText,
   scheduleError,
   shiftMovedText,
 } from "./scheduleText";
@@ -46,8 +48,8 @@ const REOPEN_FALLBACK = "Couldn't reopen the day. Please try again.";
 
 /**
  * The admin calendar: the employee page's calendar with every card clickable, "+ Add" and
- * "Reopen day" on each day, and drag and drop between days. Every write can be undone
- * from the toolbar.
+ * "Reopen day" on each day, each day heading opening that day's hours, and drag and drop
+ * between days. Every write can be undone from the toolbar.
  */
 export function AdminSchedulePage() {
   const view = useAdminView();
@@ -61,11 +63,13 @@ export function AdminSchedulePage() {
   const employeesQuery = useEmployees();
   const calendarQuery = useCalendarData(view.range);
   const closedQuery = useClosedDays();
+  const hours = useHoursData();
   const updateShift = useUpdateShift();
   const updateDayOff = useUpdateDayOff();
-  const reopenDays = useReopenDays();
+  const setStandardHours = useSetStandardHours();
 
   const [addDate, setAddDate] = useState<ISODate | null>(null);
+  const [hoursDate, setHoursDate] = useState<ISODate | null>(null);
   const [editTarget, setEditTarget] = useState<EditTarget | null>(null);
   const [reviewTarget, setReviewTarget] = useState<ReviewTarget | null>(null);
   const [reopening, setReopening] = useState<ReadonlySet<ISODate>>(() => new Set());
@@ -77,10 +81,17 @@ export function AdminSchedulePage() {
   const closedDays = closedQuery.data;
   const { range, today, selectedEmployeeIds, showTimeOff, showAvailability } = view;
 
+  const hoursData = hours.data;
+  // A read that has failed once stays ready while it is tried again (see useHoursData), so
+  // a dialog opening or the window regaining focus never sends the calendar back to "Loading...".
+  const hoursReady = hours.ready;
+
   // While a new range loads, calendarData still holds the previous range's rows (see
   // SchedulePage): the new dates show at once, with placeholders where rows are missing.
+  // The hours are waited for (loaded or failed), so the headings don't change after the
+  // first paint; hours that failed to load never hold the calendar up.
   const days = useMemo(() => {
-    if (!employees || !calendarData || !closedDays) return null;
+    if (!employees || !calendarData || !closedDays || !hoursReady) return null;
     return buildCalendarDays({
       range,
       today,
@@ -93,8 +104,20 @@ export function AdminSchedulePage() {
       showTimeOff,
       showAvailability,
       meId: null,
+      hours: hoursData,
     });
-  }, [range, today, employees, calendarData, closedDays, selectedEmployeeIds, showTimeOff, showAvailability]);
+  }, [
+    range,
+    today,
+    employees,
+    calendarData,
+    closedDays,
+    hoursReady,
+    hoursData,
+    selectedEmployeeIds,
+    showTimeOff,
+    showAvailability,
+  ]);
 
   const openCard = useCallback((card: DayCard) => {
     const action = cardAction(card);
@@ -103,6 +126,7 @@ export function AdminSchedulePage() {
   }, []);
 
   const closeAdd = useCallback(() => setAddDate(null), []);
+  const closeHours = useCallback(() => setHoursDate(null), []);
   const closeEdit = useCallback(() => setEditTarget(null), []);
   const closeReview = useCallback(() => {
     // An approved or denied request's card is replaced or removed, so the dialog can't hand
@@ -262,18 +286,21 @@ export function AdminSchedulePage() {
     : undefined;
 
   // ---------------------------------------------------------------------------
-  // Reopen (C6)
+  // Reopen (C6): back to standard hours (H12), a shortcut for Day Hours → Standard hours.
 
   const reopen = async (date: ISODate) => {
     if (reopening.has(date)) return;
     setReopening((current) => new Set(current).add(date));
     try {
-      const change = await reopenDays.mutateAsync({ dates: [date] });
+      const change = await setStandardHours.mutateAsync({ dates: [date] });
       if (isEmptyChange(change)) {
         toast.show(ALREADY_REMOVED, "info");
       } else {
-        undo.push({ label: reopenLabel(date), change });
-        toast.show(formatShortDate(date), "success", { title: "Business Day Reopened" });
+        // "Reopen Oct 9", or "Set standard hours for Oct 9" when someone reopened it first
+        // but it had custom hours, and those were cleared.
+        const text = hoursSaveText([date], change, null);
+        undo.push({ label: text.label, change });
+        toast.show(text.message, "success", { title: text.title });
       }
     } catch (caught) {
       toast.show(adminErrorMessage(caught, REOPEN_FALLBACK), "error");
@@ -321,8 +348,11 @@ export function AdminSchedulePage() {
 
   const queries = [employeesQuery, calendarQuery, closedQuery];
   const failed = queries.filter((query) => query.isError && query.data === undefined);
-  // A refetch (after a change, or on focus) that failed keeps the old rows on screen.
-  const outdated = queries.filter((query) => query.isError && query.data !== undefined);
+  // A refetch (after a change, or on focus) that failed keeps the old rows on screen. The
+  // hours never block the calendar, but a failed refresh of them is reported the same way.
+  const outdated = [...queries, hours.weekly, hours.custom].filter(
+    (query) => query.isError && query.data !== undefined,
+  );
   const busy = calendarQuery.isPlaceholderData;
 
   let content: ReactNode;
@@ -355,6 +385,7 @@ export function AdminSchedulePage() {
           onOpenCard={openCard}
           renderDayFooter={renderDayFooter}
           dragAndDrop={dragAndDrop}
+          onOpenDay={setHoursDate}
         />
       </>
     );
@@ -385,6 +416,7 @@ export function AdminSchedulePage() {
         </section>
       </main>
       <AddItemDialog date={addDate} onClose={closeAdd} />
+      <DayHoursDialog date={hoursDate} onClose={closeHours} />
       <EditItemDialog target={editTarget} onClose={closeEdit} />
       <RequestReviewDialog target={reviewTarget} onClose={closeReview} />
     </div>

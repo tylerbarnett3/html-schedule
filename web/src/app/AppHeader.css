@@ -54,6 +54,16 @@
   max-width: min(45%, 360px);
 }
 
+.app-header-corner {
+  position: absolute;
+  top: var(--space-14);
+  left: var(--space-18);
+  z-index: var(--z-sticky);
+  display: flex;
+  align-items: center;
+  gap: var(--space-10);
+}
+
 .app-header-user {
   min-width: 0;
   overflow: hidden;

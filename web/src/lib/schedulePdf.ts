@@ -1,8 +1,18 @@
 // The printable schedule behind the toolbar's "Download PDF": one table per 7-day chunk of
-// the visible range, one row per employee. Everything here is pure so the layout rules are
-// unit-tested; features/admin/tools/downloadSchedulePdf.ts draws the tables with jsPDF.
+// the visible range, one row per employee. Page 1 starts with a key of the standard business
+// hours, and a date with special hours prints them under its column header. Everything here
+// is pure so the layout rules are unit-tested; features/admin/tools/downloadSchedulePdf.ts
+// draws the tables with jsPDF.
 
 import { formatRangeLabel, rangeDates, weekdayOf, WEEKDAY_SHORT } from "./dates";
+import {
+  formatHoursRange,
+  HOURS_KEY_SEPARATOR,
+  hoursKeyParagraphs,
+  specialHoursOn,
+  type Hours,
+  type HoursData,
+} from "./hours";
 import { normalizePeriod, periodSortValue } from "./periods";
 import { compareTimes, formatShiftTime } from "./time";
 import type { DateRange, Employee, ISODate, Shift, TimeOff } from "./types";
@@ -20,6 +30,11 @@ export const PDF_LAYOUT = {
   unit: "mm",
   format: "a4",
   title: { x: 148, y: 15, fontSize: 18 },
+  /**
+   * The business hours key under the title on page 1: centered, one paragraph per weekly set,
+   * wrapped to the table width. lineHeight is 9pt × 1.15 in mm (jsPDF's lineHeightFactor).
+   */
+  key: { x: 148, y: 21, fontSize: 9, lineHeight: 3.651, maxWidth: 269 },
   firstStartY: 25,
   nextStartY: 15,
   /** The page width minus the margins (297 - 28), shared by the name column and 7 days. */
@@ -28,6 +43,8 @@ export const PDF_LAYOUT = {
   fontSize: 9,
   cellPadding: { top: 3, right: 2, bottom: 3, left: 2 },
   headPadding: 3,
+  /** A day header with a third (hours) line: smaller, with the body's side padding, so it never wraps. */
+  hoursHead: { fontSize: 8, cellPadding: { top: 3, right: 2, bottom: 3, left: 2 } },
   footer: { x: 148, y: 200, fontSize: 8, color: [150, 150, 150] },
   headFill: [110, 95, 74],
   headText: [255, 255, 255],
@@ -48,17 +65,76 @@ export function pdfWeeks(range: DateRange): ISODate[][] {
   return weeks;
 }
 
-/** 'Tue\n9/29' */
-function dayHeader(d: ISODate): string {
-  return `${WEEKDAY_SHORT[weekdayOf(d)]}\n${Number(d.slice(5, 7))}/${Number(d.slice(8, 10))}`;
+/** 'Tue\n9/29', or 'Sat\n10/31\n(9:00 AM - 5:00 PM)' with special hours. */
+function dayHeader(d: ISODate, hours: Hours | null): string {
+  const label = `${WEEKDAY_SHORT[weekdayOf(d)]}\n${Number(d.slice(5, 7))}/${Number(d.slice(8, 10))}`;
+  return hours ? `${label}\n(${formatHoursRange(hours)})` : label;
 }
 
-/** ["Week of\nSep 29 - Oct 5", "Tue\n9/29", ...]; empty for an empty week. */
-export function pdfWeekHeader(week: readonly ISODate[]): string[] {
+/**
+ * ["Week of\nSep 29 - Oct 5", "Tue\n9/29", ...]; empty for an empty week. A day that hoursFor
+ * gives hours gets them as a third line.
+ */
+export function pdfWeekHeader(week: readonly ISODate[], hoursFor?: (date: ISODate) => Hours | null): string[] {
   const first = week[0];
   const last = week[week.length - 1];
   if (first === undefined || last === undefined) return [];
-  return [`Week of\n${formatRangeLabel({ start: first, end: last }).text}`, ...week.map(dayHeader)];
+  return [
+    `Week of\n${formatRangeLabel({ start: first, end: last }).text}`,
+    ...week.map((d) => dayHeader(d, hoursFor ? hoursFor(d) : null)),
+  ];
+}
+
+/**
+ * The page 1 key: the standard hours in effect on the first day, then a "From Nov 1: …"
+ * paragraph for each change within the range. Empty without hours (or with no weekly sets).
+ */
+export function pdfHoursKey(input: Pick<SchedulePdfInput, "hours" | "range">): string[] {
+  return input.hours ? hoursKeyParagraphs(input.hours.sets, input.range) : [];
+}
+
+/**
+ * The key's printed lines. Each paragraph wraps to maxWidth only between its
+ * '<days>: <hours>' groups, so a time range never splits and no line starts with '- '; a
+ * 'From Nov 1:' label stays with its first group. The ' | ' between two groups is left out
+ * where the line breaks, so no line starts or ends with '|'. widthOf measures text in the
+ * key's font (jsPDF's getTextWidth). A group too wide for a line on its own (none is at 9pt)
+ * breaks at its spaces.
+ */
+export function pdfKeyLines(
+  paragraphs: readonly string[],
+  maxWidth: number,
+  widthOf: (text: string) => number,
+): string[] {
+  return paragraphs.flatMap((paragraph) => {
+    // Each piece with what joins it to the piece before when both are on one line.
+    const pieces = paragraph.split(HOURS_KEY_SEPARATOR).flatMap((group, groupIndex) => {
+      const words = widthOf(group) > maxWidth ? group.split(" ") : [group];
+      return words.map((text, wordIndex) => ({
+        text,
+        joiner: wordIndex > 0 ? " " : groupIndex > 0 ? HOURS_KEY_SEPARATOR : "",
+      }));
+    });
+    const lines: string[] = [];
+    let line = "";
+    for (const { text, joiner } of pieces) {
+      const joined = line === "" ? text : `${line}${joiner}${text}`;
+      if (line !== "" && widthOf(joined) > maxWidth) {
+        lines.push(line);
+        line = text;
+      } else {
+        line = joined;
+      }
+    }
+    if (line !== "") lines.push(line);
+    return lines;
+  });
+}
+
+/** Where the first table starts: under the title, and lower when the key needs more than one line. */
+export function pdfFirstStartY(keyLines: number): number {
+  const { firstStartY, key } = PDF_LAYOUT;
+  return keyLines <= 1 ? firstStartY : firstStartY + (keyLines - 1) * key.lineHeight;
 }
 
 const APPROVED_TEXT = { "full-day": "OFF", morning: "MORNING OFF", evening: "EVENING OFF" } as const;
@@ -97,11 +173,15 @@ export interface SchedulePdfInput {
   shifts: readonly Shift[];
   timeOff: readonly TimeOff[];
   closedDays: ReadonlySet<ISODate>;
+  /** Missing: no key and no hours lines. */
+  hours?: HoursData;
 }
 
 export interface SchedulePdfTable {
   head: string[];
   body: string[][];
+  /** Indexes into head of the day cells that have an hours line. */
+  hoursColumns: number[];
 }
 
 function cellKey(employeeId: string, date: ISODate): string {
@@ -117,10 +197,13 @@ function pushTo<T>(map: Map<string, T[]>, key: string, item: T): void {
 /**
  * One table per week. Rows follow the admin's employee filter in display order; an archived
  * employee only gets a row when something of theirs prints in the range (D3). Time off always
- * prints (whatever the Show Time Off toggle says) and availability never does.
+ * prints (whatever the Show Time Off toggle says) and availability never does. With hours, a
+ * date whose hours differ from the standard (specialHoursOn; never a closed date) prints them
+ * in its header.
  */
 export function buildSchedulePdfTables(input: SchedulePdfInput): SchedulePdfTable[] {
-  const { range, closedDays } = input;
+  const { range, closedDays, hours } = input;
+  const hoursFor = hours ? (d: ISODate) => specialHoursOn(d, hours, closedDays) : undefined;
   // A closed date prints CLOSED, so rows on it don't count as printing anything.
   const prints = (d: ISODate) => d >= range.start && d <= range.end && !closedDays.has(d);
 
@@ -143,7 +226,7 @@ export function buildSchedulePdfTables(input: SchedulePdfInput): SchedulePdfTabl
   );
 
   return pdfWeeks(range).map((week) => ({
-    head: pdfWeekHeader(week),
+    head: pdfWeekHeader(week, hoursFor),
     body: employees.map((employee) => [
       employee.name,
       ...week.map((date) =>
@@ -154,6 +237,8 @@ export function buildSchedulePdfTables(input: SchedulePdfInput): SchedulePdfTabl
         }),
       ),
     ]),
+    // Head index 0 is the week label, so day i sits at i + 1.
+    hoursColumns: hoursFor ? week.flatMap((date, i) => (hoursFor(date) ? [i + 1] : [])) : [],
   }));
 }
 

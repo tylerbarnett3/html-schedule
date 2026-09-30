@@ -1,5 +1,7 @@
-// The toolbar's "Export Backup" file (T1): every schedule table, rows exactly as stored.
-// The admins table is left out on purpose.
+// The toolbar's "Export Backup" file (T1): every schedule table, rows exactly as stored,
+// business hours (weekly_hours and custom_hours, migration 005) and logged hours (hour_logs,
+// migration 006) included. The admins table is left out on purpose. The newer tables were
+// added without a version bump: the file only gained keys, and nothing imports it.
 
 import type { Tables } from "./supabase";
 import { BUSINESS_TIME_ZONE } from "./types";
@@ -16,6 +18,9 @@ export const BACKUP_TABLES = [
   "availability",
   "shift_actuals",
   "closed_days",
+  "weekly_hours",
+  "custom_hours",
+  "hour_logs",
 ] as const;
 
 export type BackupTable = (typeof BACKUP_TABLES)[number];
@@ -40,6 +45,9 @@ export function buildBackupFile(tables: BackupTables, exportedAt: Date): BackupF
     availability: tables.availability,
     shift_actuals: tables.shift_actuals,
     closed_days: tables.closed_days,
+    weekly_hours: tables.weekly_hours,
+    custom_hours: tables.custom_hours,
+    hour_logs: tables.hour_logs,
   };
 }
 

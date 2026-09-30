@@ -10,10 +10,7 @@ export interface ToolbarButtonProps extends ButtonHTMLAttributes<HTMLButtonEleme
   icon?: ReactNode;
 }
 
-/**
- * A button for the dark admin toolbar: 36px tall on desktop, a full-width 44px row on phones.
- * For a count, put <span className="toolbar-btn-badge"> inside the label.
- */
+/** A button for the dark admin toolbar: 36px tall on desktop, a full-width 44px row on phones. */
 export function ToolbarButton({
   variant = "on-dark",
   icon,

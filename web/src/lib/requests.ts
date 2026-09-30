@@ -134,16 +134,16 @@ export function requestResultMessage(
     return {
       text:
         skipped.length > 0
-          ? `Availability request submitted. Skipped dates that were closed or already had overlapping availability: ${list}`
-          : "Availability request submitted! Your manager will review it shortly.",
+          ? `Availability submitted. Skipped dates that were closed or already had overlapping availability: ${list}`
+          : "Availability submitted!",
       closeDialog: true,
     };
   }
   return {
     text:
       skipped.length > 0
-        ? `No new availability requests were submitted. These dates were closed or already had overlapping availability: ${list}`
-        : "No availability requests were submitted.",
+        ? `No new availability was submitted. These dates were closed or already had overlapping availability: ${list}`
+        : "No availability was submitted.",
     closeDialog: false,
   };
 }

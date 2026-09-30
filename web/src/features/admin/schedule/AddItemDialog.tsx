@@ -7,44 +7,55 @@ import { Spinner } from "../../../components/Spinner";
 import { useConfirm } from "../../../components/useConfirm";
 import { useToast } from "../../../components/useToast";
 import {
-  fetchCloseDayCounts,
   fetchEditingRows,
   useAddDaysOff,
   useAddShifts,
-  useCloseDays,
+  useSetCustomHours,
+  useSetStandardHours,
 } from "../../../data/adminSchedule";
+import { useHoursData } from "../../../data/hours";
 import { useClosedDays, useEmployees } from "../../../data/schedule";
 import { formatChipDate, monthOf, type MonthKey } from "../../../lib/dates";
+import {
+  HOURS_CHOICE_LABELS,
+  HOURS_CHOICES,
+  specialHoursOn,
+  standardHoursOn,
+  type Hours,
+  type HoursChoice,
+} from "../../../lib/hours";
 import { DAY_PERIODS, formatPeriod } from "../../../lib/periods";
 import { toggleDate } from "../../../lib/requests";
-import { undoableCloseChange } from "../../../lib/scheduleChange";
+import { isEmptyChange, type ScheduleChange } from "../../../lib/scheduleChange";
 import {
-  ADD_ITEM_SAVE_LABELS,
   ADD_ITEM_TITLES,
   ADD_ITEM_TYPE_LABELS,
+  addItemSaveLabel,
   addPickerDay,
-  closeDaysConfirm,
-  closedDaysText,
   planAddSave,
   QUICK_SHIFTS,
   withoutClosedDates,
   type AddItemType,
 } from "../../../lib/scheduleEditing";
-import { formatShiftTime } from "../../../lib/time";
+import { formatShiftTime, toClock } from "../../../lib/time";
 import type { DayPeriod, Employee, ISODate } from "../../../lib/types";
 import { DatePicker } from "../../schedule/DatePicker";
 import { useAdminView } from "../useAdminView";
 import { useUndo } from "../undo/useUndo";
-import { confirmShiftDeletion } from "./scheduleConfirms";
+import { confirmShiftDeletion, keepFocusOnDay } from "./scheduleConfirms";
 import {
   addDaysOffLabel,
+  addHoursHint,
   addShiftsLabel,
-  alreadyClosedText,
-  closeDaysLabel,
+  alreadyStandardText,
   daysOffAddedText,
+  hoursErrorMessage,
+  hoursSaveText,
+  sameHoursText,
   scheduleError,
   shiftsAddedText,
 } from "./scheduleText";
+import { useMarkClosed } from "./useMarkClosed";
 import "../../../components/Field.css";
 import "./AddItemDialog.css";
 
@@ -54,9 +65,13 @@ export interface AddItemDialogProps {
   onClose(): void;
 }
 
-const TYPE_OPTIONS: readonly SegmentedOption<AddItemType>[] = (["shift", "day-off", "closed"] as const).map(
+const TYPE_OPTIONS: readonly SegmentedOption<AddItemType>[] = (["shift", "day-off", "hours"] as const).map(
   (value) => ({ value, label: ADD_ITEM_TYPE_LABELS[value] }),
 );
+const HOURS_OPTIONS: readonly SegmentedOption<HoursChoice>[] = HOURS_CHOICES.map((value) => ({
+  value,
+  label: HOURS_CHOICE_LABELS[value],
+}));
 const PERIOD_OPTIONS: readonly SegmentedOption<DayPeriod>[] = DAY_PERIODS.map((value) => ({
   value,
   label: formatPeriod(value),
@@ -69,9 +84,9 @@ const NO_EMPLOYEES: readonly Employee[] = [];
 let lastTimes = { start: "09:00", end: "17:00" };
 
 /**
- * "+ Add" on a calendar day: shifts, days off, or closed days, for several dates and
- * employees at once (D4). Each open starts as a Shift on the clicked date with nobody
- * picked, because the form is remounted whenever the dialog opens.
+ * "+ Add" on a calendar day: shifts, days off, or hours (standard, custom or closed), for
+ * several dates and employees at once (D4). Each open starts as a Shift on the clicked date
+ * with nobody picked, because the form is remounted whenever the dialog opens.
  */
 export function AddItemDialog({ date, onClose }: AddItemDialogProps) {
   if (date === null) return null;
@@ -82,6 +97,8 @@ function AddItemForm({ date, onClose }: { date: ISODate; onClose(): void }) {
   const formId = useId();
   const startId = useId();
   const endId = useId();
+  const openId = useId();
+  const closeId = useId();
   const datesLabelId = useId();
 
   const [type, setType] = useState<AddItemType>("shift");
@@ -91,6 +108,9 @@ function AddItemForm({ date, onClose }: { date: ISODate; onClose(): void }) {
   const [startTime, setStartTime] = useState(lastTimes.start);
   const [endTime, setEndTime] = useState(lastTimes.end);
   const [period, setPeriod] = useState<DayPeriod>("full-day");
+  const [hoursChoice, setHoursChoice] = useState<HoursChoice>("custom");
+  // Null until typed: the custom times follow the clicked day's current hours until then.
+  const [typedHours, setTypedHours] = useState<{ open: string; close: string } | null>(null);
   const [error, setError] = useState<{ id: number; text: string } | null>(null);
   const [busy, setBusy] = useState(false);
   const busyRef = useRef(false);
@@ -104,9 +124,12 @@ function AddItemForm({ date, onClose }: { date: ISODate; onClose(): void }) {
   const { today } = useAdminView();
   const employeesQuery = useEmployees();
   const closedQuery = useClosedDays();
+  const hours = useHoursData();
   const addShifts = useAddShifts();
   const addDaysOff = useAddDaysOff();
-  const closeDays = useCloseDays();
+  const setStandard = useSetStandardHours();
+  const setCustom = useSetCustomHours();
+  const markClosed = useMarkClosed();
   const undo = useUndo();
   const confirm = useConfirm();
   const toast = useToast();
@@ -116,6 +139,13 @@ function AddItemForm({ date, onClose }: { date: ISODate; onClose(): void }) {
   // New work goes to active employees only (C17, E10).
   const active = useMemo(() => employees.filter((e) => !e.archived), [employees]);
   const pickedIds = active.filter((e) => picked.has(e.id)).map((e) => e.id);
+  // Custom hours start from the clicked day's hours: its special hours, else its standard
+  // hours, else blank. They are separate from the Shift times remembered between opens.
+  const clickedHours = specialHoursOn(date, hours.data, closedDays) ?? standardHoursOn(hours.data.sets, date);
+  const hoursTimes = typedHours ?? {
+    open: toClock(clickedHours?.open) ?? "",
+    close: toClock(clickedHours?.close) ?? "",
+  };
 
   useEffect(() => {
     mounted.current = true;
@@ -145,8 +175,18 @@ function AddItemForm({ date, onClose }: { date: ISODate; onClose(): void }) {
 
   const changeType = (next: AddItemType) => {
     setType(next);
-    // Only Closed can pick closed days; the others drop them (the old page did the same).
-    if (next !== "closed") setDates((current) => withoutClosedDates(current, closedDays));
+    // Only Hours can pick closed days; the others drop them (the old page did the same).
+    if (next !== "hours") setDates((current) => withoutClosedDates(current, closedDays));
+    setError(null);
+  };
+
+  const changeHoursChoice = (next: HoursChoice) => {
+    setHoursChoice(next);
+    setError(null);
+  };
+
+  const changeHoursTimes = (open: string, close: string) => {
+    setTypedHours({ open, close });
     setError(null);
   };
 
@@ -188,27 +228,51 @@ function AddItemForm({ date, onClose }: { date: ISODate; onClose(): void }) {
     if (mounted.current) onClose();
   };
 
-  const markClosed = async (closeDates: ISODate[]) => {
-    const ask = closeDaysConfirm(closeDates, await fetchCloseDayCounts(closeDates));
-    if (!mounted.current) return;
-    if (ask) {
-      // Not busy while asking, so focus can come back to the button afterwards.
-      setWorking(false);
-      const ok = await confirm({ ...ask, confirmLabel: "Mark Closed", cancelLabel: "Cancel", tone: "danger" });
-      if (!ok || !mounted.current) return;
-      setWorking(true);
+  /** A failed write shows in the dialog, or as a toast once the dialog has gone. */
+  const report = (message: string) => {
+    if (mounted.current) showError(message);
+    else toast.show(message, "error");
+  };
+
+  const closeDates = async (closing: ISODate[]) => {
+    try {
+      const result = await markClosed(closing, { isMounted: () => mounted.current, setWorking });
+      if (result !== "done") return;
+      close();
+      // The clicked day's "+ Add" is replaced by "Reopen day"; keep keyboard focus there.
+      if (closing.includes(date)) keepFocusOnDay(date, ".admin-day-reopen");
+    } catch (caught) {
+      report(scheduleError(caught, { adding: true, employees }).message);
     }
-    const change = await closeDays.mutateAsync({ dates: closeDates });
-    const closedCount = change.inserted.closed_days.length;
-    // Closed can pick days that are closed already; what it clears off them can't be undone
-    // (and when every day was closed already, there is nothing to undo, so no step is added).
-    undo.push({ label: closeDaysLabel(closedCount), change: undoableCloseChange(change) });
-    if (closedCount > 0) {
-      toast.show(closedDaysText(closedCount), "success", { title: "Closed for Business" });
-    } else {
-      toast.show(alreadyClosedText(closeDates.length), "info");
+  };
+
+  /** An undo step and a success toast worded by what the change did (hoursSaveText). */
+  const announceHours = (hoursDates: ISODate[], change: ScheduleChange, custom: Hours | null) => {
+    const text = hoursSaveText(hoursDates, change, custom);
+    undo.push({ label: text.label, change });
+    toast.show(text.message, "success", { title: text.title });
+  };
+
+  const saveStandardHours = async (hoursDates: ISODate[]) => {
+    try {
+      const change = await setStandard.mutateAsync({ dates: hoursDates });
+      if (isEmptyChange(change)) toast.show(alreadyStandardText(hoursDates.length), "info");
+      else announceHours(hoursDates, change, null);
+      close();
+    } catch (caught) {
+      report(hoursErrorMessage(caught));
     }
-    close();
+  };
+
+  const saveCustomHours = async (hoursDates: ISODate[], open: string, closeTime: string) => {
+    try {
+      const change = await setCustom.mutateAsync({ dates: hoursDates, open, close: closeTime });
+      if (isEmptyChange(change)) toast.show(sameHoursText(hoursDates.length), "info");
+      else announceHours(hoursDates, change, { open, close: closeTime });
+      close();
+    } catch (caught) {
+      report(hoursErrorMessage(caught));
+    }
   };
 
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
@@ -216,8 +280,20 @@ function AddItemForm({ date, onClose }: { date: ISODate; onClose(): void }) {
     if (busyRef.current) return;
     setError(null);
 
-    const input = { type, dates, employeeIds: pickedIds, startTime, endTime, period, closedDays, employees };
-    // The quick checks (dates, employees, closed days, times) need no rows.
+    const input = {
+      type,
+      dates,
+      employeeIds: pickedIds,
+      startTime,
+      endTime,
+      period,
+      hoursChoice,
+      openTime: hoursTimes.open,
+      closeTime: hoursTimes.close,
+      closedDays,
+      employees,
+    };
+    // The quick checks (dates, hours, employees, closed days, times) need no rows.
     const first = planAddSave({ ...input, shifts: [], timeOff: [] });
     if (first.kind === "error") {
       showError(first.message);
@@ -226,8 +302,17 @@ function AddItemForm({ date, onClose }: { date: ISODate; onClose(): void }) {
 
     setWorking(true);
     try {
+      // Hours need no rows; each path reports its own errors.
       if (first.kind === "close-days") {
-        await markClosed(first.dates);
+        await closeDates(first.dates);
+        return;
+      }
+      if (first.kind === "standard-hours") {
+        await saveStandardHours(first.dates);
+        return;
+      }
+      if (first.kind === "custom-hours") {
+        await saveCustomHours(first.dates, first.open, first.close);
         return;
       }
       // Conflicts are checked against rows read now, not the calendar cache (C15).
@@ -279,7 +364,7 @@ function AddItemForm({ date, onClose }: { date: ISODate; onClose(): void }) {
             Saving...
           </>
         ) : (
-          ADD_ITEM_SAVE_LABELS[type]
+          addItemSaveLabel(type, hoursChoice)
         )}
       </Button>
     </>
@@ -297,10 +382,44 @@ function AddItemForm({ date, onClose }: { date: ISODate; onClose(): void }) {
             onChange={changeType}
           />
 
-          {type === "closed" ? (
-            <p className="add-item-hint">
-              Pick the days to close. Their shifts and time off are deleted; payroll records and availability are kept.
-            </p>
+          {type === "hours" ? (
+            <>
+              <SegmentedControl
+                label="Hours"
+                options={HOURS_OPTIONS}
+                value={hoursChoice}
+                onChange={changeHoursChoice}
+              />
+              {hoursChoice === "custom" ? (
+                <div className="add-item-times">
+                  <div className="field">
+                    <label htmlFor={openId} className="field-label">
+                      Open Time
+                    </label>
+                    <input
+                      id={openId}
+                      type="time"
+                      className="field-control"
+                      value={hoursTimes.open}
+                      onChange={(event) => changeHoursTimes(event.target.value, hoursTimes.close)}
+                    />
+                  </div>
+                  <div className="field">
+                    <label htmlFor={closeId} className="field-label">
+                      Close Time
+                    </label>
+                    <input
+                      id={closeId}
+                      type="time"
+                      className="field-control"
+                      value={hoursTimes.close}
+                      onChange={(event) => changeHoursTimes(hoursTimes.open, event.target.value)}
+                    />
+                  </div>
+                </div>
+              ) : null}
+              <p className="add-item-hint">{addHoursHint(hoursChoice)}</p>
+            </>
           ) : (
             <fieldset className="add-item-employees">
               <legend className="field-label">Employee(s)</legend>

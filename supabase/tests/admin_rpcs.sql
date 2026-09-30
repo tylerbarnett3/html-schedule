@@ -74,8 +74,8 @@ begin
 end;
 $$;
 
--- A fingerprint of the calendar and payroll tables, to check that an undo puts back exactly
--- what was there (same ids, same values, same updated_at).
+-- A fingerprint of the calendar, payroll and business hours tables, to check that an undo puts
+-- back exactly what was there (same ids, same values, same updated_at).
 create function pg_temp.schedule_state()
 returns text
 language sql
@@ -90,7 +90,11 @@ as $$
         (select string_agg(concat_ws(',', id, shift_id, employee_id, work_date, start_time, end_time, status, note), ';' order by id)
             from public.shift_actuals),
         (select string_agg(concat_ws(',', id, employee_id, available_date, period, status, reviewed_at), ';' order by id)
-            from public.availability)
+            from public.availability),
+        (select string_agg(concat_ws(',', hours_date, open_time, close_time, created_at, updated_at), ';' order by hours_date)
+            from public.custom_hours),
+        (select string_agg(concat_ws(',', id, starts_on, weekday, open_time, close_time, created_at, updated_at), ';' order by id)
+            from public.weekly_hours)
     ));
 $$;
 
@@ -120,7 +124,10 @@ begin
         and jsonb_typeof(p_change #> '{deleted,shifts}') = 'array'
         and jsonb_typeof(p_change #> '{deleted,time_off}') = 'array'
         and jsonb_typeof(p_change #> '{deleted,closed_days}') = 'array'
-        and jsonb_typeof(p_change #> '{deleted,actual_links}') = 'array',
+        and jsonb_typeof(p_change #> '{deleted,actual_links}') = 'array'
+        and jsonb_typeof(p_change #> '{inserted,custom_hours}') = 'array'
+        and jsonb_typeof(p_change #> '{updated,custom_hours}') = 'array'
+        and jsonb_typeof(p_change #> '{deleted,custom_hours}') = 'array',
         'change is missing a key: ' || p_change::text;
 end;
 $$;
@@ -808,7 +815,9 @@ $$;
 rollback to savepoint t;
 
 -- That holds whichever side of an older clash was saved last, as after the Wix import (time off
--- first, then shifts): deleting either side of Avery's +5 day off and 12-6 shift can be undone.
+-- first, then shifts): deleting either side of Avery's +5 day off and her shift that day can be
+-- undone. The seed rotates shift times and working days by date, so her shift that day may start
+-- at any seeded time or be missing (the test then adds a 12-6 one).
 savepoint t;
 do $$
 declare
@@ -822,8 +831,14 @@ begin
     select id into day_off from public.time_off
     where employee_id = avery and off_date = today + 5 and period = 'full-day' and status = 'approved';
     select id into shift_id from public.shifts
-    where employee_id = avery and shift_date = today + 5 and start_time = '12:00';
-    assert day_off is not null and shift_id is not null, 'seed needs Avery''s +5 day off and 12-6 shift';
+    where employee_id = avery and shift_date = today + 5
+    order by start_time limit 1;
+    if shift_id is null then
+        insert into public.shifts (employee_id, shift_date, start_time, end_time)
+        values (avery, today + 5, '12:00', '18:00')
+        returning id into shift_id;
+    end if;
+    assert day_off is not null, 'seed needs Avery''s +5 day off';
 
     perform set_config('schedule.keep_updated_at', 'on', true);
     update public.time_off set updated_at = now() - interval '10 minutes' where id = day_off;

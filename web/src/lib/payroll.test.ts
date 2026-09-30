@@ -5,6 +5,7 @@ import {
   applyRowAction,
   buildPristineRows,
   canResetRow,
+  canUseLoggedHours,
   compareDraftRows,
   dayTab,
   dayTabKeyTarget,
@@ -13,6 +14,7 @@ import {
   findInvalidRow,
   formatActualDifference,
   formatActualHours,
+  formatDuration,
   formatPayrollDecimalHours,
   isFutureWorkDate,
   lastSavedText,
@@ -253,6 +255,16 @@ describe("formatActualDifference", () => {
     [-1440, "−24 hr"],
   ])("%s -> %s", (minutes, expected) => {
     expect(formatActualDifference(minutes)).toBe(expected);
+  });
+});
+
+describe("formatDuration", () => {
+  it("writes hours and minutes", () => {
+    expect(formatDuration(375)).toBe("6h 15m");
+    expect(formatDuration(480)).toBe("8h");
+    expect(formatDuration(15)).toBe("15m");
+    expect(formatDuration(1330)).toBe("22h 10m");
+    expect(formatDuration(0)).toBe("0m");
   });
 });
 
@@ -707,6 +719,58 @@ describe("applyRowAction and deriveActualStatus", () => {
   });
 });
 
+describe("use-logged (Use logged hours)", () => {
+  const start = scheduled("shift:s4"); // e2, Sep 16, 12:00-18:00, not reviewed
+  const late = { employeeId: "e2", start: "12:00", end: "18:10" };
+
+  it("fills in the logged times: adjusted, or as scheduled when they match", () => {
+    expect(apply(start, { type: "use-logged", ...late })).toMatchObject({
+      status: "adjusted",
+      employeeId: "e2",
+      start: "12:00",
+      end: "18:10",
+    });
+    expect(apply(start, { type: "use-logged", employeeId: "e2", start: "12:00", end: "18:00" })).toMatchObject({
+      status: "confirmed",
+    });
+  });
+
+  it("takes the employee who logged them", () => {
+    expect(apply(start, { type: "use-logged", ...late, employeeId: "e1" })).toMatchObject({
+      status: "adjusted",
+      employeeId: "e1",
+    });
+  });
+
+  it("undoes Vacated and keeps the note", () => {
+    const vacated = apply(start, { type: "vacate" }, { type: "set-note", note: "Sick" });
+    expect(apply(vacated, { type: "use-logged", ...late })).toMatchObject({
+      status: "adjusted",
+      employeeId: "e2",
+      start: "12:00",
+      end: "18:10",
+      note: "Sick",
+    });
+  });
+
+  it("is only offered when it would change something", () => {
+    // Not reviewed yet: even hours that match the schedule set an outcome.
+    expect(canUseLoggedHours(start, { employeeId: "e2", start: "12:00", end: "18:00" }, TODAY)).toBe(true);
+    const used = apply(start, { type: "use-logged", ...late });
+    expect(canUseLoggedHours(used, late, TODAY)).toBe(false);
+    expect(applyRowAction(used, { type: "use-logged", ...late }, TODAY)).toBe(used);
+    expect(canUseLoggedHours(used, { ...late, end: "18:15" }, TODAY)).toBe(true);
+  });
+
+  it("does nothing on a future day or on work off the schedule", () => {
+    const future = scheduled("shift:s5");
+    expect(canUseLoggedHours(future, { employeeId: "e1", start: "09:00", end: "17:10" }, TODAY)).toBe(false);
+    const unscheduled = actualOnly("actual:u1");
+    const action: RowAction = { type: "use-logged", employeeId: "e1", start: "10:00", end: "13:00" };
+    expect(applyRowAction(unscheduled, action, TODAY)).toBe(unscheduled);
+  });
+});
+
 describe("reset (canResetRow and rowsEqual)", () => {
   it("nothing to reset on an untouched row; something after an edit", () => {
     const s4 = scheduled("shift:s4");
@@ -1026,11 +1090,18 @@ describe("row text", () => {
   });
 
   it("scheduledLine", () => {
-    expect(scheduledLine(row("shift:s1"))).toBe("Scheduled · 9:00 AM – 5:00 PM");
+    expect(scheduledLine(row("shift:s1"))).toBe("Scheduled · 9:00 AM – 5:00 PM (8h)");
+    expect(scheduledLine(row("shift:s3"))).toBe("Scheduled · 11:00 AM – 5:00 PM (6h)");
     const overnight = scheduled("shift:s1");
     expect(
       scheduledLine({ ...overnight, shift: { ...overnight.shift, start_time: "22:00:00", end_time: "02:00:00" } }),
-    ).toBe("Scheduled · 10:00 PM – 2:00 AM");
+    ).toBe("Scheduled · 10:00 PM – 2:00 AM (4h)");
+    expect(
+      scheduledLine({ ...overnight, shift: { ...overnight.shift, start_time: "09:15:00", end_time: "17:00:00" } }),
+    ).toBe("Scheduled · 9:15 AM – 5:00 PM (7h 45m)");
+    expect(
+      scheduledLine({ ...overnight, shift: { ...overnight.shift, start_time: "12:00:00", end_time: "12:45:00" } }),
+    ).toBe("Scheduled · 12:00 PM – 12:45 PM (45m)");
     expect(scheduledLine(actualOnly("actual:u1"))).toBe("Not originally scheduled");
     const orphan = actual("o1", {
       employee_id: "e2",

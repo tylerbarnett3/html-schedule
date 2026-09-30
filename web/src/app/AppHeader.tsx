@@ -7,9 +7,11 @@ import "./AppHeader.css";
 export interface AppHeaderProps {
   /** The page's call-to-action buttons, shown under the title (use <Button variant="gold">). */
   actions?: ReactNode;
+  /** Shown in the top left corner, across from the account (Export Backup on the admin pages). */
+  corner?: ReactNode;
 }
 
-export function AppHeader({ actions }: AppHeaderProps) {
+export function AppHeader({ actions, corner }: AppHeaderProps) {
   const auth = useAuth();
   const { signingOut, signOut } = useSignOut();
   const onSchedulePage = useMatch("/") !== null;
@@ -27,6 +29,7 @@ export function AppHeader({ actions }: AppHeaderProps) {
 
   return (
     <header className="app-header">
+      {corner ? <div className="app-header-corner">{corner}</div> : null}
       {accountName !== null ? (
         <div className="app-header-account">
           <span className="app-header-user">

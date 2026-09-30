@@ -2,9 +2,9 @@ import { describe, expect, it } from "vitest";
 import type { DayCard } from "./calendar";
 import { addDays } from "./dates";
 import {
-  ADD_ITEM_SAVE_LABELS,
   ADD_ITEM_TITLES,
   ADD_ITEM_TYPE_LABELS,
+  addItemSaveLabel,
   addPickerDay,
   buildDuplicateDayOffMessage,
   buildPendingBlockMessage,
@@ -102,9 +102,17 @@ function check(employeeId: string, date: string, startTime: string, endTime: str
 
 describe("labels and shortcuts", () => {
   it("names each add type", () => {
-    expect(ADD_ITEM_TYPE_LABELS).toEqual({ shift: "Shift", "day-off": "Day Off", closed: "Closed" });
-    expect(ADD_ITEM_TITLES).toEqual({ shift: "Add Shift", "day-off": "Add Day Off", closed: "Add Closed Day" });
-    expect(ADD_ITEM_SAVE_LABELS).toEqual({ shift: "Add Shift", "day-off": "Add Day Off", closed: "Mark Closed" });
+    expect(ADD_ITEM_TYPE_LABELS).toEqual({ shift: "Shift", "day-off": "Day Off", hours: "Hours" });
+    expect(ADD_ITEM_TITLES).toEqual({ shift: "Add Shift", "day-off": "Add Day Off", hours: "Set Hours" });
+  });
+
+  it("labels the save button by type, and for Hours by the choice", () => {
+    expect(addItemSaveLabel("shift", "custom")).toBe("Add Shift");
+    expect(addItemSaveLabel("shift", "closed")).toBe("Add Shift");
+    expect(addItemSaveLabel("day-off", "standard")).toBe("Add Day Off");
+    expect(addItemSaveLabel("hours", "standard")).toBe("Set Standard Hours");
+    expect(addItemSaveLabel("hours", "custom")).toBe("Set Custom Hours");
+    expect(addItemSaveLabel("hours", "closed")).toBe("Mark Closed");
   });
 
   it("has the old quick shifts, in order", () => {
@@ -516,12 +524,13 @@ describe("Add dialog picker", () => {
       title: "Closed for business",
       marker: "closed",
     });
-    expect(addPickerDay("2026-10-09", closedDays, "closed")).toEqual({
+    expect(addPickerDay("2026-10-09", closedDays, "hours")).toEqual({
       disabled: false,
       title: "Closed for business",
       marker: "closed",
     });
     expect(addPickerDay("2020-01-01", closedDays, "day-off")).toEqual({ disabled: false });
+    expect(addPickerDay("2020-01-01", closedDays, "hours")).toEqual({ disabled: false });
   });
 
   it("drops closed dates", () => {
@@ -539,6 +548,9 @@ describe("planAddSave", () => {
       startTime: "09:30",
       endTime: "17:00",
       period: "full-day",
+      hoursChoice: "custom",
+      openTime: "09:00",
+      closeTime: "17:00",
       closedDays,
       shifts,
       timeOff: timeOffRows,
@@ -549,23 +561,89 @@ describe("planAddSave", () => {
   it("needs dates first", () => {
     expect(add({ dates: [] })).toEqual({ kind: "error", message: "Please select at least one date" });
     expect(add({ dates: [], employeeIds: [] })).toEqual({ kind: "error", message: "Please select at least one date" });
+    for (const hoursChoice of ["standard", "custom", "closed"] as const) {
+      expect(add({ type: "hours", hoursChoice, dates: [], employeeIds: [] })).toEqual({
+        kind: "error",
+        message: "Please select at least one date",
+      });
+    }
+    // Nothing but real dates counts.
+    expect(add({ type: "hours", hoursChoice: "closed", dates: ["", "10/09/2026"] })).toEqual({
+      kind: "error",
+      message: "Please select at least one date",
+    });
   });
 
   it("closes days without employees or times", () => {
-    expect(add({ type: "closed", dates: ["2026-10-09", "2026-10-10"], employeeIds: [], startTime: "" })).toEqual({
+    const closing = { type: "hours", hoursChoice: "closed" } as const;
+    expect(add({ ...closing, dates: ["2026-10-09", "2026-10-10"], employeeIds: [], startTime: "" })).toEqual({
       kind: "close-days",
       dates: ["2026-10-09", "2026-10-10"],
     });
-    expect(add({ type: "closed", dates: ["2026-10-10", "2026-10-09", "2026-10-10"] })).toEqual({
+    expect(add({ ...closing, dates: ["2026-10-10", "2026-10-09", "2026-10-10"] })).toEqual({
       kind: "close-days",
       dates: ["2026-10-09", "2026-10-10"],
+    });
+    // The custom times don't matter when closing.
+    expect(add({ ...closing, dates: ["2026-10-10"], openTime: "", closeTime: "" })).toEqual({
+      kind: "close-days",
+      dates: ["2026-10-10"],
     });
     expect(closedDaysText(2)).toBe("2 days marked closed");
   });
 
+  it("puts days back on standard hours, closed days included, without employees or times", () => {
+    expect(
+      add({
+        type: "hours",
+        hoursChoice: "standard",
+        dates: ["2026-10-10", "2026-10-09", "2026-10-10"],
+        employeeIds: [],
+        openTime: "",
+        closeTime: "",
+      }),
+    ).toEqual({ kind: "standard-hours", dates: ["2026-10-09", "2026-10-10"] });
+  });
+
+  it("gives days custom hours as 'HH:MM', closed days included", () => {
+    expect(
+      add({
+        type: "hours",
+        hoursChoice: "custom",
+        dates: ["2026-10-31", "2026-10-09", "2026-10-31"],
+        employeeIds: [],
+        openTime: "09:00:00",
+        closeTime: "13:30",
+      }),
+    ).toEqual({ kind: "custom-hours", dates: ["2026-10-09", "2026-10-31"], open: "09:00", close: "13:30" });
+    // The shift times and the shift checks play no part.
+    expect(
+      add({ type: "hours", dates: ["2026-09-30"], startTime: "", endTime: "", openTime: "10:00", closeTime: "19:00" }),
+    ).toEqual({ kind: "custom-hours", dates: ["2026-09-30"], open: "10:00", close: "19:00" });
+  });
+
+  it("checks the custom times: both needed, close after open", () => {
+    const custom = { type: "hours", hoursChoice: "custom", dates: ["2026-10-31"], employeeIds: [] } as const;
+    const missing = { kind: "error", message: "Please fill in open and close times" };
+    const order = { kind: "error", message: "Close time must be after open time." };
+    expect(add({ ...custom, openTime: "", closeTime: "17:00" })).toEqual(missing);
+    expect(add({ ...custom, openTime: "09:00", closeTime: "" })).toEqual(missing);
+    expect(add({ ...custom, openTime: "9am", closeTime: "17:00" })).toEqual(missing);
+    expect(add({ ...custom, openTime: "17:00", closeTime: "09:00" })).toEqual(order);
+    expect(add({ ...custom, openTime: "09:00", closeTime: "09:00:00" })).toEqual(order);
+  });
+
   it("checks employees, then closed dates, then times", () => {
     expect(add({ employeeIds: [] })).toEqual({ kind: "error", message: "Please select at least one employee" });
+    expect(add({ type: "day-off", employeeIds: [] })).toEqual({
+      kind: "error",
+      message: "Please select at least one employee",
+    });
     expect(add({ dates: ["2026-10-09"], startTime: "" })).toEqual({
+      kind: "error",
+      message: "Reopen closed business days before adding shifts.",
+    });
+    expect(add({ type: "day-off", dates: ["2026-10-02", "2026-10-09"] })).toEqual({
       kind: "error",
       message: "Reopen closed business days before adding shifts.",
     });

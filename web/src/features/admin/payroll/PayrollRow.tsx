@@ -1,6 +1,8 @@
 import { memo } from "react";
+import { payrollLoggedLine, type HourLog } from "../../../lib/hourLogs";
 import {
   canResetRow,
+  canUseLoggedHours,
   isFutureWorkDate,
   lastSavedText,
   NOTE_MAX_LENGTH,
@@ -13,6 +15,7 @@ import {
   type DraftRow,
   type RowAction,
 } from "../../../lib/payroll";
+import { toClock } from "../../../lib/time";
 import type { Employee, ISODate } from "../../../lib/types";
 import { payrollFieldId, type PayrollRowField } from "./payrollFieldId";
 import "./PayrollRow.css";
@@ -23,6 +26,10 @@ export interface PayrollRowProps {
   pristine: DraftRow | undefined;
   /** Whose row it is: the scheduled employee, or who the work was added for. */
   ownerName: string;
+  /** The hours the employee logged for this shift, if any (scheduled rows only). */
+  log: HourLog | null;
+  /** Who logged them, when that isn't the scheduled employee (the shift changed hands since). */
+  loggedBy: string | null;
   /** Every employee, archived included, for "Actual employee". */
   employees: readonly Employee[];
   today: ISODate;
@@ -39,6 +46,8 @@ export const PayrollRow = memo(function PayrollRow({
   row,
   pristine,
   ownerName,
+  log,
+  loggedBy,
   employees,
   today,
   idPrefix,
@@ -60,7 +69,12 @@ export const PayrollRow = memo(function PayrollRow({
   const ownerId = `${idPrefix}-${row.key}-owner`;
   const outcomeId = `${idPrefix}-${row.key}-outcome`;
   const hintId = `${idPrefix}-${row.key}-hint`;
+  const loggedId = `${idPrefix}-${row.key}-logged`;
   const act = (action: RowAction) => onAction(row.key, action);
+  const logged =
+    log && row.kind === "scheduled"
+      ? { employeeId: log.employee_id, start: toClock(log.start_time) ?? "", end: toClock(log.end_time) ?? "" }
+      : null;
 
   const classes = ["payroll-row"];
   if (row.status) classes.push(`is-${row.status}`);
@@ -159,6 +173,25 @@ export const PayrollRow = memo(function PayrollRow({
               </button>
             </div>
           )}
+          {log && logged && row.kind === "scheduled" ? (
+            <div className="payroll-row-logged">
+              <div id={loggedId}>
+                <p className="payroll-row-logged-line">{payrollLoggedLine(log, row.shift, loggedBy)}</p>
+                {log.note ? <p className="payroll-row-logged-note">“{log.note}”</p> : null}
+              </div>
+              {/* aria-disabled once used, so focus stays on the button instead of dropping to the page. */}
+              <button
+                type="button"
+                className="payroll-mini-btn payroll-use-logged"
+                aria-describedby={loggedId}
+                aria-disabled={!canUseLoggedHours(row, logged, today) || undefined}
+                disabled={disabled}
+                onClick={() => act({ type: "use-logged", ...logged })}
+              >
+                Use logged hours
+              </button>
+            </div>
+          ) : null}
         </div>
       </div>
 

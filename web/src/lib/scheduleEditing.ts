@@ -1,32 +1,46 @@
 // Rules and messages for the admin's schedule edits: adding shifts and days off, the Edit
-// dialog, drag and drop, and closing days. Pure functions over rows fetched at save time,
+// dialog, drag and drop, and setting a date's hours (closing days included). Pure functions over rows fetched at save time,
 // so the dialogs and the calendar decide the same way. The database enforces the rest.
 
 import type { DayCard } from "./calendar";
 import { formatChipDate, formatDateList, formatShortDate, isISODate } from "./dates";
+import { checkHoursTimes, type HoursChoice } from "./hours";
 import { formatPeriod, normalizePeriod, periodCoversShiftStart, periodSortValue, periodsConflict } from "./periods";
 import { absoluteShiftInterval, compareTimes, formatShiftTime, intervalsOverlap, timeToMinutes, toClock } from "./time";
 import type { Availability, DayPeriod, Employee, ISODate, PgTime, Shift, TimeOff } from "./types";
 
-export type AddItemType = "shift" | "day-off" | "closed";
+/** The Add dialog's types. Hours sets several dates to standard hours, custom hours or closed. */
+export type AddItemType = "shift" | "day-off" | "hours";
 
 export const ADD_ITEM_TYPE_LABELS: Record<AddItemType, string> = {
   shift: "Shift",
   "day-off": "Day Off",
-  closed: "Closed",
+  hours: "Hours",
 };
 
 export const ADD_ITEM_TITLES: Record<AddItemType, string> = {
   shift: "Add Shift",
   "day-off": "Add Day Off",
-  closed: "Add Closed Day",
+  hours: "Set Hours",
 };
 
-export const ADD_ITEM_SAVE_LABELS: Record<AddItemType, string> = {
-  shift: "Add Shift",
-  "day-off": "Add Day Off",
+const HOURS_SAVE_LABELS: Readonly<Record<HoursChoice, string>> = {
+  standard: "Set Standard Hours",
+  custom: "Set Custom Hours",
   closed: "Mark Closed",
 };
+
+/** Add Shift | Add Day Off | Set Standard Hours | Set Custom Hours | Mark Closed */
+export function addItemSaveLabel(type: AddItemType, choice: HoursChoice): string {
+  switch (type) {
+    case "shift":
+      return "Add Shift";
+    case "day-off":
+      return "Add Day Off";
+    case "hours":
+      return HOURS_SAVE_LABELS[choice];
+  }
+}
 
 /** The Add dialog's shortcuts; label each with formatShiftTime. */
 export const QUICK_SHIFTS: readonly { start: PgTime; end: PgTime }[] = [
@@ -513,17 +527,20 @@ export function buildPendingBlockMessage(blocks: readonly TimeOffKey[], employee
 // ---------------------------------------------------------------------------
 // Add dialog
 
-/** A day in the Add dialog's picker. Closed days can be picked only to mark them closed. */
+/**
+ * A day in the Add dialog's picker. Closed days can be picked only with Hours (any choice:
+ * standard and custom hours reopen them, and closing them again changes nothing).
+ */
 export function addPickerDay(
   date: ISODate,
   closedDays: ReadonlySet<ISODate>,
   type: AddItemType,
 ): { disabled: boolean; title?: string; marker?: "closed" } {
   if (!closedDays.has(date)) return { disabled: false };
-  return { disabled: type !== "closed", title: CLOSED_DAY_TITLE, marker: "closed" };
+  return { disabled: type !== "hours", title: CLOSED_DAY_TITLE, marker: "closed" };
 }
 
-/** Switching the Add dialog away from Closed drops the closed dates. */
+/** Switching the Add dialog away from Hours drops the closed dates. */
 export function withoutClosedDates(selected: readonly ISODate[], closedDays: ReadonlySet<ISODate>): ISODate[] {
   return selected.filter((d) => !closedDays.has(d));
 }
@@ -534,6 +551,9 @@ type NewDayOffRow = { employee_id: string; off_date: ISODate; period: DayPeriod 
 export type AddPlan =
   | { kind: "error"; message: string }
   | { kind: "close-days"; dates: ISODate[] }
+  | { kind: "standard-hours"; dates: ISODate[] }
+  /** open and close as 'HH:MM'. */
+  | { kind: "custom-hours"; dates: ISODate[]; open: string; close: string }
   | { kind: "add-shifts"; rows: NewShiftRow[] }
   | { kind: "add-days-off"; rows: NewDayOffRow[]; deleteShiftIds: string[]; confirmMessage: string | null };
 
@@ -570,11 +590,27 @@ function planDayOff(input: {
   };
 }
 
+/** Hours for the picked dates: close them, put them back on standard hours, or give them custom hours. */
+function planHours(dates: ISODate[], choice: HoursChoice, openTime: string, closeTime: string): AddPlan {
+  switch (choice) {
+    case "closed":
+      return { kind: "close-days", dates };
+    case "standard":
+      return { kind: "standard-hours", dates };
+    case "custom": {
+      const times = checkHoursTimes(openTime, closeTime);
+      if (!times.ok) return { kind: "error", message: times.message };
+      return { kind: "custom-hours", dates, open: times.open, close: times.close };
+    }
+  }
+}
+
 /**
- * Checks the Add dialog in the old page's order and says what to write: dates; Closed marks
- * the dates closed; employees; closed dates; for shifts the times, start ≠ end and conflicts;
- * for days off pending requests, overlapping days off, then a confirm for deleted shifts.
- * Rows go date by date, employees in the given order.
+ * Checks the Add dialog in the old page's order and says what to write: dates; Hours closes
+ * the dates, puts them back on standard hours or checks the custom times (no employees
+ * needed, and closed dates are allowed); employees; closed dates; for shifts the times,
+ * start ≠ end and conflicts; for days off pending requests, overlapping days off, then a
+ * confirm for deleted shifts. Rows go date by date, employees in the given order.
  */
 export function planAddSave(input: {
   type: AddItemType;
@@ -583,6 +619,9 @@ export function planAddSave(input: {
   startTime: string;
   endTime: string;
   period: DayPeriod;
+  hoursChoice: HoursChoice;
+  openTime: string;
+  closeTime: string;
   closedDays: ReadonlySet<ISODate>;
   shifts: readonly Shift[];
   timeOff: readonly TimeOff[];
@@ -590,49 +629,52 @@ export function planAddSave(input: {
 }): AddPlan {
   const dates = sortedDates(input.dates);
   if (dates.length === 0) return { kind: "error", message: NO_DATES };
-  if (input.type === "closed") return { kind: "close-days", dates };
+  if (input.type === "hours") return planHours(dates, input.hoursChoice, input.openTime, input.closeTime);
 
   const employeeIds = uniqueValues(input.employeeIds.filter((id) => id !== ""));
   if (employeeIds.length === 0) return { kind: "error", message: NO_EMPLOYEES };
   if (dates.some((d) => input.closedDays.has(d))) return { kind: "error", message: ADD_ON_CLOSED_DAY };
 
-  if (input.type === "shift") {
-    const times = checkShiftTimes(input.startTime, input.endTime);
-    if ("error" in times) return { kind: "error", message: times.error };
-    const conflicts = getShiftSubmissionConflicts({
-      employeeIds,
-      dates,
-      startTime: times.start,
-      endTime: times.end,
-      shifts: input.shifts,
-      timeOff: input.timeOff,
-      employees: input.employees,
-    });
-    if (conflicts.length > 0) return { kind: "error", message: buildShiftConflictMessage(conflicts) };
-    const { start, end } = times;
-    return {
-      kind: "add-shifts",
-      rows: dates.flatMap((date) =>
-        employeeIds.map((employee_id) => ({ employee_id, shift_date: date, start_time: start, end_time: end })),
-      ),
-    };
+  switch (input.type) {
+    case "shift": {
+      const times = checkShiftTimes(input.startTime, input.endTime);
+      if ("error" in times) return { kind: "error", message: times.error };
+      const conflicts = getShiftSubmissionConflicts({
+        employeeIds,
+        dates,
+        startTime: times.start,
+        endTime: times.end,
+        shifts: input.shifts,
+        timeOff: input.timeOff,
+        employees: input.employees,
+      });
+      if (conflicts.length > 0) return { kind: "error", message: buildShiftConflictMessage(conflicts) };
+      const { start, end } = times;
+      return {
+        kind: "add-shifts",
+        rows: dates.flatMap((date) =>
+          employeeIds.map((employee_id) => ({ employee_id, shift_date: date, start_time: start, end_time: end })),
+        ),
+      };
+    }
+    case "day-off": {
+      const period = normalizePeriod(input.period);
+      const plan = planDayOff({
+        employeeIds,
+        dates,
+        period,
+        shifts: input.shifts,
+        timeOff: input.timeOff,
+        employees: input.employees,
+      });
+      if ("error" in plan) return { kind: "error", message: plan.error };
+      return {
+        kind: "add-days-off",
+        rows: dates.flatMap((date) => employeeIds.map((employee_id) => ({ employee_id, off_date: date, period }))),
+        ...plan,
+      };
+    }
   }
-
-  const period = normalizePeriod(input.period);
-  const plan = planDayOff({
-    employeeIds,
-    dates,
-    period,
-    shifts: input.shifts,
-    timeOff: input.timeOff,
-    employees: input.employees,
-  });
-  if ("error" in plan) return { kind: "error", message: plan.error };
-  return {
-    kind: "add-days-off",
-    rows: dates.flatMap((date) => employeeIds.map((employee_id) => ({ employee_id, off_date: date, period }))),
-    ...plan,
-  };
 }
 
 // ---------------------------------------------------------------------------

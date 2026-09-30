@@ -4,7 +4,7 @@
 
 A backup contains:
 
-- `public-data.sql`: every row in the schedule tables (employees, rates, shifts, time off, availability, actuals, closed days, admins)
+- `public-data.sql`: every row in the schedule tables (employees, rates, shifts, time off, availability, actuals, closed days, business hours (weekly and per date), logged hours, admins)
 - `auth-users.sql`: the logins, so employees keep their usernames and passwords after a restore
 - `public-schema.sql`: the table definitions at the time of the backup, for reference
 

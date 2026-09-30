@@ -24,9 +24,6 @@ import {
 } from "../../../lib/adminRequests";
 import { buildShiftDeletionMessage, getApprovalConflicts, uniqueShiftIds } from "../../../lib/scheduleEditing";
 
-/** The Requests drawer's toggle, so the toolbar's Requests button can move focus to it (D11). */
-export const REQUESTS_TOGGLE_ID = "admin-requests-toggle";
-
 export type ReviewAction = "approve" | "deny" | "remove";
 
 export interface RequestReview {

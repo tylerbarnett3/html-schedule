@@ -1,4 +1,4 @@
-/* Add Shift / Add Day Off / Add Closed Day (admin design spec §4.4 A, decision D4): the form
+/* Add Shift / Add Day Off / Set Hours (admin design spec §4.4 A, decision D4): the form
    beside the date picker at 900px and wider, one column below that. The Modal makes it a
    full-height sheet on phones. */
 .add-item-form {

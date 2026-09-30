@@ -4,12 +4,11 @@
 import { useMutation, useQueryClient, type UseMutationResult } from "@tanstack/react-query";
 import type { Json } from "../lib/database.types";
 import { addDays } from "../lib/dates";
-import { parseScheduleChange, reopenChange, toChangeJson, type ScheduleChange } from "../lib/scheduleChange";
+import { parseScheduleChange, toChangeJson, type ScheduleChange } from "../lib/scheduleChange";
 import { supabase, type DayPeriod } from "../lib/supabase";
 import { toClock } from "../lib/time";
 import type { ISODate, PgTime, Shift, TimeOff } from "../lib/types";
 import { ADMIN_NETWORK_MODE, invalidateAdminData, waitForRefresh } from "./adminKeys";
-import { SCHEDULE_INFO_CODES } from "./errors";
 import { fetchAll, SHIFT_COLUMNS, TIME_OFF_COLUMNS, toError, toTimeOffRow } from "./schedule";
 
 export type NewShift = { employee_id: string; shift_date: ISODate; start_time: PgTime; end_time: PgTime };
@@ -140,7 +139,6 @@ function useScheduleMutation<V>(write: (variables: V) => Promise<ScheduleChange>
   return useMutation({
     mutationFn: write,
     networkMode: ADMIN_NETWORK_MODE,
-    meta: { infoCodes: SCHEDULE_INFO_CODES },
     // Also after errors: the write may have reached the database even if the reply was lost.
     onSettled: (_data, error) => waitForRefresh(invalidateAdminData(client), error),
   });
@@ -259,24 +257,31 @@ export function useDeleteScheduleItems(): M<{ shiftIds?: string[]; timeOffIds?: 
   );
 }
 
-/** inserted.closed_days lists only the days that weren't closed already. */
+/** inserted.closed_days lists only the days that weren't closed already. Custom hours on the days are cleared too. */
 export function useCloseDays(): M<{ dates: ISODate[] }> {
   return useScheduleMutation(async ({ dates }) =>
     toChange(await supabase.rpc("admin_close_days", { p_dates: dates })),
   );
 }
 
-/** Reopening deletes the closed_days rows; the change lists only the days that were closed. */
-export function useReopenDays(): M<{ dates: ISODate[] }> {
-  return useScheduleMutation(async ({ dates }) => {
-    const { data, error } = await supabase
-      .from("closed_days")
-      .delete()
-      .in("closed_date", dates)
-      .select("closed_date");
-    if (error) throw toError(error);
-    return reopenChange(data.map((row) => row.closed_date));
-  });
+/** admin_set_custom_hours; closed dates are reopened, hours equal to standard clear the row. */
+export function useSetCustomHours(): M<{ dates: ISODate[]; open: PgTime; close: PgTime }> {
+  return useScheduleMutation(async ({ dates, open, close }) =>
+    toChange(
+      await supabase.rpc("admin_set_custom_hours", {
+        p_dates: dates,
+        p_open_time: clock(open),
+        p_close_time: clock(close),
+      }),
+    ),
+  );
+}
+
+/** admin_set_standard_hours; also the "Reopen day" button. Reopens closed dates and clears custom hours. */
+export function useSetStandardHours(): M<{ dates: ISODate[] }> {
+  return useScheduleMutation(async ({ dates }) =>
+    toChange(await supabase.rpc("admin_set_standard_hours", { p_dates: dates })),
+  );
 }
 
 /** Reverses a change. Fails with undo_stale, changing nothing, when the rows changed since. */

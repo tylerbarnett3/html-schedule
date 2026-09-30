@@ -11,6 +11,7 @@ import {
   type CalendarInput,
   type DayCard,
 } from "./calendar";
+import type { Hours, HoursData, HoursSet } from "./hours";
 import type { Availability, Employee, Shift, TimeOff } from "./types";
 
 const D = "2026-10-05";
@@ -225,7 +226,7 @@ describe("what a day shows", () => {
         }),
       ),
     );
-    expect(day).toEqual({ date: D, closed: true, isToday: false, cards: [] });
+    expect(day).toEqual({ date: D, closed: true, isToday: false, cards: [], specialHours: null });
   });
 
   it("shows no cards with an empty employee filter but keeps closed days", () => {
@@ -372,6 +373,47 @@ describe("days in the range", () => {
     const tuesday = shift(avery.id, "09:00:00", "17:00:00", { shift_date: "2026-10-06" });
     const days = buildCalendarDays(input({ range: { start: "2026-10-05", end: "2026-10-06" }, shifts: [tuesday, monday] }));
     expect(days.map((d) => rowIds(d.cards))).toEqual([[monday.id], [tuesday.id]]);
+  });
+});
+
+describe("special hours", () => {
+  const range = { start: "2026-10-29", end: "2026-10-31" }; // Thursday to Saturday
+  const weekday: Hours = { open: "11:00:00", close: "21:00:00" };
+  const saturday: Hours = { open: "10:00:00", close: "18:00:00" };
+  const oct: HoursSet = {
+    startsOn: "2026-10-01",
+    days: { 0: weekday, 1: weekday, 2: weekday, 3: weekday, 4: weekday, 5: weekday, 6: saturday },
+  };
+  const hours: HoursData = {
+    sets: [oct],
+    custom: new Map([
+      ["2026-10-29", { open: "11:00", close: "21:00" }], // equal to the standard
+      ["2026-10-30", { open: "09:00:00", close: "17:00:00" }],
+      ["2026-10-31", { open: "09:00:00", close: "13:00:00" }],
+    ]),
+  };
+
+  it("gives an open day custom hours that differ from the standard", () => {
+    const days = buildCalendarDays(input({ range, hours }));
+    expect(days.map((d) => d.specialHours)).toEqual([
+      null,
+      { open: "09:00:00", close: "17:00:00" },
+      { open: "09:00:00", close: "13:00:00" },
+    ]);
+  });
+
+  it("never gives a closed day hours", () => {
+    const days = buildCalendarDays(input({ range, hours, closedDays: new Set(["2026-10-31"]) }));
+    expect(days.map((d) => [d.closed, d.specialHours])).toEqual([
+      [false, null],
+      [false, { open: "09:00:00", close: "17:00:00" }],
+      [true, null],
+    ]);
+  });
+
+  it("shows no hours without the hours input", () => {
+    const days = buildCalendarDays(input({ range, closedDays: new Set(["2026-10-31"]) }));
+    expect(days.map((d) => d.specialHours)).toEqual([null, null, null]);
   });
 });
 

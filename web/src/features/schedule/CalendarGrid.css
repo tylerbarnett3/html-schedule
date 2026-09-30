@@ -81,6 +81,62 @@
   box-shadow: inset 0 0 0 1px rgba(216, 169, 79, 0.65);
 }
 
+/* A day whose hours differ from the standard: the hours follow the date, and wrap under it
+   in narrow cells. Lines break only at " - " or before the hours. */
+.calendar-day-title {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  column-gap: 0.35em;
+  row-gap: 2px;
+  min-width: 0;
+}
+
+.calendar-day-hours {
+  color: var(--clay-800);
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0;
+}
+
+.calendar-day-time {
+  white-space: nowrap;
+}
+
+/* Admin page: the heading is a button that opens the day's hours. It takes the heading's
+   layout and padding, so it looks exactly like the employee page's until hovered. The
+   compound selector beats the media-query padding further down. */
+.calendar-day-header.calendar-day-header-openable {
+  padding: 0;
+}
+
+.calendar-day-header-button {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-6);
+  width: 100%;
+  min-width: 0;
+  padding: var(--space-8);
+  font: inherit;
+  color: inherit;
+  letter-spacing: inherit;
+  text-align: left;
+  background: none;
+  border: none;
+  cursor: pointer;
+}
+
+/* The day card clips overflow, so draw the focus ring inside the header. */
+.calendar-day-header-button:focus-visible {
+  outline-offset: -3px;
+}
+
+.calendar-day-header-button:hover .calendar-day-date {
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
 .calendar-today-tag {
   flex: 0 0 auto;
   padding: 2px 7px;
@@ -200,6 +256,10 @@
     font-size: 15px;
   }
 
+  .calendar-day-header-button {
+    padding: var(--space-8) var(--space-6);
+  }
+
   .calendar-day-body {
     padding: var(--space-6);
   }
@@ -223,6 +283,15 @@
     padding: var(--space-12) var(--space-14);
     font-size: 14px;
     line-height: 1.25;
+  }
+
+  .calendar-day-hours {
+    font-size: 13px;
+  }
+
+  .calendar-day-header-button {
+    min-height: 44px;
+    padding: var(--space-12) var(--space-14);
   }
 
   /* The agenda has room for the TODAY tag, so the date itself stays plain. */

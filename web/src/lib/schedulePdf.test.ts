@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import { NO_HOURS, type Hours, type HoursData, type HoursSet, type Weekday } from "./hours";
 import {
   buildSchedulePdfTables,
   PDF_CLOSED_CELL,
@@ -6,6 +7,9 @@ import {
   PDF_LAYOUT,
   pdfCellText,
   pdfFilename,
+  pdfFirstStartY,
+  pdfHoursKey,
+  pdfKeyLines,
   pdfPageFooter,
   pdfTimeOffText,
   pdfWeekHeader,
@@ -35,6 +39,57 @@ function employee(id: string, name: string, display_order: number, archived = fa
 
 const times = (start_time: string, end_time: string) => ({ start_time, end_time });
 const off = (period: DayPeriod, status: RequestStatus = "approved") => ({ period, status });
+
+const hours = (open: string, close: string): Hours => ({ open, close });
+
+/** A weekly set from Monday-first hours, as Postgres returns them ('HH:MM:SS'). */
+function hoursSet(startsOn: ISODate | null, mondayFirst: readonly [string, string][]): HoursSet {
+  const at = (weekday: Weekday): Hours => {
+    const [open, close] = mondayFirst[(weekday + 6) % 7] ?? ["", ""];
+    return hours(open, close);
+  };
+  return { startsOn, days: { 0: at(0), 1: at(1), 2: at(2), 3: at(3), 4: at(4), 5: at(5), 6: at(6) } };
+}
+
+const WEEKDAY_11_9: [string, string] = ["11:00:00", "21:00:00"];
+const SATURDAY_10_6: [string, string] = ["10:00:00", "18:00:00"];
+const SUNDAY_12_5: [string, string] = ["12:00:00", "17:00:00"];
+
+// Like the local seed on 2026-09-30: the first set, one from seed-60 (in effect today) and an
+// upcoming change from seed+21.
+const FIRST = hoursSet(null, [
+  ...Array.from({ length: 5 }, (): [string, string] => ["10:00:00", "20:00:00"]),
+  SATURDAY_10_6,
+  SUNDAY_12_5,
+]);
+const AUG = hoursSet("2026-08-01", [
+  ...Array.from({ length: 5 }, () => WEEKDAY_11_9),
+  SATURDAY_10_6,
+  SUNDAY_12_5,
+]);
+const OCT21 = hoursSet("2026-10-21", [
+  WEEKDAY_11_9,
+  ["11:00:00", "19:00:00"],
+  WEEKDAY_11_9,
+  WEEKDAY_11_9,
+  ["11:00:00", "22:00:00"],
+  ["10:00:00", "22:00:00"],
+  SUNDAY_12_5,
+]);
+
+const SEEDED_RANGE = { start: "2026-09-30", end: "2026-11-03" };
+const SEEDED_CLOSED: ReadonlySet<ISODate> = new Set(["2026-10-09", "2026-10-30"]);
+const SEEDED_HOURS: HoursData = {
+  sets: [FIRST, AUG, OCT21],
+  custom: new Map<ISODate, Hours>([
+    ["2026-10-03", hours("10:00:00", "18:00:00")], // +3, a Saturday: equal to its standard
+    ["2026-10-04", hours("12:00:00", "16:00:00")], // +4
+    // A stray row on a closed date (only a direct write could make one): CLOSED wins.
+    ["2026-10-09", hours("09:00:00", "13:00:00")],
+    ["2026-10-11", hours("10:00:00", "15:00:00")], // +11
+    ["2026-10-23", hours("11:00:00", "21:00:00")], // +23, a Friday: the old standard, not the new 11-10
+  ]),
+};
 
 describe("pdfWeeks", () => {
   it("cuts a 35-day range into 5 chunks of 7 from the start date", () => {
@@ -108,6 +163,33 @@ describe("pdfWeekHeader", () => {
 
   it("is empty for an empty week", () => {
     expect(pdfWeekHeader([])).toEqual([]);
+    expect(pdfWeekHeader([], () => hours("09:00", "17:00"))).toEqual([]);
+  });
+
+  it("adds a third line to the days hoursFor gives hours", () => {
+    const week = pdfWeeks({ start: "2026-10-25", end: "2026-10-31" })[0] ?? [];
+    const hoursFor = (d: ISODate) => (d === "2026-10-31" ? hours("09:00:00", "17:00:00") : null);
+    expect(pdfWeekHeader(week, hoursFor)).toEqual([
+      "Week of\nOct 25 - Oct 31",
+      "Sun\n10/25",
+      "Mon\n10/26",
+      "Tue\n10/27",
+      "Wed\n10/28",
+      "Thu\n10/29",
+      "Fri\n10/30",
+      "Sat\n10/31\n(9:00 AM - 5:00 PM)",
+    ]);
+    // Without hoursFor, or when it gives nothing, the header is the plain two lines.
+    const plain = pdfWeekHeader(week);
+    expect(plain.at(-1)).toBe("Sat\n10/31");
+    expect(pdfWeekHeader(week, () => null)).toEqual(plain);
+  });
+
+  it("prints 'HH:MM' hours and times past noon in the shift time style", () => {
+    expect(pdfWeekHeader(["2026-10-31"], () => hours("12:30", "23:59"))).toEqual([
+      "Week of\nOct 31 - Oct 31",
+      "Sat\n10/31\n(12:30 PM - 11:59 PM)",
+    ]);
   });
 });
 
@@ -337,6 +419,169 @@ describe("buildSchedulePdfTables", () => {
       for (const row of table.body) expect(row).toHaveLength(table.head.length);
     }
   });
+
+  describe("business hours", () => {
+    const seeded = (overrides: Partial<SchedulePdfInput> = {}) =>
+      buildSchedulePdfTables(
+        input({ range: SEEDED_RANGE, closedDays: SEEDED_CLOSED, hours: SEEDED_HOURS, ...overrides }),
+      );
+
+    it("marks the columns whose date has special hours (+4, +11 and the seeded Friday)", () => {
+      const tables = seeded();
+      expect(tables.map((t) => t.hoursColumns)).toEqual([[5], [5], [], [3], []]);
+      expect(tables[0]?.head[5]).toBe("Sun\n10/4\n(12:00 PM - 4:00 PM)");
+      expect(tables[1]?.head[5]).toBe("Sun\n10/11\n(10:00 AM - 3:00 PM)");
+      expect(tables[3]?.head[3]).toBe("Fri\n10/23\n(11:00 AM - 9:00 PM)");
+      // hoursColumns lists exactly the head cells with a third line.
+      for (const table of tables) {
+        const withThirdLine = table.head.flatMap((cell, i) => (cell.split("\n").length === 3 ? [i] : []));
+        expect(table.hoursColumns).toEqual(withThirdLine);
+      }
+    });
+
+    it("prints no hours for a custom row equal to the day's standard (+3)", () => {
+      const tables = seeded();
+      expect(tables[0]?.head[4]).toBe("Sat\n10/3");
+    });
+
+    it("never prints hours on a closed date, even with a stray custom row", () => {
+      const tables = seeded();
+      expect(tables[1]?.head[3]).toBe("Fri\n10/9");
+      expect(tables[4]?.head[3]).toBe("Fri\n10/30");
+      expect(tables[1]?.body.map((row) => row[3])).toEqual(["CLOSED", "CLOSED"]);
+      expect(tables[1]?.hoursColumns).not.toContain(3);
+    });
+
+    it("compares against the set in effect on each date (the Friday row differs only after Oct 21)", () => {
+      const tables = seeded({
+        hours: { ...SEEDED_HOURS, custom: new Map([["2026-10-16", hours("11:00", "21:00")]]) },
+      });
+      // Oct 16 is a Friday under the Aug set (11-9): equal, so no line.
+      expect(tables.flatMap((t) => t.hoursColumns)).toEqual([]);
+    });
+
+    it("prints every custom row on an open date when there are no weekly sets (H5)", () => {
+      const tables = seeded({ hours: { sets: [], custom: SEEDED_HOURS.custom } });
+      // With no standard to compare against, +3 counts as special too; the closed +9 still doesn't.
+      expect(tables.map((t) => t.hoursColumns)).toEqual([[4, 5], [5], [], [3], []]);
+      expect(tables[0]?.head[4]).toBe("Sat\n10/3\n(10:00 AM - 6:00 PM)");
+    });
+
+    it("has no third lines and empty hoursColumns without hours", () => {
+      const tables = seeded({ hours: undefined });
+      expect(tables.map((t) => t.hoursColumns)).toEqual([[], [], [], [], []]);
+      expect(tables.flatMap((t) => t.head).every((cell) => cell.split("\n").length === 2)).toBe(true);
+      expect(tables.map((t) => t.head)).toEqual(
+        buildSchedulePdfTables(input({ range: SEEDED_RANGE, closedDays: SEEDED_CLOSED })).map((t) => t.head),
+      );
+    });
+
+    it("leaves the body unchanged", () => {
+      const shifts = [shift("s1", "a", "2026-10-04", "12:00:00", "16:00:00")];
+      const withHours = seeded({ shifts });
+      const without = seeded({ shifts, hours: undefined });
+      expect(withHours.map((t) => t.body)).toEqual(without.map((t) => t.body));
+    });
+  });
+});
+
+describe("pdfHoursKey", () => {
+  it("is empty without hours or without weekly sets", () => {
+    expect(pdfHoursKey({ range: SEEDED_RANGE })).toEqual([]);
+    expect(pdfHoursKey({ range: SEEDED_RANGE, hours: NO_HOURS })).toEqual([]);
+    expect(pdfHoursKey({ range: SEEDED_RANGE, hours: { sets: [], custom: SEEDED_HOURS.custom } })).toEqual([]);
+  });
+
+  it("gives the current sentence, then a 'From' paragraph for a change within the range", () => {
+    expect(pdfHoursKey({ range: SEEDED_RANGE, hours: SEEDED_HOURS })).toEqual([
+      "Monday-Friday: 11:00 AM - 9:00 PM | Saturday: 10:00 AM - 6:00 PM | Sunday: 12:00 PM - 5:00 PM",
+      "From Oct 21: Monday, Wednesday-Thursday: 11:00 AM - 9:00 PM | Tuesday: 11:00 AM - 7:00 PM | " +
+        "Friday: 11:00 AM - 10:00 PM | Saturday: 10:00 AM - 10:00 PM | Sunday: 12:00 PM - 5:00 PM",
+    ]);
+  });
+
+  it("uses the set in effect on the range's first day", () => {
+    expect(pdfHoursKey({ range: { start: "2026-07-01", end: "2026-07-31" }, hours: SEEDED_HOURS })).toEqual([
+      "Monday-Friday: 10:00 AM - 8:00 PM | Saturday: 10:00 AM - 6:00 PM | Sunday: 12:00 PM - 5:00 PM",
+    ]);
+    expect(pdfHoursKey({ range: { start: "2026-10-21", end: "2026-11-24" }, hours: SEEDED_HOURS })).toHaveLength(1);
+  });
+});
+
+describe("pdfKeyLines", () => {
+  // One unit per character stands in for jsPDF's text width.
+  const width = (text: string) => text.length;
+  // A change with a different time every day: 7 groups, too long for one line.
+  const SEVEN = hoursSet("2026-10-21", [
+    WEEKDAY_11_9,
+    ["11:00:00", "19:00:00"],
+    ["10:00:00", "21:00:00"],
+    ["11:00:00", "20:00:00"],
+    ["11:00:00", "22:00:00"],
+    ["10:00:00", "22:00:00"],
+    SUNDAY_12_5,
+  ]);
+  const [current = "", change = ""] = pdfHoursKey({
+    range: SEEDED_RANGE,
+    hours: { sets: [FIRST, AUG, SEVEN], custom: new Map() },
+  });
+
+  it("is empty without paragraphs", () => {
+    expect(pdfKeyLines([], 269, width)).toEqual([]);
+  });
+
+  it("keeps a paragraph that fits on one line, and starts each paragraph on a new line", () => {
+    expect(pdfKeyLines([current, current], 269, width)).toEqual([current, current]);
+  });
+
+  it("breaks only between groups, keeping the 'From' label with the first", () => {
+    expect(change).toBe(
+      "From Oct 21: Monday: 11:00 AM - 9:00 PM | Tuesday: 11:00 AM - 7:00 PM | Wednesday: 10:00 AM - 9:00 PM | " +
+        "Thursday: 11:00 AM - 8:00 PM | Friday: 11:00 AM - 10:00 PM | Saturday: 10:00 AM - 10:00 PM | " +
+        "Sunday: 12:00 PM - 5:00 PM",
+    );
+    // At 95 a word wrap would end the first line in "Wednesday: 10:00 AM -".
+    const lines = pdfKeyLines([current, change], 95, width);
+    expect(lines).toEqual([
+      current,
+      "From Oct 21: Monday: 11:00 AM - 9:00 PM | Tuesday: 11:00 AM - 7:00 PM",
+      "Wednesday: 10:00 AM - 9:00 PM | Thursday: 11:00 AM - 8:00 PM | Friday: 11:00 AM - 10:00 PM",
+      "Saturday: 10:00 AM - 10:00 PM | Sunday: 12:00 PM - 5:00 PM",
+    ]);
+    for (const line of lines) {
+      expect(width(line)).toBeLessThanOrEqual(95);
+      // No separator is left at a break, and nothing follows the last group.
+      expect(line).toMatch(/^[A-Z].* PM$/);
+    }
+  });
+
+  it("fills a line exactly to the width", () => {
+    const [first] = pdfKeyLines([change], 101, width);
+    expect(first).toBe(
+      "From Oct 21: Monday: 11:00 AM - 9:00 PM | Tuesday: 11:00 AM - 7:00 PM | Wednesday: 10:00 AM - 9:00 PM",
+    );
+    expect(first?.length).toBe(101);
+  });
+
+  it("breaks a group wider than a line at its spaces, leaving out the separator at a break", () => {
+    const lines = pdfKeyLines([current], 20, width);
+    expect(lines).toEqual([
+      "Monday-Friday: 11:00",
+      "AM - 9:00 PM",
+      "Saturday: 10:00 AM -",
+      "6:00 PM | Sunday:",
+      "12:00 PM - 5:00 PM",
+    ]);
+  });
+});
+
+describe("pdfFirstStartY", () => {
+  it("starts under the title, lower for each key line after the first", () => {
+    expect(pdfFirstStartY(0)).toBe(25);
+    expect(pdfFirstStartY(1)).toBe(25);
+    expect(pdfFirstStartY(2)).toBeCloseTo(28.651, 6);
+    expect(pdfFirstStartY(3)).toBeCloseTo(32.302, 6);
+  });
 });
 
 describe("pdfFilename and pdfPageFooter", () => {
@@ -357,5 +602,17 @@ describe("PDF_LAYOUT", () => {
     expect(PDF_LAYOUT.cellPadding).toEqual({ top: 3, right: 2, bottom: 3, left: 2 });
     expect(PDF_LAYOUT.headPadding).toBe(3);
     expect(PDF_LAYOUT.margin.left + PDF_LAYOUT.margin.right + PDF_LAYOUT.columnWidth * 8).toBe(297);
+    expect(PDF_LAYOUT.firstStartY).toBe(25);
+  });
+
+  it("places the hours key centered under the title, as wide as the table", () => {
+    expect(PDF_LAYOUT.key).toEqual({ x: 148, y: 21, fontSize: 9, lineHeight: 3.651, maxWidth: 269 });
+    expect(PDF_LAYOUT.key.maxWidth).toBe(PDF_LAYOUT.columnWidth * 8);
+    // 9pt × 1.15 (jsPDF's lineHeightFactor) in mm.
+    expect(PDF_LAYOUT.key.lineHeight).toBeCloseTo((9 * 1.15 * 25.4) / 72, 3);
+  });
+
+  it("prints a header's hours line at 8pt with the body's side padding", () => {
+    expect(PDF_LAYOUT.hoursHead).toEqual({ fontSize: 8, cellPadding: { top: 3, right: 2, bottom: 3, left: 2 } });
   });
 });

@@ -1,0 +1,77 @@
+/* The sidebar's Business Hours section (§4.5): the hours in effect, each upcoming change,
+   and on the admin page the button that opens the weekly editor. */
+.business-hours {
+  display: flow-root;
+}
+
+/* Day name | hours. Each time stays on one line, so a narrow sidebar breaks only at " - ".
+   Capped so a full-width sidebar (1024px and below) keeps each day next to its hours. */
+.business-hours-list {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  max-width: 18rem;
+  align-items: baseline;
+  column-gap: var(--space-10);
+  row-gap: 4px;
+  color: var(--ink);
+  font-size: 13px;
+  line-height: 1.35;
+  font-variant-numeric: tabular-nums;
+}
+
+.business-hours-day {
+  color: var(--clay-900);
+  font-weight: 700;
+}
+
+.business-hours-hours {
+  min-width: 0;
+  text-align: right;
+}
+
+.business-hours-time {
+  white-space: nowrap;
+}
+
+.business-hours-change {
+  margin: var(--space-12) 0 var(--space-6);
+  color: var(--clay-900);
+  font-size: 13px;
+  font-weight: 800;
+  line-height: 1.3;
+}
+
+.business-hours-empty {
+  padding: var(--space-8) var(--space-8) 0;
+  color: var(--muted);
+  font-size: 13px;
+  font-style: italic;
+  text-align: center;
+}
+
+.business-hours-status {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-8);
+  padding: var(--space-10);
+}
+
+.business-hours-error {
+  color: var(--error-text);
+  font-size: 13px;
+  font-weight: 600;
+  text-align: center;
+}
+
+.business-hours-status .btn.business-hours-working {
+  cursor: progress;
+}
+
+.business-hours-edit.btn {
+  display: flex;
+  width: 100%;
+  margin-top: var(--space-14);
+  min-height: 44px;
+  font-size: 14px;
+}

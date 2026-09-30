@@ -12,6 +12,7 @@ import {
   formatLongDate,
   formatMonthDay,
   formatMonthLabel,
+  formatNumericDate,
   formatRangeLabel,
   formatShortDate,
   fromDayNumber,
@@ -26,6 +27,7 @@ import {
   timestampToBusinessDate,
   toDayNumber,
   todayInZone,
+  WEEKDAY_LONG,
   weekdayHeaders,
   weekdayOf,
 } from "./dates";
@@ -278,6 +280,12 @@ describe("calendar labels", () => {
     expect(weekdayHeaders("2026-10-01")).toHaveLength(7);
   });
 
+  it("names weekdays in full, Sunday first", () => {
+    expect(WEEKDAY_LONG[weekdayOf("2026-10-31")]).toBe("Saturday");
+    expect(WEEKDAY_LONG[weekdayOf("2026-11-01")]).toBe("Sunday");
+    expect(WEEKDAY_LONG).toEqual(["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"]);
+  });
+
   it("formats day headers", () => {
     expect(formatDayLabel("2026-10-05", "desktop")).toBe("5 Oct");
     expect(formatDayLabel("2026-10-05", "mobile")).toBe("Monday, Oct 5");
@@ -292,6 +300,13 @@ describe("calendar labels", () => {
 });
 
 describe("admin date labels", () => {
+  it("formats numeric dates with a two-digit year", () => {
+    expect(formatNumericDate("2026-08-01")).toBe("8/1/26");
+    expect(formatNumericDate("2026-12-31")).toBe("12/31/26");
+    expect(formatNumericDate("2009-01-05")).toBe("1/5/09");
+    expect(formatNumericDate("2100-03-04")).toBe("3/4/00");
+  });
+
   it("formats month and day", () => {
     expect(formatMonthDay("2026-10-05")).toBe("Oct 5");
     expect(formatMonthDay("2026-12-31")).toBe("Dec 31");

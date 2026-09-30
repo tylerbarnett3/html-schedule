@@ -2,10 +2,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import { useRef, useState } from "react";
 import { useMatch } from "react-router";
 import { useToast } from "../../../components/useToast";
-import { fetchBackup } from "../../../data/backup";
-import { adminErrorMessage } from "../../../data/errors";
 import { useEmployees } from "../../../data/schedule";
-import { backupFilename, backupJson, backupToast } from "../../../lib/backup";
 import { ToolbarButton } from "../ToolbarButton";
 import { useAdminView } from "../useAdminView";
 import { downloadSchedulePdf, PdfToolMissingError } from "./downloadSchedulePdf";
@@ -14,21 +11,15 @@ import "./ToolbarTools.css";
 const NO_EMPLOYEES = "Select at least one employee to include in the PDF.";
 const PDF_FAILED = "Couldn't create the PDF. Check your connection and try again.";
 const PDF_TOOL_MISSING = "Couldn't load the PDF tool. Reload the page and try again.";
-const BACKUP_FAILED = "Couldn't download the backup. Check your connection and try again.";
 
 /**
- * Download PDF and Export Backup as plain toolbar buttons (D2). Returned as a fragment so
- * they join the toolbar's own row, and its full-width column on phones. Download PDF prints
- * the schedule view, so it hides on Payroll (D14); Export Backup always shows.
+ * Download PDF as a plain toolbar button (D2), in the toolbar's own row (a full-width row on
+ * phones). It prints the schedule view, so it hides on Payroll (D14). Export Backup is in the
+ * header (ExportBackupButton).
  */
 export function ToolbarTools() {
   const onPayroll = useMatch("/admin/payroll") !== null;
-  return (
-    <>
-      {onPayroll ? null : <DownloadPdfButton />}
-      <ExportBackupButton />
-    </>
-  );
+  return onPayroll ? null : <DownloadPdfButton />;
 }
 
 /**
@@ -93,57 +84,4 @@ function DownloadPdfButton() {
       {busy ? "Preparing PDF…" : "Download PDF"}
     </ToolbarButton>
   );
-}
-
-function ExportBackupButton() {
-  const toast = useToast();
-
-  const { busy, run } = useBusyAction(async () => {
-    try {
-      const file = await fetchBackup();
-      saveFile(
-        new Blob([backupJson(file)], { type: "application/json" }),
-        backupFilename(new Date(file.exportedAt)),
-      );
-      const { title, message } = backupToast(file);
-      toast.show(message, "success", { title });
-    } catch (error) {
-      toast.show(adminErrorMessage(error, BACKUP_FAILED), "error");
-    }
-  });
-
-  return (
-    <ToolbarButton
-      variant="cream"
-      className={busy ? "toolbar-tools-busy" : undefined}
-      aria-disabled={busy || undefined}
-      onClick={() => void run()}
-      icon={
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" focusable="false">
-          <path
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            d="M3 16.5v2.25A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75V16.5M16.5 12 12 16.5m0 0L7.5 12m4.5 4.5V3"
-          />
-        </svg>
-      }
-    >
-      {busy ? "Preparing backup…" : "Export Backup"}
-    </ToolbarButton>
-  );
-}
-
-/**
- * Hands a file to the browser's downloads. The temporary link is never shown; the object
- * URL is released a little later because revoking it at once can cancel the download.
- */
-function saveFile(blob: Blob, filename: string): void {
-  const url = URL.createObjectURL(blob);
-  const link = document.createElement("a");
-  link.href = url;
-  link.download = filename;
-  document.body.append(link);
-  link.click();
-  link.remove();
-  window.setTimeout(() => URL.revokeObjectURL(url), 60_000);
 }

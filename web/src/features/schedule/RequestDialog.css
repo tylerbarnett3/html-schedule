@@ -1,4 +1,4 @@
-/* Request Time Off / Request Availability dialog (design spec §2.12-2.13). */
+/* Request Time Off / Add Availability dialog (design spec §2.12-2.13). */
 .request-dialog-form {
   display: flex;
   flex-direction: column;

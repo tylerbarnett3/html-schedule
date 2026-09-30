@@ -180,6 +180,42 @@
   line-height: 1;
 }
 
+/* What the employee logged (Log My Hours), under the outcome buttons. */
+.payroll-row-logged {
+  display: grid;
+  justify-items: start;
+  gap: var(--space-8);
+  margin-top: var(--space-12);
+}
+
+.payroll-row-logged-line {
+  color: var(--clay-900);
+  font-size: 13px;
+  font-weight: 700;
+  line-height: 1.35;
+  font-variant-numeric: tabular-nums;
+}
+
+.payroll-row-logged-note {
+  margin-top: 2px;
+  color: var(--muted);
+  font-size: 13px;
+  font-style: italic;
+  line-height: 1.35;
+  overflow-wrap: anywhere;
+}
+
+/* Already used: nothing left to fill in (it stays focusable). */
+.payroll-use-logged[aria-disabled="true"] {
+  cursor: default;
+  opacity: 0.45;
+}
+
+.payroll-use-logged[aria-disabled="true"]:hover {
+  background: var(--mini-btn-bg);
+  border-color: var(--line);
+}
+
 .payroll-row-outcomes {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));

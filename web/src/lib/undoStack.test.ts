@@ -1,9 +1,11 @@
 import { describe, expect, it } from "vitest";
-import { emptyChange, reopenChange } from "./scheduleChange";
+import { emptyChange } from "./scheduleChange";
 import { dropTop, MAX_UNDO_STEPS, pushStep, type UndoStep } from "./undoStack";
 
 function step(id: number): UndoStep {
-  return { id, label: `Reopen step ${id}`, change: reopenChange(["2026-10-09"]) };
+  const change = emptyChange();
+  change.deleted.closed_days = ["2026-10-09"];
+  return { id, label: `Reopen step ${id}`, change };
 }
 
 describe("pushStep", () => {
@@ -25,6 +27,21 @@ describe("pushStep", () => {
     const stack = [step(1)];
     const next = pushStep(stack, { id: 2, label: "Close 0 days", change: emptyChange() });
     expect(next.map((s) => s.id)).toEqual([1]);
+  });
+
+  it("keeps a change that only touched hours", () => {
+    const change = emptyChange();
+    change.made_at = "2026-09-29T15:05:00+00:00";
+    change.inserted.custom_hours.push({
+      hours_date: "2026-10-31",
+      open_time: "09:00:00",
+      close_time: "17:00:00",
+      created_at: "2026-09-29T15:05:00+00:00",
+      updated_at: "2026-09-29T15:05:00+00:00",
+    });
+    const next = pushStep([step(1)], { id: 2, label: "Set custom hours for Oct 31", change });
+    expect(next.map((s) => s.id)).toEqual([1, 2]);
+    expect(next[1].change).toBe(change);
   });
 
   it("doesn't change the stack it was given", () => {

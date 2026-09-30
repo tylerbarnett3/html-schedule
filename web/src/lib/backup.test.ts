@@ -19,6 +19,9 @@ function emptyTables(): BackupTables {
     availability: [],
     shift_actuals: [],
     closed_days: [],
+    weekly_hours: [],
+    custom_hours: [],
+    hour_logs: [],
   };
 }
 
@@ -56,7 +59,26 @@ describe("buildBackupFile", () => {
     expect(file.closed_days).toBe(tables.closed_days);
   });
 
-  it("lists the seven tables and never admins", () => {
+  it("writes the ten table keys in order, the business hours and logged hours after closed_days", () => {
+    const file = buildBackupFile(emptyTables(), new Date("2026-09-29T14:05:09Z"));
+    expect(Object.keys(file)).toEqual([
+      "format",
+      "version",
+      "exportedAt",
+      "employees",
+      "employee_rates",
+      "shifts",
+      "time_off",
+      "availability",
+      "shift_actuals",
+      "closed_days",
+      "weekly_hours",
+      "custom_hours",
+      "hour_logs",
+    ]);
+  });
+
+  it("lists the ten tables and never admins", () => {
     expect(BACKUP_TABLES).toEqual([
       "employees",
       "employee_rates",
@@ -65,8 +87,17 @@ describe("buildBackupFile", () => {
       "availability",
       "shift_actuals",
       "closed_days",
+      "weekly_hours",
+      "custom_hours",
+      "hour_logs",
     ]);
+    expect(BACKUP_TABLES).toHaveLength(10);
     expect(BACKUP_TABLES).not.toContain("admins");
+  });
+
+  it("stays version 1 with the hours and logged hours tables (they only add keys)", () => {
+    expect(BACKUP_VERSION).toBe(1);
+    expect(buildBackupFile(emptyTables(), new Date("2026-09-29T14:05:09Z")).version).toBe(1);
   });
 
   it("serializes to readable JSON that parses back to the same file", () => {
@@ -74,6 +105,52 @@ describe("buildBackupFile", () => {
     const json = backupJson(file);
     expect(json.startsWith('{\n  "format": "mad-potter-schedule-backup",\n  "version": 1,')).toBe(true);
     expect(JSON.parse(json)).toEqual(file);
+  });
+
+  it("keeps weekly hours, custom hours and logged hours rows exactly as stored through a JSON round trip", () => {
+    const tables = emptyTables();
+    tables.weekly_hours = [
+      {
+        id: "0b6c5f7e-2d7a-4c1e-9d55-1f0e0e7b9a01",
+        starts_on: null,
+        weekday: 1,
+        open_time: "11:00:00",
+        close_time: "21:00:00",
+        created_at: "2026-09-01T12:00:00+00:00",
+        updated_at: "2026-09-02T12:00:00+00:00",
+      },
+    ];
+    tables.custom_hours = [
+      {
+        hours_date: "2026-10-31",
+        open_time: "09:00:00",
+        close_time: "17:00:00",
+        created_at: "2026-09-03T12:00:00+00:00",
+        updated_at: "2026-09-04T12:00:00+00:00",
+      },
+    ];
+    tables.hour_logs = [
+      {
+        shift_id: "5d0c7a3e-8f4b-4c2a-a1e9-3b6f2d9c8e10",
+        employee_id: "e0000000-0000-0000-0000-000000000008",
+        start_time: "13:00:00",
+        end_time: "19:10:00",
+        note: "Stayed to unload the kiln",
+        created_at: "2026-09-29T23:20:00+00:00",
+        updated_at: "2026-09-29T23:25:00+00:00",
+      },
+    ];
+    const file = buildBackupFile(tables, new Date("2026-09-29T14:05:09Z"));
+    expect(file.hour_logs).toBe(tables.hour_logs);
+    expect(file.weekly_hours).toBe(tables.weekly_hours);
+    expect(file.custom_hours).toBe(tables.custom_hours);
+    const parsed: unknown = JSON.parse(backupJson(file));
+    expect(parsed).toEqual(file);
+    expect(parsed).toMatchObject({
+      weekly_hours: [{ starts_on: null, weekday: 1, open_time: "11:00:00", close_time: "21:00:00" }],
+      custom_hours: [{ hours_date: "2026-10-31", open_time: "09:00:00", close_time: "17:00:00" }],
+      hour_logs: [{ start_time: "13:00:00", end_time: "19:10:00", note: "Stayed to unload the kiln" }],
+    });
   });
 });
 

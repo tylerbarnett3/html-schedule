@@ -1,0 +1,263 @@
+/* The weekly business hours editor (§4.6): one card per set of hours, the "New hours
+   starting on…" panel, then the earlier sets. A full-height sheet on phones (Modal md). */
+.weekly-hours-form {
+  display: grid;
+  gap: var(--space-16);
+  padding-bottom: var(--space-4);
+}
+
+/* A set of hours. The legend floats, so it sits inside the card (not on its border) and
+   the Remove button can share its line; the grid clears both. */
+.weekly-hours-set {
+  min-width: 0;
+  margin: 0;
+  padding: var(--space-12) var(--space-14) var(--space-14);
+  background: var(--surface-82);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-item);
+}
+
+.weekly-hours-legend {
+  float: left;
+  max-width: 100%;
+  margin: 0 0 var(--space-10);
+  padding: 0;
+}
+
+.weekly-hours-title {
+  color: var(--clay-900);
+  font-size: 16px;
+  font-weight: 700;
+  line-height: 1.3;
+}
+
+.weekly-hours-since {
+  display: block;
+  margin-top: 2px;
+  color: var(--muted);
+  font-size: 13px;
+  line-height: 1.35;
+}
+
+.weekly-hours-remove.btn {
+  float: right;
+  margin: -2px -6px var(--space-8) var(--space-8);
+}
+
+/* An earlier set folds to its title and dates: the whole legend is the toggle, and the
+   days show only when it is open. The legend still floats (see above), across the full width. */
+.weekly-hours-legend-toggle {
+  width: 100%;
+  margin: 0;
+}
+
+.weekly-hours-expand {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-8);
+  width: 100%;
+  min-height: 44px;
+  padding: 0;
+  color: inherit;
+  font: inherit;
+  letter-spacing: inherit;
+  text-align: left;
+  background: none;
+  border: none;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+}
+
+.weekly-hours-expand:focus-visible {
+  outline: 3px solid var(--focus-ring);
+  outline-offset: 4px;
+}
+
+.weekly-hours-expand-text {
+  display: grid;
+  min-width: 0;
+}
+
+.weekly-hours-expand .weekly-hours-since {
+  font-weight: 400;
+}
+
+.weekly-hours-chevron {
+  flex: none;
+  color: var(--clay-700);
+  font-size: 12px;
+  transition: transform 0.2s;
+}
+
+.weekly-hours-expand[aria-expanded="true"] .weekly-hours-chevron {
+  transform: rotate(180deg);
+}
+
+.weekly-hours-set-collapsible .weekly-hours-grid {
+  margin-top: var(--space-10);
+}
+
+.weekly-hours-grid[hidden] {
+  display: none;
+}
+
+/* Day | Open | Close. The rows are display: contents, so every row shares the columns. */
+.weekly-hours-grid {
+  clear: both;
+  display: grid;
+  grid-template-columns: minmax(84px, auto) minmax(0, 1fr) minmax(0, 1fr);
+  align-items: center;
+  gap: var(--space-8);
+}
+
+.weekly-hours-head,
+.weekly-hours-row {
+  display: contents;
+}
+
+.weekly-hours-head > span {
+  color: var(--clay-800);
+  font-size: 12px;
+  font-weight: 700;
+  line-height: 1.2;
+}
+
+.weekly-hours-day {
+  min-width: 0;
+  color: var(--clay-900);
+  font-size: 14px;
+  font-weight: 700;
+}
+
+/* Tighter side padding than other fields, so "12:00 PM" and the picker icon fit on phones. */
+.weekly-hours-input.field-control {
+  padding-right: var(--space-6);
+  padding-left: var(--space-10);
+}
+
+.weekly-hours-new {
+  display: grid;
+  gap: var(--space-10);
+}
+
+.weekly-hours-toggle.btn {
+  justify-self: start;
+}
+
+.weekly-hours-panel {
+  display: grid;
+  gap: var(--space-10);
+  padding: var(--space-12);
+  background: var(--add-panel-bg);
+  border: 1px solid var(--add-panel-border);
+  border-radius: var(--radius-md);
+}
+
+.weekly-hours-panel[hidden] {
+  display: none;
+}
+
+.weekly-hours-panel-intro {
+  color: var(--clay-800);
+  font-size: 13px;
+  line-height: 1.45;
+}
+
+.weekly-hours-label {
+  color: var(--clay-800);
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.weekly-hours-start.field-control {
+  max-width: 220px;
+}
+
+.weekly-hours-panel-actions {
+  display: flex;
+  gap: var(--space-8);
+}
+
+.weekly-hours-earlier {
+  margin-top: var(--space-4);
+}
+
+.weekly-hours-error:focus {
+  outline: none;
+}
+
+.weekly-hours-error:focus-visible {
+  outline: 3px solid var(--focus-ring);
+  outline-offset: 2px;
+}
+
+.weekly-hours-spinner .spinner-ring {
+  border-color: rgba(255, 250, 241, 0.28);
+  border-top-color: var(--gold-light);
+}
+
+.weekly-hours-dialog .btn[aria-disabled="true"] {
+  cursor: progress;
+  opacity: 0.8;
+}
+
+@media (max-width: 768px) {
+  .weekly-hours-toggle.btn {
+    justify-self: stretch;
+    min-height: 44px;
+  }
+
+  .weekly-hours-start.field-control {
+    max-width: none;
+  }
+
+  .weekly-hours-panel-actions > .btn {
+    flex: 1 1 0;
+    min-height: 44px;
+  }
+
+  .weekly-hours-remove.btn {
+    min-height: 44px;
+  }
+}
+
+/* Phones: a little less padding around the times and a smaller picker icon, so "12:00 PM"
+   is never cut off beside the day names (down to 381px; narrower screens stack below). */
+@media (max-width: 480px) {
+  .weekly-hours-set {
+    padding: var(--space-12);
+  }
+
+  .weekly-hours-grid {
+    column-gap: var(--space-6);
+  }
+
+  .weekly-hours-input.field-control {
+    padding-right: var(--space-4);
+    padding-left: var(--space-8);
+  }
+
+  .weekly-hours-input::-webkit-calendar-picker-indicator {
+    margin-inline-start: 2px;
+    padding: 1px;
+  }
+}
+
+/* Narrow phones: the day name goes on its own line above its two times. */
+@media (max-width: 380px) {
+  .weekly-hours-grid {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    row-gap: var(--space-6);
+  }
+
+  .weekly-hours-head > .weekly-hours-head-day {
+    display: none;
+  }
+
+  .weekly-hours-day {
+    grid-column: 1 / -1;
+    margin-top: var(--space-6);
+  }
+}

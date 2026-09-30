@@ -1,13 +1,18 @@
 import { onlineManager, type QueryClient } from "@tanstack/react-query";
 import type { Styles, UserOptions } from "jspdf-autotable";
 import { EMPLOYEE_REORDER_MUTATION_KEY } from "../../../data/adminKeys";
+import { CUSTOM_HOURS_KEY, fetchCustomHours, fetchWeeklyHours, WEEKLY_HOURS_KEY } from "../../../data/hours";
 import { fetchCalendarData, fetchClosedDays, fetchEmployees } from "../../../data/schedule";
 import {
   buildSchedulePdfTables,
   PDF_LAYOUT,
   PDF_TITLE,
   pdfFilename,
+  pdfFirstStartY,
+  pdfHoursKey,
+  pdfKeyLines,
   pdfPageFooter,
+  type SchedulePdfInput,
   type SchedulePdfTable,
 } from "../../../lib/schedulePdf";
 import type { DateRange, Employee } from "../../../lib/types";
@@ -52,7 +57,7 @@ export async function downloadSchedulePdf({
   // cached list holds the new order, and refetching it would flash the old order back.
   const cachedEmployees = client.getQueryData<Employee[]>(["employees"]) ?? [];
   const reordering = client.isMutating({ mutationKey: EMPLOYEE_REORDER_MUTATION_KEY }) > 0;
-  const [employees, calendar, closedDays] = await Promise.all([
+  const [employees, calendar, closedDays, sets, custom] = await Promise.all([
     reordering
       ? cachedEmployees
       : client.fetchQuery({
@@ -70,6 +75,16 @@ export async function downloadSchedulePdf({
       queryFn: ({ signal }) => fetchClosedDays(signal),
       staleTime: 0,
     }),
+    client.fetchQuery({
+      queryKey: WEEKLY_HOURS_KEY,
+      queryFn: ({ signal }) => fetchWeeklyHours(signal),
+      staleTime: 0,
+    }),
+    client.fetchQuery({
+      queryKey: CUSTOM_HOURS_KEY,
+      queryFn: ({ signal }) => fetchCustomHours(signal),
+      staleTime: 0,
+    }),
   ]);
 
   // The filter stores who is hidden, so an employee added since the list was cached shows.
@@ -78,14 +93,16 @@ export async function downloadSchedulePdf({
     employees.filter((e) => selectedEmployeeIds.has(e.id) || !known.has(e.id)).map((e) => e.id),
   );
 
-  const tables = buildSchedulePdfTables({
+  const input: SchedulePdfInput = {
     range,
     employees,
     selectedEmployeeIds: selected,
     shifts: calendar.shifts,
     timeOff: calendar.timeOff,
     closedDays,
-  });
+    hours: { sets, custom },
+  };
+  const tables = buildSchedulePdfTables(input);
   if (tables.every((table) => table.body.length === 0)) return "empty";
 
   const [{ jsPDF }, { autoTable }] = await libraries;
@@ -101,11 +118,22 @@ export async function downloadSchedulePdf({
   doc.text(PDF_TITLE, title.x, title.y, { align: "center" });
   doc.setTextColor(0, 0, 0);
 
+  // The business hours key, once, between the title and the first table (none without hours).
+  // Wrap after setting the font: the lines are measured in it.
+  const { key } = PDF_LAYOUT;
+  doc.setFont("helvetica", "normal");
+  doc.setFontSize(key.fontSize);
+  doc.setTextColor(0, 0, 0);
+  const keyLines = pdfKeyLines(pdfHoursKey(input), key.maxWidth, (text) => doc.getTextWidth(text));
+  if (keyLines.length > 0) {
+    doc.text(keyLines, key.x, key.y, { align: "center", lineHeightFactor: 1.15 });
+  }
+
   tables.forEach((table, index) => {
-    // One week per page; the title sits above the first.
+    // One week per page; the title and key sit above the first.
     if (index > 0) doc.addPage();
     autoTable(doc, {
-      startY: index === 0 ? PDF_LAYOUT.firstStartY : PDF_LAYOUT.nextStartY,
+      startY: index === 0 ? pdfFirstStartY(keyLines.length) : PDF_LAYOUT.nextStartY,
       head: [table.head],
       body: table.body,
       ...tableStyles(table),
@@ -127,7 +155,10 @@ export async function downloadSchedulePdf({
   return "saved";
 }
 
-/** The old page's autotable options, with D3's padding and page-break rules. */
+/**
+ * The old page's autotable options, with D3's padding and page-break rules. A day header with an
+ * hours line uses the smaller hoursHead style so that line never wraps; the head stays one row.
+ */
 function tableStyles(table: SchedulePdfTable): Omit<UserOptions, "head" | "body"> {
   const L = PDF_LAYOUT;
   const cell: Partial<Styles> = {
@@ -175,5 +206,10 @@ function tableStyles(table: SchedulePdfTable): Omit<UserOptions, "head" | "body"
     // A row never splits across pages, and a week that runs over repeats its header.
     rowPageBreak: "avoid",
     showHead: "everyPage",
+    didParseCell: (data) => {
+      if (data.section !== "head" || !table.hoursColumns.includes(data.column.index)) return;
+      data.cell.styles.fontSize = L.hoursHead.fontSize;
+      data.cell.styles.cellPadding = { ...L.hoursHead.cellPadding };
+    },
   };
 }

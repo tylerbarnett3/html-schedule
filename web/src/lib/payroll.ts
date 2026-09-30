@@ -74,6 +74,14 @@ export function formatPayrollDecimalHours(minutes: number): string {
   return String(Math.round((minutes / 60) * 100) / 100);
 }
 
+/** A length of time: '6h 15m', '6h', '15m' (a zero part is left out; nothing at all is '0m'). */
+export function formatDuration(minutes: number): string {
+  const hours = Math.floor(minutes / 60);
+  const rest = minutes % 60;
+  if (hours === 0) return `${rest}m`;
+  return rest === 0 ? `${hours}h` : `${hours}h ${rest}m`;
+}
+
 /** '+15 min', '−1 hr 30 min' (U+2212 minus), 'No time difference'. */
 export function formatActualDifference(minutes: number): string {
   if (minutes === 0) return "No time difference";
@@ -313,7 +321,9 @@ export type RowAction =
   | { type: "set-employee"; employeeId: string | null }
   | { type: "set-time"; field: "start" | "end"; value: ClockTime }
   | { type: "nudge"; field: "start" | "end"; delta: number }
-  | { type: "set-note"; note: string };
+  | { type: "set-note"; note: string }
+  /** Fills in the hours the employee logged for the shift (hour_logs). */
+  | { type: "use-logged"; employeeId: string; start: ClockTime; end: ClockTime };
 
 /** Future rows, and vacated ones, can't be edited field by field. */
 function valuesLocked(row: DraftRow, today: ISODate): boolean {
@@ -370,7 +380,31 @@ export function applyRowAction(row: DraftRow, action: RowAction, today: ISODate)
       }
       return { ...row, note: action.note };
     }
+    case "use-logged": {
+      if (row.kind !== "scheduled") return row;
+      const reviewed = row.status !== null && row.status !== "not-worked";
+      if (
+        reviewed &&
+        row.employeeId === action.employeeId &&
+        sameClock(row.start, action.start) &&
+        sameClock(row.end, action.end)
+      ) {
+        return row;
+      }
+      // Logged hours mean the shift was worked, so this also undoes Vacated.
+      const worked: ScheduledRow = row.status === "not-worked" ? { ...row, status: null } : row;
+      return withValues(worked, { employeeId: action.employeeId, start: action.start, end: action.end });
+    }
   }
+}
+
+/** True when "Use logged hours" would change the row (see the use-logged action). */
+export function canUseLoggedHours(
+  row: DraftRow,
+  logged: { employeeId: string; start: ClockTime; end: ClockTime },
+  today: ISODate,
+): boolean {
+  return applyRowAction(row, { type: "use-logged", ...logged }, today) !== row;
 }
 
 /** Same values in the draft (times compared as minutes). */
@@ -464,10 +498,13 @@ export function rowDifferenceText(row: DraftRow, today: ISODate): string {
   return details.join(" · ");
 }
 
-/** 'Scheduled · 9:00 AM – 5:00 PM' (middle dot, en dash). */
+/** 'Scheduled · 9:00 AM – 5:00 PM (8h)' (middle dot, en dash). */
 export function scheduledLine(row: DraftRow): string {
   if (row.kind === "actual-only") return row.orphan ? "Its scheduled shift was deleted" : "Not originally scheduled";
-  return `Scheduled · ${formatTime12Hour(row.shift.start_time)} – ${formatTime12Hour(row.shift.end_time)}`;
+  const { start_time: start, end_time: end } = row.shift;
+  const minutes = shiftDurationMinutes(start, end);
+  const length = minutes === null ? "" : ` (${formatDuration(minutes)})`;
+  return `Scheduled · ${formatTime12Hour(start)} – ${formatTime12Hour(end)}${length}`;
 }
 
 /** 'Last saved Sep 29' (the business day it was saved on), or 'Not saved yet'. */

@@ -2,6 +2,8 @@ import { useEffect, useRef, useState, type DragEvent, type ReactNode } from "rea
 import { useMediaQuery } from "../../data/useMediaQuery";
 import { calendarCellCount, type CalendarDay, type DayCard as CalendarCard } from "../../lib/calendar";
 import { formatDayLabel, weekdayHeaders } from "../../lib/dates";
+import { dayHeaderText } from "../../lib/hours";
+import { formatTime12Hour } from "../../lib/time";
 import type { ISODate } from "../../lib/types";
 import { CALENDAR_DRAG_TYPES, calendarDragKind, type CalendarDragKind } from "../admin/dragTypes";
 import { DayCard, type CancellableCard } from "./DayCard";
@@ -30,6 +32,8 @@ export interface CalendarGridProps {
   renderDayFooter?(day: CalendarDay): ReactNode;
   /** Admin page: drag and drop between days (leave out on touch screens). */
   dragAndDrop?: CalendarDragAndDrop;
+  /** Admin page: the day heading becomes a button that opens that day's hours. */
+  onOpenDay?(date: ISODate): void;
 }
 
 const CLOSED_LETTERS = ["C", "L", "O", "S", "E", "D"];
@@ -43,6 +47,7 @@ export function CalendarGrid({
   onOpenCard,
   renderDayFooter,
   dragAndDrop,
+  onOpenDay,
 }: CalendarGridProps) {
   const mobile = useMediaQuery(MOBILE_QUERY);
   const start = days.length > 0 ? days[0].date : null;
@@ -74,6 +79,7 @@ export function CalendarGrid({
             onOpenCard={onOpenCard}
             footer={renderDayFooter ? renderDayFooter(day) : null}
             dragAndDrop={dragAndDrop}
+            onOpenDay={onOpenDay}
           />
         ))}
         {Array.from({ length: fillers }, (_, i) => (
@@ -93,6 +99,7 @@ interface CalendarDayCellProps {
   onOpenCard?(card: CalendarCard): void;
   footer: ReactNode;
   dragAndDrop?: CalendarDragAndDrop;
+  onOpenDay?(date: ISODate): void;
 }
 
 function CalendarDayCell({
@@ -104,32 +111,34 @@ function CalendarDayCell({
   onOpenCard,
   footer,
   dragAndDrop,
+  onOpenDay,
 }: CalendarDayCellProps) {
-  const fullLabel = formatDayLabel(day.date, "mobile");
   const classes = ["calendar-day", day.isToday ? "calendar-day-today" : null].filter(Boolean).join(" ");
   const drop = useDayDropTarget(day.date, dragAndDrop);
+  const heading = <DayHeading day={day} mobile={mobile} />;
 
   return (
     <li className={classes} data-date={day.date}>
       {/* tabIndex -1: focus can land here after a cancelled card disappears. */}
-      <h3 className="calendar-day-header" tabIndex={-1}>
-        {mobile ? (
-          <span className="calendar-day-date">{fullLabel}</span>
-        ) : (
-          <>
-            <span className="calendar-day-date" aria-hidden="true">
-              {formatDayLabel(day.date, "desktop")}
-            </span>
-            <span className="visually-hidden">{fullLabel}</span>
-          </>
-        )}
-        {/* The narrow desktop cells mark today with the gold date pill alone. */}
-        {day.isToday ? (
-          <span className={mobile ? "calendar-today-tag" : "visually-hidden"}>
-            <span className="visually-hidden">, </span>Today
-          </span>
-        ) : null}
-      </h3>
+      {onOpenDay ? (
+        <h3 className="calendar-day-header calendar-day-header-openable" tabIndex={-1}>
+          {/* Rendered on closed days too, always in the same place, so the Day Hours dialog
+              hands focus back to it. The heading text stays in its name. */}
+          <button
+            type="button"
+            className="calendar-day-header-button"
+            aria-haspopup="dialog"
+            onClick={() => onOpenDay(day.date)}
+          >
+            {heading}
+            <span className="visually-hidden">, edit hours</span>
+          </button>
+        </h3>
+      ) : (
+        <h3 className="calendar-day-header" tabIndex={-1}>
+          {heading}
+        </h3>
+      )}
       <div className={drop.over ? "calendar-day-body is-drop-target" : "calendar-day-body"} {...drop.handlers}>
         {day.closed ? (
           <p className="calendar-closed">
@@ -166,6 +175,51 @@ function CalendarDayCell({
         {footer ? <div className="calendar-day-footer">{footer}</div> : null}
       </div>
     </li>
+  );
+}
+
+/**
+ * A day heading's content. A day whose hours differ from the standard shows them after the
+ * date ('31 Oct (9:00 AM - 5:00 PM)'); screen readers hear the phone text on both layouts.
+ * Every other day renders exactly as it always has.
+ */
+function DayHeading({ day, mobile }: { day: CalendarDay; mobile: boolean }) {
+  const fullLabel = formatDayLabel(day.date, "mobile");
+  const hours = day.specialHours;
+  return (
+    <>
+      {hours ? (
+        <>
+          <span className="calendar-day-title" aria-hidden="true">
+            <span className="calendar-day-date">{mobile ? fullLabel : formatDayLabel(day.date, "desktop")}</span>
+            {/* Lines break only at " - " or before the hours, never inside "9:00 AM". */}
+            <span className="calendar-day-hours">
+              {"("}
+              <span className="calendar-day-time">{formatTime12Hour(hours.open)}</span>
+              {" - "}
+              <span className="calendar-day-time">{formatTime12Hour(hours.close)}</span>
+              {")"}
+            </span>
+          </span>
+          <span className="visually-hidden">{dayHeaderText(day.date, "mobile", hours)}</span>
+        </>
+      ) : mobile ? (
+        <span className="calendar-day-date">{fullLabel}</span>
+      ) : (
+        <>
+          <span className="calendar-day-date" aria-hidden="true">
+            {formatDayLabel(day.date, "desktop")}
+          </span>
+          <span className="visually-hidden">{fullLabel}</span>
+        </>
+      )}
+      {/* The narrow desktop cells mark today with the gold date pill alone. */}
+      {day.isToday ? (
+        <span className={mobile ? "calendar-today-tag" : "visually-hidden"}>
+          <span className="visually-hidden">, </span>Today
+        </span>
+      ) : null}
+    </>
   );
 }
 

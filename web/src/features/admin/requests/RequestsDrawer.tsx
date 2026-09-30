@@ -1,35 +1,22 @@
 import { useEffect, useId, useMemo, useRef, useState, type KeyboardEvent } from "react";
 import { Button } from "../../../components/Button";
 import { Spinner } from "../../../components/Spinner";
-import { useAdminRequests, type AdminRequests } from "../../../data/adminRequests";
+import { useAdminRequests } from "../../../data/adminRequests";
 import { useClosedDays, useEmployees } from "../../../data/schedule";
 import { groupPending, pendingRequestCount, splitRequests, toRequestItems } from "../../../lib/adminRequests";
 import { SidebarDrawer } from "../../schedule/SidebarDrawer";
 import { useAdminView } from "../useAdminView";
 import { RequestList } from "./RequestList";
-import { REQUESTS_TOGGLE_ID, useRequestReview } from "./useRequestReview";
+import { useRequestReview } from "./useRequestReview";
 import "./RequestList.css";
 
 type Tab = "pending" | "approved";
 const TABS: readonly Tab[] = ["pending", "approved"];
 
-// Admin sessions whose drawer has had its first-load check (D11). The key is the provider's
-// useState setter: the same for the provider's whole life (the drawer remounts when the admin
-// visits Payroll and comes back) and a new one after signing in again.
-const firstLoadChecked = new WeakSet<(open: boolean) => void>();
-
-/** Opens the drawer once, when the first load of the session finds pending requests. */
-function useOpenOnFirstLoad(data: AdminRequests | undefined, setOpen: (open: boolean) => void): void {
-  useEffect(() => {
-    if (data === undefined || firstLoadChecked.has(setOpen)) return;
-    firstLoadChecked.add(setOpen);
-    if (pendingRequestCount(data) > 0) setOpen(true);
-  }, [data, setOpen]);
-}
-
 /**
  * The sidebar's Requests section: every pending request (any date, any employee, whatever the
- * calendar filter) and the recently approved ones. The count badge shows while it's closed.
+ * calendar filter) and the recently approved ones. It starts closed; the count badge shows while
+ * it's closed.
  */
 export function RequestsDrawer() {
   const { today, requestsDrawerOpen, setRequestsDrawerOpen } = useAdminView();
@@ -41,8 +28,6 @@ export function RequestsDrawer() {
   const tabRefs = useRef<Record<Tab, HTMLButtonElement | null>>({ pending: null, approved: null });
   const restoreFocus = useRef(false);
   const baseId = useId();
-
-  useOpenOnFirstLoad(requests.data, setRequestsDrawerOpen);
 
   const lists = useMemo(() => {
     if (!requests.data || !employees.data || !closedDays.data) return null;
@@ -117,7 +102,6 @@ export function RequestsDrawer() {
   return (
     <SidebarDrawer
       title="Requests"
-      toggleId={REQUESTS_TOGGLE_ID}
       open={requestsDrawerOpen}
       onOpenChange={setRequestsDrawerOpen}
       label={count ? `Requests, ${count} pending` : undefined}

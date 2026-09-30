@@ -83,6 +83,47 @@ insert into public.closed_days (closed_date) values (current_date + 9), (current
 -- Closing a day deletes its shifts, so closed days start with none.
 delete from public.shifts where shift_date in (select closed_date from public.closed_days);
 
+-- Business hours: the first set, a change 60 days ago (the hours in effect now) and a change in
+-- three weeks, inside the default 35-day range so the PDF key shows it.
+-- Weekdays: 0 = Sunday ... 6 = Saturday.
+insert into public.weekly_hours (starts_on, weekday, open_time, close_time) values
+    -- the first set: Sunday 12-5, Monday-Friday 10-8, Saturday 10-6
+    (null, 0, '12:00', '17:00'),
+    (null, 1, '10:00', '20:00'),
+    (null, 2, '10:00', '20:00'),
+    (null, 3, '10:00', '20:00'),
+    (null, 4, '10:00', '20:00'),
+    (null, 5, '10:00', '20:00'),
+    (null, 6, '10:00', '18:00'),
+    -- 60 days ago: Monday-Friday 11-9
+    (current_date - 60, 0, '12:00', '17:00'),
+    (current_date - 60, 1, '11:00', '21:00'),
+    (current_date - 60, 2, '11:00', '21:00'),
+    (current_date - 60, 3, '11:00', '21:00'),
+    (current_date - 60, 4, '11:00', '21:00'),
+    (current_date - 60, 5, '11:00', '21:00'),
+    (current_date - 60, 6, '10:00', '18:00'),
+    -- in three weeks: Tuesday 11-7, Friday 11-10, Saturday 10-10
+    (current_date + 21, 0, '12:00', '17:00'),
+    (current_date + 21, 1, '11:00', '21:00'),
+    (current_date + 21, 2, '11:00', '19:00'),
+    (current_date + 21, 3, '11:00', '21:00'),
+    (current_date + 21, 4, '11:00', '21:00'),
+    (current_date + 21, 5, '11:00', '22:00'),
+    (current_date + 21, 6, '10:00', '22:00');
+
+-- Custom hours. In 3 days: the same as that day's weekly hours, so it shows nothing. In 4
+-- and 11 days: different hours (the second an early close). The first Friday of the change
+-- in three weeks: the old Friday hours, which differ from the new ones, so it shows.
+insert into public.custom_hours (hours_date, open_time, close_time)
+select current_date + 3, w.open_time, w.close_time
+from public.weekly_hours w
+where w.starts_on = current_date - 60 and w.weekday = extract(dow from current_date + 3)::smallint;
+insert into public.custom_hours (hours_date, open_time, close_time) values
+    (current_date + 4, '12:00', '16:00'),
+    (current_date + 11, '10:00', '15:00'),
+    (current_date + 21 + (5 - extract(dow from current_date + 21)::int + 7) % 7, '11:00', '21:00');
+
 -- Time off. Inserted without a login, so the request rules don't apply here.
 insert into public.time_off (employee_id, off_date, period, status, source, requested_at) values
     -- admin-assigned days off
@@ -169,6 +210,23 @@ where not exists (
 );
 delete from public.shifts
 where employee_id = 'e0000000-0000-0000-0000-000000000005' and shift_date = current_date - 8;
+
+-- Hours employees logged ("Log My Hours") for unreviewed shifts in the last two days: Grace
+-- stayed 10 minutes late, and Nora logged hers as scheduled, with a note.
+insert into public.hour_logs (shift_id, employee_id, start_time, end_time, note)
+select s.id, s.employee_id, s.start_time, s.end_time + interval '10 minutes', ''
+from public.shifts s
+where s.employee_id = 'e0000000-0000-0000-0000-000000000008'
+  and s.shift_date between current_date - 2 and current_date - 1
+order by s.shift_date desc
+limit 1;
+insert into public.hour_logs (shift_id, employee_id, start_time, end_time, note)
+select s.id, s.employee_id, s.start_time, s.end_time, 'Restocked the glaze shelf at close'
+from public.shifts s
+where s.employee_id = 'e0000000-0000-0000-0000-000000000006'
+  and s.shift_date between current_date - 2 and current_date - 1
+order by s.shift_date desc
+limit 1;
 
 -- More requests for the admin Requests drawer.
 insert into public.time_off (employee_id, off_date, period, status, source, requested_at) values

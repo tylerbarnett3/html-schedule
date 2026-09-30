@@ -1,11 +1,12 @@
 import { useEmployees } from "../../data/schedule";
 import { Sidebar } from "../schedule/Sidebar";
 import { EmployeesDrawer } from "./employees/EmployeesDrawer";
+import { AdminBusinessHours } from "./hours/AdminBusinessHours";
 import { RequestsDrawer } from "./requests/RequestsDrawer";
 import { useAdminView } from "./useAdminView";
 import "./AdminSidebar.css";
 
-/** The employee page's sidebar plus the Employees and Requests drawers around the filter. */
+/** The employee page's sidebar plus the Employees, Requests and Business Hours drawers around the filter. */
 export function AdminSidebar() {
   const view = useAdminView();
   const employees = useEmployees().data;
@@ -23,7 +24,12 @@ export function AdminSidebar() {
       onSelectAll={view.selectAllEmployees}
       onClearAll={view.clearAllEmployees}
       beforeFilter={<EmployeesDrawer />}
-      afterFilter={<RequestsDrawer />}
+      afterFilter={
+        <>
+          <RequestsDrawer />
+          <AdminBusinessHours />
+        </>
+      }
     />
   );
 }

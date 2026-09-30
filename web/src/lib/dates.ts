@@ -79,7 +79,7 @@ export function formatISODate(d: ISODate, options: Intl.DateTimeFormatOptions): 
 export type MonthKey = string;
 
 export const WEEKDAY_SHORT = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"] as const;
-const WEEKDAY_LONG = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
+export const WEEKDAY_LONG = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"] as const;
 const MONTH_SHORT = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
 const MONTH_LONG = [
   "January",
@@ -98,6 +98,12 @@ const MONTH_LONG = [
 
 function dateParts(d: ISODate): { year: number; month: number; day: number } {
   return { year: Number(d.slice(0, 4)), month: Number(d.slice(5, 7)), day: Number(d.slice(8, 10)) };
+}
+
+/** '8/1/26': month/day/two-digit year without leading zeros (past ranges in the hours editor). */
+export function formatNumericDate(d: ISODate): string {
+  const { year, month, day } = dateParts(d);
+  return `${month}/${day}/${String(year % 100).padStart(2, "0")}`;
 }
 
 /** 'Oct 5' */
