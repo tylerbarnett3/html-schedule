@@ -181,16 +181,82 @@
   text-align: center;
 }
 
+/* The filter count's short form ("9/10") is for phones (below). */
+.sidebar-count-slash {
+  display: none;
+}
+
+/* Only shown in the stacked layout (below). */
+.sidebar-drawer-caption {
+  display: none;
+}
+
+/* Stacked above the calendar (1024px and below): a compact two-column grid instead of a tall
+   column. The two toggles share the first row and the drawer buttons sit two to a row. Each
+   section hands its parts to the grid, so an open drawer's panel spans both columns under its
+   row; "dense" keeps the next button beside it rather than below the panel. The panel names
+   itself, since it may sit under another drawer's button. */
 @media (max-width: 1024px) {
   .sidebar {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    grid-auto-flow: row dense;
+    column-gap: var(--space-8);
+    padding: var(--space-14) var(--space-18) var(--space-6);
     border-right: none;
     border-bottom: 1px solid var(--line);
+  }
+
+  .sidebar-section {
+    display: contents;
+  }
+
+  .sidebar > .sidebar-section > .checkbox {
+    min-height: 44px;
+    margin-bottom: var(--space-8);
+    padding: var(--space-10) var(--space-12);
+  }
+
+  .sidebar-drawer-heading {
+    display: flex;
+    min-width: 0;
+    margin-bottom: var(--space-8);
+  }
+
+  .sidebar-drawer-toggle,
+  .sidebar-drawer-toggle[aria-expanded="true"] {
+    min-height: 44px;
+    padding: var(--space-10) var(--space-12);
+    border-radius: var(--radius-md);
+  }
+
+  .sidebar-drawer,
+  .sidebar-drawer[data-open="true"] {
+    grid-column: 1 / -1;
+    box-shadow: none;
+  }
+
+  /* The margin sits inside the collapsing part, so it opens and closes with the panel. */
+  .sidebar-drawer-content {
+    margin-bottom: var(--space-8);
+    border-top: 1px solid var(--line);
+    border-radius: var(--radius-md);
+  }
+
+  .sidebar-drawer-caption {
+    display: block;
+    margin-bottom: var(--space-10);
+    color: var(--clay-700);
+    font-size: 11px;
+    font-weight: 800;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
   }
 }
 
 @media (max-width: 768px) {
   .sidebar {
-    padding: var(--space-14);
+    padding: var(--space-12) var(--space-12) var(--space-4);
   }
 
   .sidebar-filter-list {
@@ -205,5 +271,40 @@
 @media (max-width: 480px) {
   .sidebar-filter-list {
     grid-template-columns: minmax(0, 1fr);
+  }
+
+  /* Half a phone is narrow: a smaller title and less padding keep "Filter by Employee" on one
+     line on most phones (it wraps on the narrowest). */
+  .sidebar-drawer-toggle,
+  .sidebar-drawer-toggle[aria-expanded="true"] {
+    gap: var(--space-6);
+    padding-inline: var(--space-10);
+    font-size: 13px;
+  }
+
+  /* "9/10" instead of "9 of 10", so the count leaves room for "Filter by Employee". */
+  .sidebar-count-of {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip: rect(0 0 0 0);
+    clip-path: inset(50%);
+    white-space: nowrap;
+  }
+
+  .sidebar-count-slash {
+    display: inline;
+  }
+
+  /* "Time Off" and "Availability" fit half a phone; screen readers still hear "Show". */
+  .sidebar-show-word {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip: rect(0 0 0 0);
+    clip-path: inset(50%);
+    white-space: nowrap;
   }
 }

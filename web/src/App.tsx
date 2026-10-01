@@ -8,8 +8,9 @@ import { ProfileError } from "./features/auth/ProfileError";
 import { SchedulePage } from "./features/schedule/SchedulePage";
 import { useAuth, type AuthState } from "./lib/auth";
 
-// The admin screens are their own download; employees never load them. The preload and the
-// routes share one import, so a failed preload is what the route sees (and reloads for).
+// The admin screens are their own download; only admins and payroll staff load them. The
+// preload and the routes share one import, so a failed preload is what the route sees (and
+// reloads for).
 let adminImport: Promise<typeof import("./features/admin/adminRoutes")> | undefined;
 const importAdmin = () => (adminImport ??= import("./features/admin/adminRoutes"));
 const loadAdmin = () =>
@@ -45,13 +46,13 @@ function gate(auth: AuthState): ReactNode | null {
 
 export default function App() {
   const auth = useAuth();
-  const isAdmin = auth.status === "signed-in" && auth.profile.isAdmin;
+  const canEditPayroll = auth.status === "signed-in" && auth.profile.canEditPayroll;
 
-  // Start the admin download as soon as an admin is known, before any redirect needs it. A
-  // failure is dealt with when the admin route opens.
+  // Start the admin download as soon as an admin (or payroll staff) is known, before any
+  // redirect needs it. A failure is dealt with when the admin route opens.
   useEffect(() => {
-    if (isAdmin) importAdmin().catch(() => {});
-  }, [isAdmin]);
+    if (canEditPayroll) importAdmin().catch(() => {});
+  }, [canEditPayroll]);
 
   if (auth.status === "loading") return <AppLoading />;
 
@@ -62,18 +63,20 @@ export default function App() {
   const home =
     gate(auth) ?? (profile?.isAdmin && !profile.employee ? <Navigate to="/admin" replace /> : <SchedulePage />);
 
-  // Everyone else goes back to their own schedule. The admin layout has its own loading
-  // boundary: navigations run as transitions, which would otherwise keep showing the
-  // previous (possibly blank) screen until the admin download finishes.
+  // Payroll staff who aren't admins get the admin layout for Payroll only; everyone else goes
+  // back to their own schedule. The admin layout has its own loading boundary: navigations run
+  // as transitions, which would otherwise keep showing the previous (possibly blank) screen
+  // until the admin download finishes.
   const admin =
     gate(auth) ??
-    (profile?.isAdmin ? (
+    (profile?.canEditPayroll ? (
       <Suspense fallback={<AppLoading />}>
         <AdminLayout />
       </Suspense>
     ) : (
       <Navigate to="/" replace />
     ));
+  const adminHome = profile?.isAdmin ? <AdminSchedulePage /> : <Navigate to="/" replace />;
 
   return (
     <div className="app-frame">
@@ -82,7 +85,7 @@ export default function App() {
           <Route path="/login" element={auth.status === "signed-out" ? <LoginPage /> : <Navigate to="/" replace />} />
           <Route path="/" element={home} />
           <Route path="/admin" element={admin}>
-            <Route index element={<AdminSchedulePage />} />
+            <Route index element={adminHome} />
             <Route path="payroll" element={<PayrollPage />} />
           </Route>
           <Route path="*" element={<Navigate to="/" replace />} />

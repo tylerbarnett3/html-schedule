@@ -6,6 +6,7 @@
 --   avery, jordan, mia, sam, taylor, nora, eli, grace, leo   employees
 --   archived            linked to an archived employee
 --   nobody              a login that isn't an admin or an employee
+--   mia                 also has payroll access (payroll_staff), without being an admin
 
 create function pg_temp.add_login(p_username text, p_id uuid)
 returns void
@@ -58,6 +59,9 @@ begin
     perform pg_temp.add_login('nobody', '00000000-0000-0000-0000-0000000000ff');
 end;
 $$;
+
+-- Mia helps with payroll: she can review and edit it, but isn't an admin.
+insert into public.payroll_staff (user_id) values ('00000000-0000-0000-0000-000000000003');
 
 -- Shifts from 3 weeks ago to 7 weeks ahead: most employees work most days on a
 -- rotating pattern, plus one overnight shift a week.

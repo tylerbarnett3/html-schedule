@@ -1,6 +1,7 @@
 /* Export Backup: a round icon button in the header's top left corner, styled like Sign out. */
 .export-backup-btn {
   display: inline-flex;
+  flex: none;
   align-items: center;
   justify-content: center;
   width: 34px;

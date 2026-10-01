@@ -19,6 +19,12 @@
   pointer-events: none;
 }
 
+/* Admin pages: the name sits centered in the top row, just above the title, so the title
+   moves down a little to make room. */
+.app-header-name-center {
+  padding-top: calc(var(--space-38) + var(--space-14));
+}
+
 .app-header-title,
 .app-header-actions {
   position: relative;
@@ -43,25 +49,47 @@
   padding-top: var(--space-20);
 }
 
-.app-header-account {
+/* The top row: corner and/or name on the left, the name in the middle (admin pages), and
+   Admin + Sign out on the right. The side columns share the leftover width equally, so the
+   middle stays centered; a long name shortens with an ellipsis. */
+.app-header-bar {
   position: absolute;
   top: var(--space-14);
   right: var(--space-18);
-  z-index: var(--z-sticky);
-  display: flex;
-  align-items: center;
-  gap: var(--space-10);
-  max-width: min(45%, 360px);
-}
-
-.app-header-corner {
-  position: absolute;
-  top: var(--space-14);
   left: var(--space-18);
   z-index: var(--z-sticky);
+  display: grid;
+  grid-template-columns: 1fr minmax(0, auto) 1fr;
+  align-items: center;
+  gap: var(--space-10);
+}
+
+.app-header-start,
+.app-header-end {
   display: flex;
   align-items: center;
   gap: var(--space-10);
+}
+
+/* A long name on the left shortens; the buttons on the right never do (on a phone they can
+   push a centered name off true center, never over them). With the name in the middle, the
+   left holds only the Export icon, which keeps its size and the name shortens instead. */
+.app-header-start {
+  min-width: 0;
+}
+
+.app-header-name-center .app-header-start {
+  min-width: max-content;
+}
+
+.app-header-end {
+  justify-content: flex-end;
+}
+
+.app-header-middle {
+  display: flex;
+  justify-content: center;
+  min-width: 0;
 }
 
 .app-header-user {
@@ -91,7 +119,12 @@
 .app-header-link {
   display: inline-flex;
   align-items: center;
+  white-space: nowrap;
   text-decoration: none;
+}
+
+.app-header-signout {
+  white-space: nowrap;
 }
 
 .app-header-link:hover,
@@ -110,14 +143,17 @@
     padding: var(--space-14) var(--space-18) 24px;
   }
 
-  /* Phones: the account row sits above the title instead of floating over it. */
-  .app-header-account {
+  /* Phones: the top row sits above the title instead of floating over it. */
+  .app-header-name-center {
+    padding-top: var(--space-14);
+  }
+
+  .app-header-bar {
     position: relative;
     top: auto;
     right: auto;
-    justify-content: flex-end;
-    max-width: none;
-    margin: 0 -6px var(--space-12) 0;
+    left: auto;
+    margin-bottom: var(--space-12);
   }
 
   .app-header-link,
@@ -129,7 +165,7 @@
     margin-top: var(--space-14);
   }
 
-  .app-header-account + .app-header-title {
+  .app-header-bar + .app-header-title {
     margin-top: 0;
   }
 }
@@ -138,5 +174,39 @@
   .app-header-actions {
     flex-direction: column;
     align-items: stretch;
+  }
+}
+
+/* An admin who is also an employee has Employee view and Sign out on the right, which leaves
+   no room below about 560px for a name centered between them and the Export icon: the name
+   gets its own centered line under the row. */
+@media (max-width: 560px) {
+  .app-header-name-center .app-header-bar:has(.app-header-link) {
+    grid-template-columns: 1fr auto;
+    grid-template-areas:
+      "start end"
+      "middle middle";
+    row-gap: var(--space-6);
+  }
+
+  .app-header-name-center .app-header-bar:has(.app-header-link) .app-header-start {
+    grid-area: start;
+  }
+
+  .app-header-name-center .app-header-bar:has(.app-header-link) .app-header-middle {
+    grid-area: middle;
+  }
+
+  .app-header-name-center .app-header-bar:has(.app-header-link) .app-header-end {
+    grid-area: end;
+  }
+}
+
+/* Narrower than a 320px phone (a folded Galaxy Fold), Employee view and Sign out stack. */
+@media (max-width: 340px) {
+  .app-header-name-center .app-header-bar:has(.app-header-link) .app-header-end {
+    flex-direction: column;
+    align-items: flex-end;
+    gap: var(--space-6);
   }
 }

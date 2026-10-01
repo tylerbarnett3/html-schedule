@@ -222,6 +222,21 @@ export type Database = {
           },
         ];
       };
+      payroll_staff: {
+        Row: {
+          created_at: string;
+          user_id: string;
+        };
+        Insert: {
+          created_at?: string;
+          user_id: string;
+        };
+        Update: {
+          created_at?: string;
+          user_id?: string;
+        };
+        Relationships: [];
+      };
       shift_actuals: {
         Row: {
           actualized_at: string;
@@ -468,7 +483,9 @@ export type Database = {
       approve_time_off: { Args: { p_delete_shift_ids?: string[]; p_ids: string[] }; Returns: Json };
       assert_admin: { Args: Record<PropertyKey, never>; Returns: undefined };
       assert_open: { Args: { p_dates: string[] }; Returns: undefined };
+      assert_payroll: { Args: Record<PropertyKey, never>; Returns: undefined };
       business_today: { Args: Record<PropertyKey, never>; Returns: string };
+      can_edit_payroll: { Args: Record<PropertyKey, never>; Returns: boolean };
       capture_delete_shifts: { Args: { p_ids: string[] }; Returns: Json };
       check_request_date: { Args: { p_date: string; p_employee_id: string }; Returns: undefined };
       current_employee_id: { Args: Record<PropertyKey, never>; Returns: string };

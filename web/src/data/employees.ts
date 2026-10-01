@@ -23,7 +23,7 @@ const EMPLOYEES_KEY = ["employees"] as const;
 const EMPLOYEE_LOGINS_KEY = ["employees", "logins"] as const;
 const EMPLOYEE_RATES_KEY = ["employeeRates"] as const;
 
-/** Every pay rate. Only admins can read them; anyone else gets an empty list. */
+/** Every pay rate. Only admins can read them (not payroll staff); anyone else gets an empty list. */
 export function fetchEmployeeRates(signal: AbortSignal): Promise<EmployeeRate[]> {
   return fetchAll((from, to) =>
     supabase
@@ -37,10 +37,12 @@ export function fetchEmployeeRates(signal: AbortSignal): Promise<EmployeeRate[]>
   );
 }
 
-export function useEmployeeRates(): UseQueryResult<EmployeeRate[]> {
+/** `enabled: false` skips the read, for someone who can't see rates anyway. */
+export function useEmployeeRates({ enabled = true }: { enabled?: boolean } = {}): UseQueryResult<EmployeeRate[]> {
   return useQuery({
     queryKey: EMPLOYEE_RATES_KEY,
     queryFn: ({ signal }) => fetchEmployeeRates(signal),
+    enabled,
   });
 }
 

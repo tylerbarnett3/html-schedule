@@ -14,6 +14,7 @@ import {
   WEEKDAY_SHORT,
   weekdayOf,
 } from "./dates";
+import { rateForDate, type EmployeeRate, type RatePeriod } from "./rates";
 import type { Tables } from "./supabase";
 import { absoluteShiftInterval, formatTime12Hour, shiftDurationMinutes, timeToMinutes } from "./time";
 import type { DateRange, Employee, ISODate, PgTime, Shift } from "./types";
@@ -660,8 +661,6 @@ export interface ActualsSummary {
   scheduledMinutes: number;
   actualMinutes: number;
   reviewedScheduledMinutes: number;
-  adjustedCount: number;
-  vacatedCount: number;
 }
 
 /** Totals over the saved rows, leaving out dates that haven't happened yet. */
@@ -672,8 +671,6 @@ export function summarize(pristine: readonly DraftRow[], today: ISODate): Actual
     scheduledMinutes: 0,
     actualMinutes: 0,
     reviewedScheduledMinutes: 0,
-    adjustedCount: 0,
-    vacatedCount: 0,
   };
   for (const row of pristine) {
     if (isFutureWorkDate(rowDate(row), today)) continue;
@@ -683,25 +680,125 @@ export function summarize(pristine: readonly DraftRow[], today: ISODate): Actual
     if (row.status === null) continue;
     summary.reviewedCount += 1;
     summary.reviewedScheduledMinutes += scheduled;
-    if (row.status === "not-worked") summary.vacatedCount += 1;
-    else summary.actualMinutes += minutesWorked(row.start, row.end);
-    if (row.status === "adjusted" || row.status === "unscheduled") summary.adjustedCount += 1;
+    if (row.status !== "not-worked") summary.actualMinutes += minutesWorked(row.start, row.end);
   }
   return summary;
 }
 
-export type SummaryLabel = "Scheduled" | "Actual reviewed" | "Difference" | "Adjusted" | "Vacated";
+// ---------------------------------------------------------------------------
+// Estimated labor cost
 
-export function summaryStats(s: ActualsSummary): { label: SummaryLabel; value: string }[] {
-  return [
+/** Hours times each employee's hourly rate on the day, added up. */
+export interface LaborCost {
+  dollars: number;
+  /** Employees with hours in the total but no rate on one of those days; those hours add nothing. */
+  missingRateIds: string[];
+}
+
+export interface LaborCosts {
+  /** Every shift on the schedule up to today, at its scheduled times. */
+  scheduled: LaborCost;
+  /** The reviewed hours (the "Actual reviewed" total), for whoever actually worked them. */
+  actual: LaborCost;
+}
+
+/**
+ * The estimated labor cost of the saved rows, leaving out dates that haven't happened yet
+ * (the same rows as summarize). Each shift is priced at the rate in effect on its date.
+ */
+export function laborCosts(pristine: readonly DraftRow[], rates: readonly EmployeeRate[], today: ISODate): LaborCosts {
+  const byEmployee = new Map<string, RatePeriod[]>();
+  for (const rate of rates) {
+    const list = byEmployee.get(rate.employee_id) ?? [];
+    list.push(rate);
+    byEmployee.set(rate.employee_id, list);
+  }
+  // Added up in whole "minute-cents" (minutes x rate in cents), which stays exact, and divided
+  // by 60 once: a total on a half cent then rounds up, as Postgres rounds numeric.
+  const tally = () => ({ minuteCents: 0, missing: new Set<string>() });
+  const scheduled = tally();
+  const actual = tally();
+  const add = (into: ReturnType<typeof tally>, employeeId: string | null, date: ISODate, minutes: number) => {
+    if (employeeId === null || minutes === 0) return;
+    const rate = rateForDate(byEmployee.get(employeeId) ?? [], date);
+    if (rate === null) into.missing.add(employeeId);
+    else into.minuteCents += minutes * Math.round(rate * 100);
+  };
+
+  for (const row of pristine) {
+    const date = rowDate(row);
+    if (isFutureWorkDate(date, today)) continue;
+    if (row.kind === "scheduled") {
+      add(scheduled, row.shift.employee_id, date, minutesWorked(row.shift.start_time, row.shift.end_time));
+    }
+    if (row.status !== null && row.status !== "not-worked") {
+      add(actual, row.employeeId, date, minutesWorked(row.start, row.end));
+    }
+  }
+  const done = (t: ReturnType<typeof tally>): LaborCost => ({
+    dollars: Math.round(t.minuteCents / 60) / 100,
+    missingRateIds: [...t.missing],
+  });
+  return { scheduled: done(scheduled), actual: done(actual) };
+}
+
+const CURRENCY = new Intl.NumberFormat("en-US", { style: "currency", currency: "USD" });
+
+/** '$1,234.50' */
+export function formatDollars(dollars: number): string {
+  return CURRENCY.format(dollars);
+}
+
+/** Under a cost whose total leaves some hours out: 'No rate for Leo Bennett' or 'No rate for 3 employees'. */
+export function missingRateNote(ids: readonly string[], nameOf: (employeeId: string) => string): string | undefined {
+  if (ids.length === 0) return undefined;
+  if (ids.length > 2) return `No rate for ${ids.length} employees`;
+  return `No rate for ${ids.map(nameOf).sort((a, b) => a.localeCompare(b)).join(" and ")}`;
+}
+
+export type SummaryLabel =
+  | "Scheduled"
+  | "Actual reviewed"
+  | "Difference"
+  | "Est. labor costs (scheduled)"
+  | "Est. labor costs (actual)";
+
+export interface SummaryStat {
+  label: SummaryLabel;
+  value: string;
+  /** A short line under the value, e.g. which employees have no rate. */
+  note?: string;
+}
+
+/**
+ * The summary strip. `costs` is null until the pay rates have loaded (or when they can't),
+ * which shows a dash for both costs. Without `withCosts` (payroll staff, who can't see pay
+ * rates) the two costs are left out.
+ */
+export function summaryStats(
+  s: ActualsSummary,
+  costs: LaborCosts | null,
+  nameOf: (employeeId: string) => string,
+  withCosts = true,
+): SummaryStat[] {
+  const cost = (label: SummaryLabel, c: LaborCost | undefined, shown: boolean): SummaryStat => {
+    if (!c || !shown) return { label, value: "—" };
+    const note = missingRateNote(c.missingRateIds, nameOf);
+    return note ? { label, value: formatDollars(c.dollars), note } : { label, value: formatDollars(c.dollars) };
+  };
+  const hours: SummaryStat[] = [
     { label: "Scheduled", value: formatActualHours(s.scheduledMinutes) },
     { label: "Actual reviewed", value: formatActualHours(s.actualMinutes) },
     {
       label: "Difference",
       value: s.reviewedCount ? formatActualDifference(s.actualMinutes - s.reviewedScheduledMinutes) : "—",
     },
-    { label: "Adjusted", value: String(s.adjustedCount) },
-    { label: "Vacated", value: String(s.vacatedCount) },
+  ];
+  if (!withCosts) return hours;
+  return [
+    ...hours,
+    cost("Est. labor costs (scheduled)", costs?.scheduled, true),
+    cost("Est. labor costs (actual)", costs?.actual, s.reviewedCount > 0),
   ];
 }
 

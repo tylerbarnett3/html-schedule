@@ -21,6 +21,8 @@ export function emailToLogin(email: string): string {
 export type Profile = {
   employee: Tables<"employees"> | null;
   isAdmin: boolean;
+  /** Admins, and payroll staff (payroll_staff): they can open and edit Payroll. */
+  canEditPayroll: boolean;
 };
 
 export type AuthState =

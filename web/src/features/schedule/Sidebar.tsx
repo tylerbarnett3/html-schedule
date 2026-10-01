@@ -50,14 +50,22 @@ export function Sidebar({
     <aside className={["sidebar", className].filter(Boolean).join(" ")} aria-label="Calendar options">
       <div className="sidebar-section">
         <Checkbox
-          label="Show Time Off"
+          label={
+            <>
+              <span className="sidebar-show-word">Show </span>Time Off
+            </>
+          }
           checked={showTimeOff}
           onChange={(event) => onShowTimeOffChange(event.target.checked)}
         />
       </div>
       <div className="sidebar-section">
         <Checkbox
-          label="Show Availability"
+          label={
+            <>
+              <span className="sidebar-show-word">Show </span>Availability
+            </>
+          }
           checked={showAvailability}
           onChange={(event) => onShowAvailabilityChange(event.target.checked)}
         />
@@ -69,8 +77,14 @@ export function Sidebar({
         onOpenChange={setOpen}
         badge={
           filtered ? (
+            // "9 of 10", or "9/10" on a phone; screen readers hear "9 of 10 shown" either way.
             <>
-              {shown} of {total}
+              {shown}
+              <span className="sidebar-count-of"> of </span>
+              <span className="sidebar-count-slash" aria-hidden="true">
+                /
+              </span>
+              {total}
               <span className="visually-hidden"> shown</span>
             </>
           ) : null

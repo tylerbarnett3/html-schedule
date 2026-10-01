@@ -24,7 +24,8 @@
 /* Summary strip: five cells with hairline dividers (the gaps show the border color). */
 .payroll-summary {
   display: grid;
-  grid-template-columns: repeat(5, minmax(0, 1fr));
+  /* Five metrics for admins; three (no labor costs) for payroll staff. */
+  grid-template-columns: repeat(var(--payroll-stats, 5), minmax(0, 1fr));
   gap: 1px;
   overflow: hidden;
   background: var(--line);
@@ -51,6 +52,16 @@
   font-size: 17px;
   font-weight: 700;
   font-variant-numeric: tabular-nums;
+}
+
+/* Which employees an estimated cost leaves out (no pay rate on those days). */
+.payroll-stat-note {
+  display: block;
+  margin-top: 2px;
+  color: var(--clay-700);
+  font-size: 11px;
+  font-weight: 600;
+  line-height: 1.35;
 }
 
 .payroll-command-bar {
@@ -172,27 +183,22 @@ input[type="time"].payroll-input {
     font-size: 21px;
   }
 
-  .payroll-heading .btn,
   .payroll-command-bar .btn {
     width: 100%;
     min-height: 48px;
   }
 
-  /* Two wide cells, then three. */
+  /* Hours in a pair, the difference across, then the two costs in a pair. */
   .payroll-summary {
-    grid-template-columns: repeat(6, minmax(0, 1fr));
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
   .payroll-stat {
     padding: var(--space-12);
   }
 
-  .payroll-stat:nth-child(-n + 2) {
-    grid-column: span 3;
-  }
-
-  .payroll-stat:nth-child(n + 3) {
-    grid-column: span 2;
+  .payroll-stat:nth-child(3) {
+    grid-column: 1 / -1;
   }
 
   /* 16px keeps iOS from zooming into the field. */

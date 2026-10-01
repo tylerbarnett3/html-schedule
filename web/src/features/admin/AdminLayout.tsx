@@ -14,7 +14,7 @@ export function AdminLayout() {
   return (
     <AdminViewProvider>
       <UndoProvider>
-        <AppHeader corner={<ExportBackupButton />} />
+        <AppHeader corner={<ExportBackupButton />} nameAlign="center" />
         <AdminToolbar />
         <Outlet />
       </UndoProvider>

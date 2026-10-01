@@ -1,17 +1,20 @@
-import { useCallback, useEffect, useId, useMemo, useRef, useState } from "react";
-import { Link, useSearchParams } from "react-router";
+import { useCallback, useEffect, useId, useMemo, useRef, useState, type CSSProperties } from "react";
+import { useSearchParams } from "react-router";
 import { Button } from "../../../components/Button";
 import { Spinner } from "../../../components/Spinner";
 import { useConfirm } from "../../../components/useConfirm";
 import { useToast } from "../../../components/useToast";
+import { useEmployeeRates } from "../../../data/employees";
 import { adminErrorMessage } from "../../../data/errors";
 import { usePayrollPeriod, useSaveActuals } from "../../../data/payroll";
 import { useClosedDays, useEmployees } from "../../../data/schedule";
+import { useAuth } from "../../../lib/auth";
 import { rangeDates } from "../../../lib/dates";
 import { hourLogsByShift, type HourLog } from "../../../lib/hourLogs";
 import {
   buildPristineRows,
   findInvalidRow,
+  laborCosts,
   newActualOnlyRow,
   overlapConfirmMessage,
   overlapWarnings,
@@ -51,6 +54,9 @@ const SAVE_ERROR = "There was an error saving your changes.";
  */
 export function PayrollPage() {
   const { today } = useAdminView();
+  const auth = useAuth();
+  // Payroll staff who aren't admins can't see pay rates, so they get no labor costs.
+  const isAdmin = auth.status === "signed-in" && auth.profile.isAdmin;
   const confirm = useConfirm();
   const toast = useToast();
   const id = useId();
@@ -66,6 +72,7 @@ export function PayrollPage() {
   const employeesQuery = useEmployees();
   const closedQuery = useClosedDays();
   const payrollQuery = usePayrollPeriod(period);
+  const ratesQuery = useEmployeeRates({ enabled: isAdmin });
   const save = useSaveActuals();
 
   const employees = employeesQuery.data;
@@ -140,6 +147,10 @@ export function PayrollPage() {
   };
 
   const summary = useMemo(() => summarize(pristine, today), [pristine, today]);
+  // The estimated costs wait for the pay rates; until then (or if they can't load) they show a dash.
+  const rates = ratesQuery.data;
+  const costs = useMemo(() => (rates ? laborCosts(pristine, rates, today) : null), [pristine, rates, today]);
+  const stats = summaryStats(summary, costs, nameOf, isAdmin);
   const lines = useMemo(
     () => (data && employees ? payrollLines(employees, data.actuals, period) : []),
     [data, employees, period],
@@ -311,11 +322,14 @@ export function PayrollPage() {
   } else {
     body = (
       <>
-        <dl className="payroll-summary">
-          {summaryStats(summary).map((stat) => (
+        <dl className="payroll-summary" style={{ "--payroll-stats": stats.length } as CSSProperties}>
+          {stats.map((stat) => (
             <div key={stat.label} className="payroll-stat">
               <dt>{stat.label}</dt>
-              <dd>{stat.value}</dd>
+              <dd>
+                {stat.value}
+                {stat.note ? <span className="payroll-stat-note">{stat.note}</span> : null}
+              </dd>
             </div>
           ))}
         </dl>
@@ -395,13 +409,11 @@ export function PayrollPage() {
 
   return (
     <main className="admin-area payroll" aria-labelledby={`${id}-title`}>
+      {/* "Back to schedule" is the toolbar's gold button on this page. */}
       <div className="payroll-heading">
         <h2 id={`${id}-title`} className="payroll-title">
           Payroll
         </h2>
-        <Link to="/admin" className="btn btn-secondary btn-md payroll-back">
-          Back to schedule
-        </Link>
       </div>
       {/* One grid cell, so the empty status region below adds no gap. */}
       <div className="payroll-period-wrap">

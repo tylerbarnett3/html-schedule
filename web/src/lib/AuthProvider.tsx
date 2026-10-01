@@ -3,14 +3,24 @@ import type { Session } from "@supabase/supabase-js";
 import { AuthContext, type AuthState, type Profile } from "./auth";
 import { supabase } from "./supabase";
 
+// PostgREST's "no such function": the database doesn't have can_edit_payroll yet
+// (20260930000003_payroll_access.sql not applied), so only admins have payroll.
+const MISSING_FUNCTION = "PGRST202";
+
 async function loadProfile(session: Session): Promise<Profile> {
-  const [admin, employee] = await Promise.all([
+  const [admin, employee, payroll] = await Promise.all([
     supabase.rpc("is_admin"),
     supabase.from("employees").select("*").eq("user_id", session.user.id).maybeSingle(),
+    supabase.rpc("can_edit_payroll"),
   ]);
   if (admin.error) throw admin.error;
   if (employee.error) throw employee.error;
-  return { isAdmin: admin.data, employee: employee.data };
+  if (payroll.error && payroll.error.code !== MISSING_FUNCTION) throw payroll.error;
+  return {
+    isAdmin: admin.data,
+    employee: employee.data,
+    canEditPayroll: admin.data || (!payroll.error && payroll.data === true),
+  };
 }
 
 const RETRY_DELAY_MS = 1000;

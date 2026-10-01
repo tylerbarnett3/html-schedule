@@ -129,6 +129,8 @@
   }
 }
 
+/* Phones: arrows beside the title (one line from about 340px up), then Start and End side by
+   side with small labels above, so the whole card takes about two rows. */
 @media (max-width: 768px) {
   .period-nav {
     display: grid;
@@ -137,9 +139,11 @@
       "prev title next"
       "fields fields fields"
       "note note note";
-    align-items: start;
-    gap: var(--space-12);
-    padding: var(--space-14);
+    align-items: center;
+    gap: var(--space-10) var(--space-8);
+    margin-bottom: var(--space-14);
+    padding: var(--space-12);
+    border-radius: 16px;
   }
 
   .period-nav-info {
@@ -157,34 +161,48 @@
   .period-nav-arrow {
     width: 44px;
     height: 44px;
-    margin-top: 3px;
   }
 
   .period-nav-title {
     grid-area: title;
-    align-self: center;
+    font-size: 17px;
   }
 
+  .period-nav-range,
+  .period-nav-days {
+    display: inline;
+  }
+
+  /* When the title does wrap (below about 340px), the day count moves down whole. */
+  .period-nav-days {
+    color: var(--muted);
+    font-size: 14px;
+    font-weight: 700;
+    letter-spacing: -0.01em;
+    white-space: nowrap;
+  }
+
+  /* label, input, label, input fill the columns top to bottom: Start on the left, End on the right. */
   .period-nav-fields {
     grid-area: fields;
-    grid-template-columns: minmax(0, 1fr);
-    gap: var(--space-8);
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    grid-template-rows: auto auto;
+    grid-auto-flow: column;
+    gap: var(--space-4) var(--space-8);
   }
 
   .period-nav-label {
+    font-size: 12px;
     text-align: left;
+  }
+
+  .period-nav-input {
+    min-height: 44px;
+    padding: var(--space-8) var(--space-10);
   }
 
   .period-nav-note {
     grid-area: note;
     text-align: center;
-  }
-}
-
-@media (max-width: 480px) {
-  .period-nav {
-    grid-template-columns: 42px minmax(0, 1fr) 42px;
-    margin-bottom: var(--space-14);
-    border-radius: 16px;
   }
 }

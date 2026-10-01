@@ -175,7 +175,7 @@ export function SchedulePage() {
   let actions: ReactNode = null;
   if (employee && !employee.archived) {
     actions = (
-      <>
+      <div className="schedule-actions">
         <Button variant="gold" onClick={() => setDialog("time-off")}>
           Request Time Off
         </Button>
@@ -185,7 +185,7 @@ export function SchedulePage() {
         <Button variant="gold" onClick={() => setLogHoursOpen(true)}>
           Log My Hours
         </Button>
-      </>
+      </div>
     );
   } else if (employee) {
     actions = (

@@ -11,6 +11,29 @@
   padding: clamp(18px, 3vw, 34px);
 }
 
+/* The three header buttons: one row while they fit (the wrapper steps aside), else Request
+   Time Off across the top and the other two side by side under it. */
+.schedule-actions {
+  display: contents;
+}
+
+@media (max-width: 540px) {
+  .schedule-actions {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: var(--space-8);
+    width: 100%;
+  }
+
+  .schedule-actions > :first-child {
+    grid-column: 1 / -1;
+  }
+
+  .schedule-actions > .btn {
+    padding-inline: var(--space-12);
+  }
+}
+
 /* Shown in the header instead of the request buttons (archived login or admin). */
 .schedule-header-note {
   max-width: 40rem;

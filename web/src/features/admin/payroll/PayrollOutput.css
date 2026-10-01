@@ -12,7 +12,53 @@
   justify-content: space-between;
   gap: var(--space-16);
   padding: var(--space-14) var(--space-16);
+}
+
+.payroll-output[data-open="true"] .payroll-output-header {
   border-bottom: 1px solid var(--line);
+}
+
+/* The title opens and closes the list: a chevron points down when open, right when closed. */
+.payroll-output-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-8);
+  min-height: 32px;
+  margin: -4px -6px;
+  padding: 4px 6px;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  background: none;
+  border: none;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+}
+
+.payroll-output-toggle:hover {
+  background: var(--surface-tint);
+}
+
+/* Kept tight to the button, so the ring doesn't cover the description under it. */
+.payroll-output-toggle:focus-visible {
+  outline-offset: 0;
+}
+
+.payroll-output-chevron {
+  flex: none;
+  color: var(--clay-700);
+  font-size: 11px;
+  transform: rotate(-90deg);
+  transition: transform 0.2s;
+}
+
+.payroll-output-toggle[aria-expanded="true"] .payroll-output-chevron {
+  transform: none;
+}
+
+.payroll-output-heading {
+  font-size: 15px;
+  line-height: 1.3;
 }
 
 .payroll-output-title {
@@ -22,7 +68,7 @@
 }
 
 .payroll-output-description {
-  margin-top: 3px;
+  margin-top: var(--space-6);
   color: var(--clay-700);
   font-size: 12px;
   line-height: 1.4;
@@ -30,6 +76,10 @@
 
 .payroll-output-header .btn {
   flex: none;
+}
+
+.payroll-output-text[hidden] {
+  display: none;
 }
 
 .payroll-output-text {

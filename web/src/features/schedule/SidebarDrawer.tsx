@@ -51,7 +51,13 @@ export function SidebarDrawer({ title, icon, badge, label, open, onOpenChange, t
       </h2>
       <div id={drawerId} className="sidebar-drawer" data-open={open}>
         <div className="sidebar-drawer-inner">
-          <div className="sidebar-drawer-content">{children}</div>
+          <div className="sidebar-drawer-content">
+            {/* Names the panel where it opens away from its button (the stacked layout). */}
+            <p className="sidebar-drawer-caption" aria-hidden="true">
+              {title}
+            </p>
+            {children}
+          </div>
         </div>
       </div>
     </div>

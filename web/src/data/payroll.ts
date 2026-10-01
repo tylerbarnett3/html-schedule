@@ -1,7 +1,7 @@
-// Payroll reads and the actuals save. Reading is plain table access (admins only, by RLS);
-// the save goes through save_shift_actuals (migration 004), which writes in one transaction
-// and stamps actualized_at and work_date on the server. The hours employees logged for the
-// period's shifts (hour_logs, migration 006) are read alongside.
+// Payroll reads and the actuals save. Reading is plain table access (admins and payroll
+// staff, by RLS); the save goes through save_shift_actuals (migration 004), which writes in
+// one transaction and stamps actualized_at and work_date on the server. The hours employees
+// logged for the period's shifts (hour_logs, migration 006) are read alongside.
 
 import {
   keepPreviousData,

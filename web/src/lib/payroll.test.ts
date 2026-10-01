@@ -14,10 +14,13 @@ import {
   findInvalidRow,
   formatActualDifference,
   formatActualHours,
+  formatDollars,
   formatDuration,
   formatPayrollDecimalHours,
   isFutureWorkDate,
+  laborCosts,
   lastSavedText,
+  missingRateNote,
   newActualOnlyRow,
   nudgeClock,
   overlapConfirmMessage,
@@ -107,6 +110,13 @@ const u1 = actual("u1", {
 const actuals = [as1, as2, as3, u1];
 
 const pristine = buildPristineRows({ period: P, shifts, actuals });
+
+// Avery $16 throughout; Bea $15.50 through Sep 15, then $16.50.
+const RATES = [
+  { id: "r1", employee_id: "e1", rate: 16, start_date: null, end_date: null },
+  { id: "r2", employee_id: "e2", rate: 15.5, start_date: null, end_date: "2026-09-15" },
+  { id: "r3", employee_id: "e2", rate: 16.5, start_date: "2026-09-16", end_date: null },
+];
 
 function row(key: string): DraftRow {
   const found = pristine.find((r) => r.key === key);
@@ -502,21 +512,45 @@ describe("buildPristineRows", () => {
 describe("summarize, summaryStats and progressLabel", () => {
   it("adds up the saved rows up to today", () => {
     const summary = summarize(pristine, TODAY);
-    expect(summaryStats(summary)).toEqual([
+    expect(summaryStats(summary, laborCosts(pristine, RATES, TODAY), nameOf)).toEqual([
       { label: "Scheduled", value: "28 hr" },
       { label: "Actual reviewed", value: "16.3 hr" },
       { label: "Difference", value: "−5 hr 45 min" },
-      { label: "Adjusted", value: "2" },
-      { label: "Vacated", value: "1" },
+      { label: "Est. labor costs (scheduled)", value: "$447.00" },
+      { label: "Est. labor costs (actual)", value: "$260.00" },
     ]);
     expect(progressLabel(summary)).toBe("4 of 5 shifts reviewed");
   });
 
-  it("shows a dash for the difference when nothing is reviewed", () => {
+  it("shows a dash for the difference and the actual cost when nothing is reviewed", () => {
     const rows = buildPristineRows({ period: P, shifts: [s4], actuals: [] });
     const summary = summarize(rows, TODAY);
-    expect(summaryStats(summary)[2]).toEqual({ label: "Difference", value: "—" });
+    const stats = summaryStats(summary, laborCosts(rows, RATES, TODAY), nameOf);
+    expect(stats[2]).toEqual({ label: "Difference", value: "—" });
+    expect(stats[3]).toEqual({ label: "Est. labor costs (scheduled)", value: "$99.00" });
+    expect(stats[4]).toEqual({ label: "Est. labor costs (actual)", value: "—" });
     expect(progressLabel(summary)).toBe("0 of 1 shift reviewed");
+  });
+
+  it("leaves the costs out for payroll staff, who can't see pay rates", () => {
+    const stats = summaryStats(summarize(pristine, TODAY), null, nameOf, false);
+    expect(stats.map((stat) => stat.label)).toEqual(["Scheduled", "Actual reviewed", "Difference"]);
+  });
+
+  it("shows dashes for both costs until the rates load", () => {
+    const stats = summaryStats(summarize(pristine, TODAY), null, nameOf);
+    expect(stats.slice(3)).toEqual([
+      { label: "Est. labor costs (scheduled)", value: "—" },
+      { label: "Est. labor costs (actual)", value: "—" },
+    ]);
+  });
+
+  it("notes employees without a rate", () => {
+    const withoutBea = RATES.filter((r) => r.employee_id !== "e2");
+    const stats = summaryStats(summarize(pristine, TODAY), laborCosts(pristine, withoutBea, TODAY), nameOf);
+    expect(stats[3]).toEqual({ label: "Est. labor costs (scheduled)", value: "$224.00", note: "No rate for bea Cruz" });
+    // Bea's only reviewed shift was vacated, so the actual cost misses nothing.
+    expect(stats[4]).toEqual({ label: "Est. labor costs (actual)", value: "$260.00" });
   });
 
   it("says when there's nothing to review", () => {
@@ -533,6 +567,79 @@ describe("summarize, summaryStats and progressLabel", () => {
     });
     const summary = summarize(buildPristineRows({ period: P, shifts: [], actuals: [orphan] }), TODAY);
     expect(summary).toMatchObject({ rowCount: 1, reviewedCount: 1, actualMinutes: 360, scheduledMinutes: 0 });
+  });
+});
+
+describe("laborCosts", () => {
+  it("prices each shift at the rate on its date, leaving out the future", () => {
+    // s1 8h x $16 + s2 8h x $15.50 (before Bea's raise) + s3 6h x $16 + s4 6h x $16.50 (after).
+    // s5 (Sep 28) is after TODAY. Actual: as1 8h and as3 6.25h for Avery, u1 2h, as2 vacated.
+    expect(laborCosts(pristine, RATES, TODAY)).toEqual({
+      scheduled: { dollars: 447, missingRateIds: [] },
+      actual: { dollars: 260, missingRateIds: [] },
+    });
+  });
+
+  it("charges the employee who actually worked, at their rate", () => {
+    const covered = actual("c1", {
+      shift_id: "s4",
+      employee_id: "e1",
+      work_date: "2026-09-16",
+      start_time: "12:00:00",
+      end_time: "18:00:00",
+      status: "adjusted",
+    });
+    const rows = buildPristineRows({ period: P, shifts: [s4], actuals: [covered] });
+    // Scheduled for Bea at $16.50; worked by Avery at $16.
+    expect(laborCosts(rows, RATES, TODAY)).toEqual({
+      scheduled: { dollars: 99, missingRateIds: [] },
+      actual: { dollars: 96, missingRateIds: [] },
+    });
+  });
+
+  it("counts overnight hours and rounds the total to cents", () => {
+    const night = shift("n1", "e1", "2026-09-18", "22:00:00", "02:20:00");
+    const rows = buildPristineRows({ period: P, shifts: [night], actuals: [] });
+    // 4h 20m x $16 = $69.333…
+    expect(laborCosts(rows, RATES, TODAY).scheduled.dollars).toBe(69.33);
+  });
+
+  it("rounds a total on a half cent up, without floating-point drift", () => {
+    const rates = [
+      { id: "a", employee_id: "e1", rate: 14.5, start_date: null, end_date: null },
+      { id: "b", employee_id: "e2", rate: 15.5, start_date: null, end_date: null },
+      { id: "c", employee_id: "e3", rate: 10.02, start_date: null, end_date: null },
+    ];
+    // 245 min x $14.50 + 260 min x $15.50 = $126.375 exactly (adding decimals gives 126.37499…).
+    const pair = buildPristineRows({
+      period: P,
+      shifts: [
+        shift("x1", "e1", "2026-09-18", "09:00:00", "13:05:00"),
+        shift("x2", "e2", "2026-09-18", "09:00:00", "13:20:00"),
+      ],
+      actuals: [],
+    });
+    expect(laborCosts(pair, rates, TODAY).scheduled.dollars).toBe(126.38);
+    // 55 min x $10.02 = $9.185.
+    const short = shift("x3", "e3", "2026-09-18", "09:00:00", "09:55:00");
+    const one = buildPristineRows({ period: P, shifts: [short], actuals: [] });
+    expect(laborCosts(one, rates, TODAY).scheduled.dollars).toBe(9.19);
+  });
+
+  it("lists employees with hours but no rate on those dates", () => {
+    const early = RATES.map((r) => (r.employee_id === "e1" ? { ...r, end_date: "2026-09-15" } : r));
+    const costs = laborCosts(pristine, early, TODAY);
+    // Avery's Sep 16 shift (s3) and Sep 16-17 actuals have no rate.
+    expect(costs.scheduled).toEqual({ dollars: 351, missingRateIds: ["e1"] });
+    expect(costs.actual).toEqual({ dollars: 128, missingRateIds: ["e1"] });
+  });
+
+  it("writes dollars and the missing-rate note", () => {
+    expect(formatDollars(1234.5)).toBe("$1,234.50");
+    expect(formatDollars(0)).toBe("$0.00");
+    expect(missingRateNote([], nameOf)).toBeUndefined();
+    expect(missingRateNote(["e2", "e1"], nameOf)).toBe("No rate for Avery Lane and bea Cruz");
+    expect(missingRateNote(["e1", "e2", "e3"], nameOf)).toBe("No rate for 3 employees");
   });
 });
 

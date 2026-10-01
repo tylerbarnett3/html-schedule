@@ -41,7 +41,7 @@ export function PeriodNav({ range, onRangeChange }: PeriodNavProps) {
       </button>
       <div className="period-nav-info">
         <h2 className="period-nav-title" aria-live="polite" aria-atomic="true">
-          <span className="period-nav-range">{label.text}</span>
+          <span className="period-nav-range">{label.text}</span>{" "}
           <span className="period-nav-days">({label.days} days)</span>
         </h2>
         <div className="period-nav-fields">
