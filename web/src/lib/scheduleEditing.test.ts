@@ -140,6 +140,7 @@ describe("cardAction and canDragCard", () => {
   };
   const pendingAvailability: Availability = { ...approvedAvailability, id: "v2", status: "pending" };
   const shiftCard: DayCard = { kind: "shift", row: s1, employee: avery, label: "" };
+  const reviewedCard: DayCard = { kind: "reviewed", row: { ...s1, id: "actual-1" }, employee: avery, label: "" };
   const assignedCard: DayCard = { kind: "time-off", row: t2, employee: avery, label: "DAY OFF" };
   const requestCard: DayCard = { kind: "time-off", row: t4, employee: avery, label: "MORNING OFF" };
   const pendingCard: DayCard = {
@@ -177,6 +178,11 @@ describe("cardAction and canDragCard", () => {
       target: { kind: "availability", row: pendingAvailability },
     });
     expect(cardAction(availabilityCard)).toBeNull();
+  });
+
+  it("leaves reviewed shifts to Payroll", () => {
+    expect(cardAction(reviewedCard)).toBeNull();
+    expect(canDragCard(reviewedCard)).toBe(false);
   });
 
   it("drags shifts and assigned days off only", () => {
@@ -274,6 +280,64 @@ describe("getShiftSubmissionConflicts and buildShiftConflictMessage", () => {
     expect(buildShiftConflictMessage(conflictsFor(["a", "m"], ["2026-09-30", "2026-10-07"], "12:00", "16:00"))).toBe(
       `${CONFLICT_HEADER}Sep 30, 2026\n${S1_LINE}\n\nMia Chen already has approved full-day time off on Oct 7, 2026.`,
     );
+  });
+
+  it("says which shifts were reviewed in Payroll", () => {
+    const reviewed = getShiftSubmissionConflicts({
+      employeeIds: ["a"],
+      dates: ["2026-09-30"],
+      startTime: "10:00",
+      endTime: "11:00",
+      shifts: [{ ...s1, reviewed: true }],
+      timeOff: [],
+      employees,
+    });
+    expect(buildShiftConflictMessage(reviewed)).toBe(
+      `${CONFLICT_HEADER}Sep 30, 2026\n${S1_LINE} (reviewed in Payroll)`,
+    );
+    const covered = getDayOffConflicts({
+      employeeIds: ["a", "j"],
+      dates: ["2026-09-30"],
+      period: "morning",
+      shifts: [{ ...s1, reviewed: true }, s2],
+      employees,
+    });
+    expect(buildShiftDeletionMessage(covered, "add-day-off")).toContain(
+      `Sep 30, 2026\n${S1_LINE} (reviewed in Payroll)\n${S2_LINE}\n\n`,
+    );
+  });
+
+  it("counts the hours Payroll recorded as worked, but not a record of the shift being edited", () => {
+    // Mia covered Jordan's shift: the calendar shows her card, not his.
+    const covered = { ...s2, reviewed: true };
+    const miaWorked = {
+      id: "actual-1",
+      employee_id: "m",
+      shift_date: "2026-09-30",
+      start_time: "12:00:00",
+      end_time: "18:15:00",
+      reviewed: true,
+      reviewOf: "s2",
+    };
+    const check = (employeeIds: string[], ignoreShiftId: string | null = null) =>
+      getShiftSubmissionConflicts({
+        employeeIds,
+        dates: ["2026-09-30"],
+        startTime: "16:00",
+        endTime: "20:00",
+        ignoreShiftId,
+        shifts: [covered],
+        worked: [miaWorked],
+        timeOff: [],
+        employees,
+      });
+    expect(buildShiftConflictMessage(check(["m"]))).toBe(
+      `${CONFLICT_HEADER}Sep 30, 2026\n  - Mia Chen: 12:00 PM - 6:15 PM (reviewed in Payroll)`,
+    );
+    expect(buildShiftConflictMessage(check(["j"]))).toBe(
+      `${CONFLICT_HEADER}Sep 30, 2026\n${S2_LINE} (reviewed in Payroll)`,
+    );
+    expect(check(["m"], "s2")).toEqual([]);
   });
 
   it("lists a spilling shift under its own date, once", () => {
@@ -557,6 +621,24 @@ describe("planAddSave", () => {
       employees,
       ...overrides,
     });
+
+  it("is blocked by hours Payroll recorded as worked", () => {
+    const worked = [
+      {
+        id: "actual-1",
+        employee_id: "a",
+        shift_date: "2026-10-02",
+        start_time: "16:00:00",
+        end_time: "18:00:00",
+        reviewed: true,
+      },
+    ];
+    expect(add({ worked })).toEqual({
+      kind: "error",
+      message: `${CONFLICT_HEADER}Oct 2, 2026\n  - Avery Lane: 4:00 PM - 6:00 PM (reviewed in Payroll)`,
+    });
+    expect(add({ worked, startTime: "18:00", endTime: "20:00" }).kind).toBe("add-shifts");
+  });
 
   it("needs dates first", () => {
     expect(add({ dates: [] })).toEqual({ kind: "error", message: "Please select at least one date" });

@@ -15,6 +15,7 @@ import {
   type SchedulePdfInput,
   type SchedulePdfTable,
 } from "../../../lib/schedulePdf";
+import { shiftsAsShown } from "../../../lib/reviewedShifts";
 import type { DateRange, Employee } from "../../../lib/types";
 
 /** jsPDF couldn't be downloaded. The browser remembers the failure, so only a reload retries. */
@@ -97,7 +98,8 @@ export async function downloadSchedulePdf({
     range,
     employees,
     selectedEmployeeIds: selected,
-    shifts: calendar.shifts,
+    // As on the calendar: reviewed shifts as payroll recorded them.
+    shifts: shiftsAsShown(calendar.shifts, calendar.reviews),
     timeOff: calendar.timeOff,
     closedDays,
     hours: { sets, custom },

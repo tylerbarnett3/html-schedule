@@ -77,11 +77,16 @@ export type ReviewTarget = { kind: "time-off"; row: TimeOff } | { kind: "availab
 export type EditTarget = { kind: "shift"; row: Shift } | { kind: "day-off"; row: TimeOff };
 export type CardAction = { kind: "edit"; target: EditTarget } | { kind: "review"; target: ReviewTarget };
 
-/** What clicking a calendar card does. Approved availability isn't clickable. */
+/**
+ * What clicking a calendar card does. Approved availability isn't clickable, and neither is
+ * a reviewed shift: it changes in Payroll.
+ */
 export function cardAction(card: DayCard): CardAction | null {
   switch (card.kind) {
     case "shift":
       return { kind: "edit", target: { kind: "shift", row: card.row } };
+    case "reviewed":
+      return null;
     case "pending-time-off":
       return { kind: "review", target: { kind: "time-off", row: card.row } };
     case "time-off":
@@ -96,6 +101,7 @@ export function cardAction(card: DayCard): CardAction | null {
 /**
  * Shifts and days off the admin assigned can be dragged. A day off an employee asked for
  * can't, so it isn't moved by accident; its date can still be changed in the Edit dialog.
+ * Nor can a reviewed shift, which changes in Payroll.
  */
 export function canDragCard(card: DayCard): boolean {
   if (card.kind === "shift") return true;
@@ -159,8 +165,17 @@ function sameTime(a: PgTime | null | undefined, b: PgTime | null | undefined): b
 
 export type TimeOffReason = "approved full-day time off" | "approved morning time off" | "approved evening time off";
 
+/**
+ * A shift as the editing checks read it (fetchEditingRows). `reviewed` is set when Payroll has
+ * a record for it: the calendar shows that record instead (or nothing, if it wasn't worked),
+ * so the messages that list the shift say where it went. Hours Payroll recorded as worked
+ * (the calendar's reviewed cards) come in the same shape, with the record's id, `reviewed`
+ * set and `reviewOf` naming the scheduled shift they review, if any.
+ */
+export type EditingShift = Shift & { reviewed?: boolean; reviewOf?: string | null };
+
 export type ShiftConflict =
-  | { type: "shift"; shift: Shift }
+  | { type: "shift"; shift: EditingShift }
   | { type: "time-off"; timeOff: TimeOff; reason: TimeOffReason };
 
 export interface ShiftCheck {
@@ -186,10 +201,11 @@ function timeOffReason(period: DayPeriod): TimeOffReason {
  * that covers the shift's start on its date comes first; pending requests never block. Then
  * the same employee's shifts, compared on one timeline across days so overnight shifts that
  * spill into the next morning are caught (touching times don't overlap), earliest first.
+ * The shift being edited is skipped, along with Payroll's record of it.
  */
 export function findShiftConflict(
   check: ShiftCheck,
-  shifts: readonly Shift[],
+  shifts: readonly EditingShift[],
   timeOff: readonly TimeOff[],
 ): ShiftConflict | null {
   const blocking = timeOff
@@ -209,9 +225,12 @@ export function findShiftConflict(
   if (!requested) return null;
   // Shifts are under 24 hours, so only the day before, the day itself and the day after can
   // overlap; the timeline comparison needs no date filter.
-  let first: { shift: Shift; start: number } | null = null;
+  let first: { shift: EditingShift; start: number } | null = null;
   for (const shift of shifts) {
-    if (shift.employee_id !== check.employeeId || shift.id === check.ignoreShiftId) continue;
+    if (shift.employee_id !== check.employeeId) continue;
+    if (check.ignoreShiftId != null && (shift.id === check.ignoreShiftId || shift.reviewOf === check.ignoreShiftId)) {
+      continue;
+    }
     const existing = absoluteShiftInterval(shift.shift_date, shift.start_time, shift.end_time);
     if (!existing || !intervalsOverlap(requested, existing)) continue;
     if (!first || (existing.start - first.start || compareStrings(shift.id, first.shift.id)) < 0) {
@@ -228,7 +247,10 @@ export interface ShiftConflictEntry {
   conflict: ShiftConflict;
 }
 
-/** At most one conflict per date and employee: dates outer, employees inner, as given. */
+/**
+ * At most one conflict per date and employee: dates outer, employees inner, as given. The
+ * hours Payroll recorded as worked (`worked`) count as shifts of whoever worked them.
+ */
 export function getShiftSubmissionConflicts(input: {
   employeeIds: readonly string[];
   dates: readonly ISODate[];
@@ -236,11 +258,13 @@ export function getShiftSubmissionConflicts(input: {
   endTime: PgTime;
   ignoreShiftId?: string | null;
   ignoreTimeOffId?: string | null;
-  shifts: readonly Shift[];
+  shifts: readonly EditingShift[];
+  worked?: readonly EditingShift[];
   timeOff: readonly TimeOff[];
   employees: readonly Employee[];
 }): ShiftConflictEntry[] {
   const lookup = employeeLookup(input.employees);
+  const shifts = [...input.shifts, ...(input.worked ?? [])];
   const entries: ShiftConflictEntry[] = [];
   for (const date of uniqueValues(input.dates)) {
     for (const employeeId of uniqueValues(input.employeeIds)) {
@@ -253,7 +277,7 @@ export function getShiftSubmissionConflicts(input: {
           ignoreShiftId: input.ignoreShiftId,
           ignoreTimeOffId: input.ignoreTimeOffId,
         },
-        input.shifts,
+        shifts,
         input.timeOff,
       );
       if (conflict) entries.push({ employeeId, employeeName: lookup.name(employeeId), date, conflict });
@@ -266,12 +290,15 @@ interface ShiftListItem {
   date: ISODate;
   employeeId: string;
   employeeName: string;
-  shift: Pick<Shift, "id" | "start_time" | "end_time">;
+  shift: Pick<EditingShift, "id" | "start_time" | "end_time" | "reviewed">;
 }
+
+const REVIEWED_NOTE = " (reviewed in Payroll)";
 
 /**
  * 'Sep 30, 2026\n  - Avery Lane: 9:00 AM - 3:00 PM' blocks, one per date (first-seen order),
- * listing each employee's shifts together. A shift listed twice appears once.
+ * listing each employee's shifts together. A shift listed twice appears once; one reviewed
+ * in Payroll says so.
  */
 function shiftDateBlocks(items: readonly ShiftListItem[]): { text: string; shiftCount: number }[] {
   const byDate = new Map<ISODate, Map<string, { name: string; shifts: ShiftListItem["shift"][]; ids: Set<string> }>>();
@@ -292,7 +319,7 @@ function shiftDateBlocks(items: readonly ShiftListItem[]): { text: string; shift
   }
   return [...byDate].map(([date, byEmployee]) => {
     const lines = [...byEmployee.values()].flatMap((group) =>
-      group.shifts.map((shift) => `  - ${group.name}: ${formatShiftTime(shift)}`),
+      group.shifts.map((shift) => `  - ${group.name}: ${formatShiftTime(shift)}${shift.reviewed ? REVIEWED_NOTE : ""}`),
     );
     return { text: `${formatShortDate(date)}\n${lines.join("\n")}`, shiftCount: lines.length };
   });
@@ -333,7 +360,7 @@ export interface CoveredShift {
   employeeId: string;
   employeeName: string;
   date: ISODate;
-  shift: Shift;
+  shift: EditingShift;
 }
 
 /**
@@ -342,7 +369,7 @@ export interface CoveredShift {
  */
 function coveredShifts(
   days: readonly { employeeId: string; date: ISODate; period: DayPeriod }[],
-  shifts: readonly Shift[],
+  shifts: readonly EditingShift[],
   employees: readonly Employee[],
   ignoreShiftId?: string | null,
 ): CoveredShift[] {
@@ -378,7 +405,7 @@ export function getDayOffConflicts(input: {
   employeeIds: readonly string[];
   dates: readonly ISODate[];
   period: DayPeriod;
-  shifts: readonly Shift[];
+  shifts: readonly EditingShift[];
   employees: readonly Employee[];
   ignoreShiftId?: string | null;
 }): CoveredShift[] {
@@ -391,7 +418,7 @@ export function getDayOffConflicts(input: {
 /** Shifts that approving these time-off requests would delete. */
 export function getApprovalConflicts(
   requests: readonly Pick<TimeOff, "employee_id" | "off_date" | "period">[],
-  shifts: readonly Shift[],
+  shifts: readonly EditingShift[],
   employees: readonly Employee[],
 ): CoveredShift[] {
   const days = requests.map((r) => ({ employeeId: r.employee_id, date: r.off_date, period: r.period }));
@@ -624,6 +651,7 @@ export function planAddSave(input: {
   closeTime: string;
   closedDays: ReadonlySet<ISODate>;
   shifts: readonly Shift[];
+  worked?: readonly EditingShift[];
   timeOff: readonly TimeOff[];
   employees: readonly Employee[];
 }): AddPlan {
@@ -645,6 +673,7 @@ export function planAddSave(input: {
         startTime: times.start,
         endTime: times.end,
         shifts: input.shifts,
+        worked: input.worked,
         timeOff: input.timeOff,
         employees: input.employees,
       });
@@ -770,6 +799,7 @@ export function planEditSave(
   ctx: {
     closedDays: ReadonlySet<ISODate>;
     shifts: readonly Shift[];
+    worked?: readonly EditingShift[];
     timeOff: readonly TimeOff[];
     employees: readonly Employee[];
   },
@@ -807,6 +837,7 @@ export function planEditSave(
       ignoreShiftId: target.kind === "shift" ? target.row.id : null,
       ignoreTimeOffId: target.kind === "day-off" ? target.row.id : null,
       shifts: ctx.shifts,
+      worked: ctx.worked,
       timeOff: ctx.timeOff,
       employees: ctx.employees,
     });
@@ -858,6 +889,7 @@ export function checkCardDrop(input: {
   targetDate: ISODate;
   closedDays: ReadonlySet<ISODate>;
   shifts: readonly Shift[];
+  worked?: readonly EditingShift[];
   timeOff: readonly TimeOff[];
   employees: readonly Employee[];
 }): DropResult {
@@ -875,6 +907,7 @@ export function checkCardDrop(input: {
       endTime: card.row.end_time,
       ignoreShiftId: card.row.id,
       shifts: input.shifts,
+      worked: input.worked,
       timeOff: input.timeOff,
       employees: input.employees,
     });

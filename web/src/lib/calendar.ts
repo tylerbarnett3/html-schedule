@@ -3,6 +3,7 @@
 import { rangeDates } from "./dates";
 import { NO_HOURS, specialHoursOn, type Hours, type HoursData } from "./hours";
 import { formatPeriod, periodSortValue } from "./periods";
+import { applyReviews, type ShiftReview } from "./reviewedShifts";
 import { compareTimes, formatShiftTime } from "./time";
 import type { Availability, DateRange, Employee, ISODate, Shift, TimeOff } from "./types";
 
@@ -20,6 +21,8 @@ export type DayCard =
       canCancel: boolean;
     }
   | { kind: "shift"; row: Shift; employee: Employee; label: string }
+  /** A shift reviewed in Payroll, as recorded (row.id is the payroll record's). Locked here. */
+  | { kind: "reviewed"; row: Shift; employee: Employee; label: string }
   | { kind: "time-off"; row: TimeOff; employee: Employee; label: string }
   | {
       kind: "availability";
@@ -44,6 +47,8 @@ export interface CalendarInput {
   today: ISODate;
   employees: readonly Employee[];
   shifts: readonly Shift[];
+  /** Payroll's records: reviewed shifts show as recorded (see applyReviews). */
+  reviews: readonly ShiftReview[];
   timeOff: readonly TimeOff[];
   availability: readonly Availability[];
   closedDays: ReadonlySet<ISODate>;
@@ -167,7 +172,8 @@ function compareAvailability(a: Placed<Availability>, b: Placed<Availability>): 
 
 /**
  * One entry per date in the range. Within a day: pending time off (oldest request
- * first), shifts (by start time), approved time off, then availability (by name).
+ * first), shifts (by start time; reviewed ones as payroll recorded them, and none for a
+ * shift that wasn't worked), approved time off, then availability (by name).
  * Closed days show no cards. Rows for employees missing from `employees` are skipped.
  * Open days whose custom hours differ from the standard carry them in specialHours.
  */
@@ -187,7 +193,9 @@ export function buildCalendarDays(input: CalendarInput): CalendarDay[] {
   const isVisible = (item: Placed<unknown>) => selectedEmployeeIds.has(item.employee.id);
   const isMine = (employeeId: string) => meId !== null && employeeId === meId;
 
-  const shiftsByDate = groupByDate(input.shifts, (s) => s.shift_date);
+  const { scheduled, reviewed } = applyReviews(input.shifts, input.reviews);
+  const shiftsByDate = groupByDate(scheduled, (s) => s.shift_date);
+  const reviewedByDate = groupByDate(reviewed, (s) => s.shift_date);
   const timeOffByDate = groupByDate(input.timeOff, (t) => t.off_date);
   const availabilityByDate = groupByDate(input.availability, (a) => a.available_date);
 
@@ -217,8 +225,12 @@ export function buildCalendarDays(input: CalendarInput): CalendarDay[] {
       });
     });
 
-    for (const item of place(shiftsByDate.get(date)).filter(isVisible).sort(compareShifts)) {
-      day.cards.push({ kind: "shift", ...item, label: formatShiftTime(item.row) });
+    const shifts = [
+      ...place(shiftsByDate.get(date)).map((item) => ({ kind: "shift" as const, ...item })),
+      ...place(reviewedByDate.get(date)).map((item) => ({ kind: "reviewed" as const, ...item })),
+    ];
+    for (const item of shifts.filter(isVisible).sort(compareShifts)) {
+      day.cards.push({ ...item, label: formatShiftTime(item.row) });
     }
 
     const approved = timeOff.filter((t) => t.row.status !== "pending" && isVisible(t)).sort(compareTimeOff);

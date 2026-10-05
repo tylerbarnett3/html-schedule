@@ -217,7 +217,7 @@ export function PayrollPage() {
       await save.mutateAsync(draft.plan);
       draft.clear();
       refocusSaveBar.current = true;
-      toast.show("The published schedule is unchanged.", "success", { title: "Actuals saved" });
+      toast.show("The schedule now shows the reviewed hours.", "success", { title: "Actuals saved" });
     } catch (error) {
       toast.show(adminErrorMessage(error, SAVE_ERROR), "error", { title: "Save Failed" });
     }

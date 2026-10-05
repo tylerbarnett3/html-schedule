@@ -12,6 +12,7 @@ import {
   type DayCard,
 } from "./calendar";
 import type { Hours, HoursData, HoursSet } from "./hours";
+import type { ShiftReview } from "./reviewedShifts";
 import type { Availability, Employee, Shift, TimeOff } from "./types";
 
 const D = "2026-10-05";
@@ -67,6 +68,7 @@ function input(overrides: Partial<CalendarInput> = {}): CalendarInput {
     today: "2026-09-28",
     employees,
     shifts: [],
+    reviews: [],
     timeOff: [],
     availability: [],
     closedDays: new Set(),
@@ -88,6 +90,71 @@ const rowIds = (cards: DayCard[]) => cards.map((c) => c.row.id);
 function pendingColors(cards: DayCard[]): string[] {
   return cards.flatMap((c) => (c.kind === "pending-time-off" ? [c.color] : []));
 }
+
+function review(employeeId: string, extra: Partial<ShiftReview> = {}): ShiftReview {
+  return {
+    id: id("actual"),
+    shift_id: null,
+    employee_id: employeeId,
+    work_date: D,
+    start_time: "10:00:00",
+    end_time: "16:00:00",
+    status: "unscheduled",
+    ...extra,
+  };
+}
+
+describe("reviewed shifts", () => {
+  it("shows them as recorded, sorted in with the scheduled shifts, and hides vacated ones", () => {
+    const early = shift(avery.id, "09:00:00", "15:00:00");
+    const covered = shift(jordan.id, "12:00:00", "18:00:00");
+    const vacated = shift(mia.id, "10:00:00", "14:00:00");
+    const late = shift(sam.id, "16:00:00", "20:00:00");
+    const coveredReview = review(taylor.id, {
+      shift_id: covered.id,
+      status: "adjusted",
+      start_time: "12:30:00",
+      end_time: "18:00:00",
+    });
+    const vacatedReview = review(mia.id, {
+      shift_id: vacated.id,
+      status: "not-worked",
+      start_time: null,
+      end_time: null,
+    });
+    const extra = review(avery.id, { start_time: "07:00:00", end_time: "09:00:00" });
+    const day = onlyDay(
+      buildCalendarDays(
+        input({ shifts: [early, covered, vacated, late], reviews: [coveredReview, vacatedReview, extra] }),
+      ),
+    );
+    expect(day.cards.map((c) => [c.kind, c.employee.name, c.label])).toEqual([
+      ["reviewed", "Avery", "7:00 AM - 9:00 AM"],
+      ["shift", "Avery", "9:00 AM - 3:00 PM"],
+      ["reviewed", "Taylor", "12:30 PM - 6:00 PM"],
+      ["shift", "Sam", "4:00 PM - 8:00 PM"],
+    ]);
+    expect(rowIds(day.cards)).toEqual([extra.id, early.id, coveredReview.id, late.id]);
+  });
+
+  it("follows the employee filter by who worked the shift", () => {
+    const covered = shift(jordan.id, "12:00:00", "18:00:00");
+    const coveredReview = review(taylor.id, { shift_id: covered.id, status: "adjusted" });
+    const shown = (ids: string[]) =>
+      onlyDay(
+        buildCalendarDays(
+          input({ shifts: [covered], reviews: [coveredReview], selectedEmployeeIds: new Set(ids) }),
+        ),
+      ).cards.map((c) => c.row.id);
+    expect(shown([jordan.id])).toEqual([]);
+    expect(shown([taylor.id])).toEqual([coveredReview.id]);
+  });
+
+  it("shows nothing on a closed day", () => {
+    const day = onlyDay(buildCalendarDays(input({ reviews: [review(avery.id)], closedDays: new Set([D]) })));
+    expect(day.cards).toEqual([]);
+  });
+});
 
 describe("card order within a day", () => {
   it("puts pending time off first, then shifts, then approved time off", () => {

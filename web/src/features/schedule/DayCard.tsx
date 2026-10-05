@@ -27,6 +27,7 @@ export interface DayCardProps {
 function cardDate(card: CalendarCard): string {
   switch (card.kind) {
     case "shift":
+    case "reviewed":
       return card.row.shift_date;
     case "availability":
       return card.row.available_date;
@@ -47,6 +48,9 @@ export function DayCard({ card, onCancel, cancelling = false, onOpen, draggable 
       style = { background };
       break;
     }
+    case "reviewed":
+      variant = "day-card-reviewed";
+      break;
     case "pending-time-off":
       variant = card.color === BUSY_PENDING_COLOR ? "day-card-pending day-card-pending-busy" : "day-card-pending";
       break;
@@ -114,6 +118,7 @@ export function DayCard({ card, onCancel, cancelling = false, onOpen, draggable 
           <div className="day-card-label">{card.label}</div>
         </>
       )}
+      {card.kind === "reviewed" ? <ReviewedMark /> : null}
       {cancellable ? (
         <button
           type="button"
@@ -131,5 +136,28 @@ export function DayCard({ card, onCancel, cancelling = false, onOpen, draggable 
         </button>
       ) : null}
     </li>
+  );
+}
+
+/** Lucide's circle-check in the card's top right corner. */
+function ReviewedMark() {
+  return (
+    <span className="day-card-reviewed-mark">
+      <svg
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="2"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        aria-hidden="true"
+        focusable="false"
+      >
+        <title>Hours reviewed</title>
+        <circle cx="12" cy="12" r="10" />
+        <path d="m9 12 2 2 4-4" />
+      </svg>
+      <span className="visually-hidden">, hours reviewed</span>
+    </span>
   );
 }

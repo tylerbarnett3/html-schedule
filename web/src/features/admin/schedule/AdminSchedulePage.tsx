@@ -97,6 +97,7 @@ export function AdminSchedulePage() {
       today,
       employees,
       shifts: calendarData.shifts,
+      reviews: calendarData.reviews,
       timeOff: calendarData.timeOff,
       availability: calendarData.availability,
       closedDays,

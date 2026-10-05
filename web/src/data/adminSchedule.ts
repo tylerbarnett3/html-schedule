@@ -5,9 +5,10 @@ import { useMutation, useQueryClient, type UseMutationResult } from "@tanstack/r
 import type { Json } from "../lib/database.types";
 import { addDays } from "../lib/dates";
 import { parseScheduleChange, toChangeJson, type ScheduleChange } from "../lib/scheduleChange";
+import type { EditingShift } from "../lib/scheduleEditing";
 import { supabase, type DayPeriod } from "../lib/supabase";
 import { toClock } from "../lib/time";
-import type { ISODate, PgTime, Shift, TimeOff } from "../lib/types";
+import type { ISODate, PgTime, TimeOff } from "../lib/types";
 import { ADMIN_NETWORK_MODE, invalidateAdminData, waitForRefresh } from "./adminKeys";
 import { fetchAll, SHIFT_COLUMNS, TIME_OFF_COLUMNS, toError, toTimeOffRow } from "./schedule";
 
@@ -35,15 +36,17 @@ function clock(t: PgTime): string {
 /**
  * The rows a save or drop is checked against, read fresh rather than from the calendar
  * cache: these employees' shifts on the dates and the days either side (overnight
- * shifts), and their time off of any status on the dates.
+ * shifts), marked when Payroll has reviewed them; the hours Payroll recorded these
+ * employees as working on those days (the calendar's reviewed cards); and their time off of
+ * any status on the dates.
  */
 export async function fetchEditingRows(i: {
   employeeIds: readonly string[];
   dates: readonly ISODate[];
-}): Promise<{ shifts: Shift[]; timeOff: TimeOff[] }> {
+}): Promise<{ shifts: EditingShift[]; worked: EditingShift[]; timeOff: TimeOff[] }> {
   const employeeIds = unique(i.employeeIds);
   const dates = unique(i.dates);
-  if (employeeIds.length === 0 || dates.length === 0) return { shifts: [], timeOff: [] };
+  if (employeeIds.length === 0 || dates.length === 0) return { shifts: [], worked: [], timeOff: [] };
   const shiftDates = unique(dates.flatMap((d) => [addDays(d, -1), d, addDays(d, 1)]));
 
   const shiftReads = chunks(employeeIds).flatMap((ids) =>
@@ -76,8 +79,45 @@ export async function fetchEditingRows(i: {
       ),
     ),
   );
-  const [shifts, timeOff] = await Promise.all([Promise.all(shiftReads), Promise.all(timeOffReads)]);
-  return { shifts: shifts.flat(), timeOff: timeOff.flat().map(toTimeOffRow) };
+  const workedReads = chunks(employeeIds).flatMap((ids) =>
+    chunks(shiftDates).map((days) =>
+      fetchAll((from, to) =>
+        supabase
+          .from("shift_actuals")
+          .select("id, shift_id, employee_id, work_date, start_time, end_time")
+          .in("employee_id", ids)
+          .in("work_date", days)
+          .neq("status", "not-worked")
+          .order("id")
+          .range(from, to),
+      ),
+    ),
+  );
+  const [shiftPages, workedPages, timeOff] = await Promise.all([
+    Promise.all(shiftReads),
+    Promise.all(workedReads),
+    Promise.all(timeOffReads),
+  ]);
+  const shifts = shiftPages.flat();
+  const reviewed = await fetchShiftIdsWithActuals(shifts.map((s) => s.id));
+  const worked: EditingShift[] = [];
+  for (const r of workedPages.flat()) {
+    if (r.start_time === null || r.end_time === null) continue;
+    worked.push({
+      id: r.id,
+      employee_id: r.employee_id,
+      shift_date: r.work_date,
+      start_time: r.start_time,
+      end_time: r.end_time,
+      reviewed: true,
+      reviewOf: r.shift_id,
+    });
+  }
+  return {
+    shifts: shifts.map((s) => (reviewed.has(s.id) ? { ...s, reviewed: true } : s)),
+    worked,
+    timeOff: timeOff.flat().map(toTimeOffRow),
+  };
 }
 
 /** Which of these shifts have payroll hours recorded (a shift_actuals row). */

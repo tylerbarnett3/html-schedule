@@ -19,7 +19,7 @@ import {
   useReorderEmployees,
   useSetEmployeeArchived,
 } from "../../../data/employees";
-import { useCalendarData, useEmployees } from "../../../data/schedule";
+import { useCalendarData, useClosedDays, useEmployees } from "../../../data/schedule";
 import { useMediaQuery } from "../../../data/useMediaQuery";
 import {
   activeEmployees,
@@ -29,6 +29,7 @@ import {
   reorderedIds,
 } from "../../../lib/employees";
 import { rateSummary, type EmployeeRate } from "../../../lib/rates";
+import { shiftsAsShown } from "../../../lib/reviewedShifts";
 import type { Employee } from "../../../lib/types";
 import { DRAG_TYPE_EMPLOYEE, isEmployeeDrag } from "../dragTypes";
 import { useAdminView } from "../useAdminView";
@@ -101,11 +102,24 @@ export function EmployeesDrawer() {
     );
   }
 
-  // Stats come from the shifts on screen (E12). While the calendar still shows the
-  // previous range, its shifts would give wrong numbers.
-  const shifts = calendarQuery.data?.shifts;
-  const stats = useMemo(() => (shifts ? employeeRangeStats(shifts, view.range) : null), [shifts, view.range]);
-  const statsLoading = calendarQuery.isPlaceholderData || (!shifts && !calendarQuery.isError);
+  // Stats come from the shifts on screen (E12): reviewed ones as payroll recorded them, and
+  // none on closed days (payroll records can be dated on one). While the calendar still
+  // shows the previous range, its shifts would give wrong numbers.
+  const calendarData = calendarQuery.data;
+  const closedQuery = useClosedDays();
+  const closedDays = closedQuery.data;
+  const stats = useMemo(() => {
+    if (!calendarData || !closedDays) return null;
+    const shown = shiftsAsShown(calendarData.shifts, calendarData.reviews);
+    return employeeRangeStats(
+      shown.filter((shift) => !closedDays.has(shift.shift_date)),
+      view.range,
+    );
+  }, [calendarData, closedDays, view.range]);
+  const statsLoading =
+    calendarQuery.isPlaceholderData ||
+    (!calendarData && !calendarQuery.isError) ||
+    (!closedDays && !closedQuery.isError);
   const ratesByEmployee = useMemo(() => {
     const map = new Map<string, EmployeeRate[]>();
     for (const rate of ratesQuery.data ?? []) map.set(rate.employee_id, [...(map.get(rate.employee_id) ?? []), rate]);

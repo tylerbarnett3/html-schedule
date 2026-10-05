@@ -2,6 +2,7 @@ import { keepPreviousData, skipToken, useQuery, type UseQueryResult } from "@tan
 import { PostgrestError } from "@supabase/supabase-js";
 import { toClosedDaySet } from "../lib/calendar";
 import { addDays } from "../lib/dates";
+import type { ShiftReview } from "../lib/reviewedShifts";
 import { supabase } from "../lib/supabase";
 import type {
   Availability,
@@ -83,13 +84,40 @@ export function fetchEmployees(signal: AbortSignal = noSignal()): Promise<Employ
   );
 }
 
-export type CalendarData = { shifts: Shift[]; timeOff: TimeOff[]; availability: Availability[] };
+// PostgREST's "no such function": the database doesn't have reviewed_shifts yet
+// (20261005000001_reviewed_shifts.sql not applied), so no shift shows as reviewed.
+const MISSING_FUNCTION = "PGRST202";
+
+/** The payroll records for the range's reviewed shifts, without their notes (see ShiftReview). */
+async function fetchReviews(range: DateRange, signal: AbortSignal): Promise<ShiftReview[]> {
+  try {
+    return await fetchAll((from, to) =>
+      supabase
+        .rpc("reviewed_shifts", { p_start: range.start, p_end: range.end })
+        .order("work_date")
+        .order("id")
+        .range(from, to)
+        .abortSignal(signal),
+    );
+  } catch (error) {
+    if (error instanceof Error && "code" in error && error.code === MISSING_FUNCTION) return [];
+    throw error;
+  }
+}
+
+export type CalendarData = {
+  shifts: Shift[];
+  timeOff: TimeOff[];
+  availability: Availability[];
+  /** Payroll's records for the range: the calendar shows reviewed shifts as recorded (applyReviews). */
+  reviews: ShiftReview[];
+};
 
 export async function fetchCalendarData(
   range: DateRange,
   signal: AbortSignal = noSignal(),
 ): Promise<CalendarData> {
-  const [shifts, timeOff, availability] = await Promise.all([
+  const [shifts, timeOff, availability, reviews] = await Promise.all([
     fetchAll((from, to) =>
       supabase
         .from("shifts")
@@ -126,8 +154,9 @@ export async function fetchCalendarData(
         .range(from, to)
         .abortSignal(signal),
     ),
+    fetchReviews(range, signal),
   ]);
-  return { shifts, timeOff: timeOff.map(toTimeOffRow), availability };
+  return { shifts, timeOff: timeOff.map(toTimeOffRow), availability, reviews };
 }
 
 /** Every closed day; the table is small, and the date picker looks a year ahead. */

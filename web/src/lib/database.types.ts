@@ -530,6 +530,18 @@ export type Database = {
         Args: { p_dates: string[]; p_period: Database["public"]["Enums"]["day_period"] };
         Returns: Json;
       };
+      reviewed_shifts: {
+        Args: { p_end: string; p_start: string };
+        Returns: {
+          employee_id: string;
+          end_time: string;
+          id: string;
+          shift_id: string;
+          start_time: string;
+          status: Database["public"]["Enums"]["actual_status"];
+          work_date: string;
+        }[];
+      };
       save_employee: { Args: { p_employee: Json }; Returns: string };
       save_shift_actuals: { Args: { p_plan: Json }; Returns: Json };
       save_weekly_hours: { Args: { p_hours: Json }; Returns: undefined };

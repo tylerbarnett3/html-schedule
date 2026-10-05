@@ -74,6 +74,9 @@
   --chip-available-pending-bg: #fef3c7;
   --chip-available-pending-text: #78350f;
   --chip-available-pending-border: rgba(217, 119, 6, 0.42);
+  /* A shift reviewed in Payroll: the check keeps 4.5:1 on the green, the dark text 10:1. */
+  --chip-reviewed: #afd8ac;
+  --chip-reviewed-mark: #25602a;
   --chip-sheen: linear-gradient(135deg, rgba(255, 255, 255, 0.2), transparent 42%);
   /* Darker than the old #8fae8b -> #6f906b so the white CLOSED letters keep 3:1 (large text). */
   --closed-day: linear-gradient(135deg, #7a9a76 0%, #5e7f5a 100%);

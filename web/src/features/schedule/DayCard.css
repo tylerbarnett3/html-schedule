@@ -97,6 +97,47 @@
   color: var(--chip-pending-text);
 }
 
+/* A shift reviewed in Payroll: green with dark text, and a check tucked into the top right
+   corner. Where the card's text is under 100px wide (every desktop calendar column), room
+   beside the name would split names mid-word, so the name starts just below the check.
+   Wider cards (phones) keep the check beside the name's first line only (a float one line
+   tall), so the name's other lines keep the full width. */
+.day-card-reviewed {
+  container-type: inline-size;
+  color: var(--chip-pending-text);
+  background: var(--chip-reviewed);
+}
+
+.day-card-reviewed .day-card-name::before {
+  content: "";
+  float: right;
+  width: 6px;
+  height: 1em;
+}
+
+.day-card-reviewed-mark {
+  position: absolute;
+  top: 4px;
+  right: 3px;
+  display: flex;
+  color: var(--chip-reviewed-mark);
+}
+
+.day-card-reviewed-mark svg {
+  width: 12px;
+  height: 12px;
+}
+
+@container (max-width: 99px) {
+  .day-card-reviewed .day-card-name {
+    padding-top: 8px;
+  }
+
+  .day-card-reviewed .day-card-name::before {
+    content: none;
+  }
+}
+
 .day-card-off {
   background: var(--chip-day-off);
 }
@@ -206,6 +247,11 @@
   .day-card-cancel {
     padding: var(--space-4) var(--space-6);
   }
+
+  .day-card-reviewed-mark {
+    top: 4px;
+    right: 2px;
+  }
 }
 
 @media (max-width: 768px) {
@@ -230,6 +276,20 @@
   .day-card-label {
     font-size: 11px;
     line-height: 1.35;
+  }
+
+  .day-card-reviewed .day-card-name::before {
+    width: 22px;
+  }
+
+  .day-card-reviewed-mark {
+    top: 10px;
+    right: 10px;
+  }
+
+  .day-card-reviewed-mark svg {
+    width: 18px;
+    height: 18px;
   }
 
   /* Easier to tap on phones. */
