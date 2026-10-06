@@ -8,16 +8,16 @@
 
 .edit-item-requested {
   padding: var(--space-12) var(--space-14);
-  color: var(--clay-800);
+  color: var(--color-secondary);
   font-size: 14px;
   line-height: 1.45;
-  background: var(--surface-tint);
-  border: 1px solid var(--line);
+  background: var(--color-surface-tint);
+  border: 1px solid var(--color-border);
   border-radius: var(--radius-sm);
 }
 
 .edit-item-requested strong {
-  color: var(--clay-900);
+  color: var(--color-emphasis);
   font-weight: 700;
 }
 
@@ -42,8 +42,7 @@
 }
 
 .edit-item-spinner .spinner-ring {
-  border-color: rgba(255, 250, 241, 0.28);
-  border-top-color: var(--gold-light);
+  border-color: var(--color-accent-on-dark) var(--color-spinner-track-on-dark) var(--color-spinner-track-on-dark);
 }
 
 .edit-item-dialog .btn[aria-disabled="true"] {

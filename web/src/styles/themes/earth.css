@@ -1,0 +1,46 @@
+/*
+ * Earth: the app's palette, in the terminal palette format of Nebula's themes: linen and paper,
+ * umber text, and earth accents (moss, sage, ochre, brick, plum, terracotta). roles.css turns it
+ * into every color the app paints, so a theme is only this:
+ *
+ * - The 16 ANSI slots. Black holds a light muted gray and white a darker one, bright black and
+ *   bright white hold the highlight levels (med and high: edges and borders), and the other
+ *   brights repeat their normals.
+ * - --terminal-background (the page) and --terminal-foreground (the text).
+ * - Two levels alongside them: --terminal-surface, the paper that cards, panels, inputs and
+ *   dialogs sit on; and --terminal-ink, the text's deep shade, which the accents deepen toward
+ *   and which is the dark text on light custom-colored shift cards.
+ * - The select chevron, an image: the one thing roles.css can't build from the palette.
+ */
+:root.theme-earth {
+  /* Normal colors (ANSI 0-7) */
+  --color-black: #a0947f; /* warm gray, the muted end */
+  --color-red: #a94a35; /* brick */
+  --color-green: #4d6a3f; /* moss */
+  --color-yellow: #c99235; /* ochre */
+  --color-blue: #5a8590; /* sage, a dusty blue-green */
+  --color-magenta: #8b6077; /* plum */
+  --color-cyan: #c26a4a; /* terracotta */
+  --color-white: #766a5c; /* stone, a darker warm gray */
+
+  /* Bright colors (ANSI 8-15) */
+  --color-bright-black: #e3d9c9; /* highlight med */
+  --color-bright-red: var(--color-red);
+  --color-bright-green: var(--color-green);
+  --color-bright-yellow: var(--color-yellow);
+  --color-bright-blue: var(--color-blue);
+  --color-bright-magenta: var(--color-magenta);
+  --color-bright-cyan: var(--color-cyan);
+  --color-bright-white: #cdbfa9; /* highlight high */
+
+  /* Terminal background and foreground */
+  --terminal-background: #f4efe6; /* linen */
+  --terminal-foreground: #3a3026; /* umber */
+
+  /* Levels */
+  --terminal-surface: #fbf8f2; /* paper */
+  --terminal-ink: color-mix(in oklab, var(--terminal-foreground) 70%, #000); /* umber's deep shade */
+
+  /* A data URL can't read variables, so the chevron's umber stroke is written out. */
+  --image-select-chevron: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%233a3026' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
+}

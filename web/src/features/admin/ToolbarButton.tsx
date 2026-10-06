@@ -1,8 +1,8 @@
 import type { ButtonHTMLAttributes, ReactNode } from "react";
 import "./AdminToolbar.css";
 
-/** on-dark: translucent pill (Undo); cream: solid light pill (tools); gold: Payroll. */
-export type ToolbarButtonVariant = "on-dark" | "cream" | "gold";
+/** on-dark: translucent pill (Undo); light: solid paper pill (tools); accent: ochre (Payroll). */
+export type ToolbarButtonVariant = "on-dark" | "light" | "accent";
 
 export interface ToolbarButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
   variant?: ToolbarButtonVariant;

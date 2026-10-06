@@ -2,8 +2,8 @@
 .sidebar {
   min-width: 0;
   padding: var(--space-22);
-  background: var(--gradient-sidebar);
-  border-right: 1px solid var(--line);
+  background: var(--gradient-sidebar-panel);
+  border-right: 1px solid var(--color-border);
 }
 
 .sidebar-section + .sidebar-section {
@@ -21,21 +21,21 @@
   width: 100%;
   min-height: 48px;
   padding: var(--space-14) var(--space-16);
-  color: var(--white);
+  color: var(--color-inverse);
   font-size: 14px;
   font-weight: 700;
   text-align: left;
-  background: var(--gradient-clay);
-  border: 1px solid var(--border-white-65);
+  background: var(--gradient-primary);
+  border: 1px solid color-mix(in srgb, var(--color-surface) 65%, transparent);
   border-radius: var(--radius-md);
-  box-shadow: var(--shadow-card);
+  box-shadow: var(--shadow-panel);
   transition:
     var(--transition-lift),
     border-radius 0.2s ease;
 }
 
 .sidebar-drawer-toggle:hover {
-  background: var(--gradient-clay-hover);
+  background: var(--gradient-primary-hover);
 }
 
 .sidebar-drawer-toggle[aria-expanded="true"] {
@@ -62,17 +62,17 @@
 .sidebar-drawer-count {
   flex: none;
   padding: 2px var(--space-8);
-  color: var(--cream);
+  color: var(--color-inverse);
   font-size: 12px;
   font-weight: 600;
-  background: var(--on-clay-badge-bg);
+  background: var(--color-badge-on-primary);
   border-radius: var(--radius-pill);
 }
 
-/* The old chevron inherited dark ink on the brown header; cream reads properly. */
+/* The old chevron inherited the dark text on the dark header; light text reads properly. */
 .sidebar-drawer-chevron {
   flex: none;
-  color: rgba(255, 250, 241, 0.85);
+  color: var(--color-inverse-muted);
   font-size: 13px;
   transition: transform 0.3s;
 }
@@ -97,7 +97,7 @@
 .sidebar-drawer[data-open="true"] {
   grid-template-rows: 1fr;
   visibility: visible;
-  box-shadow: var(--shadow-card);
+  box-shadow: var(--shadow-panel);
   transition:
     grid-template-rows 0.5s ease-in,
     box-shadow 0.5s ease-in,
@@ -111,8 +111,8 @@
 
 .sidebar-drawer-content {
   padding: var(--space-14);
-  background: var(--surface-92);
-  border: 1px solid var(--line);
+  background: var(--color-input);
+  border: 1px solid var(--color-border);
   border-top: none;
   border-radius: 0 0 var(--radius-md) var(--radius-md);
 }
@@ -139,11 +139,11 @@
 /* Filter rows: the old page gave them a lighter shadow and no visible border. */
 .sidebar-filter-list .sidebar-filter-item {
   border-color: transparent;
-  box-shadow: var(--shadow-item);
+  box-shadow: var(--shadow-row);
 }
 
 .sidebar-filter-list .sidebar-filter-item:hover {
-  border-color: var(--border-hover);
+  border-color: var(--color-border-hover);
 }
 
 .sidebar-filter-label {
@@ -158,7 +158,7 @@
   width: 10px;
   height: 10px;
   border-radius: 50%;
-  box-shadow: inset 0 0 0 1px rgba(33, 23, 15, 0.18);
+  box-shadow: var(--shadow-swatch);
 }
 
 .sidebar-filter-name {
@@ -204,7 +204,7 @@
     column-gap: var(--space-8);
     padding: var(--space-14) var(--space-18) var(--space-6);
     border-right: none;
-    border-bottom: 1px solid var(--line);
+    border-bottom: 1px solid var(--color-border);
   }
 
   .sidebar-section {
@@ -239,14 +239,14 @@
   /* The margin sits inside the collapsing part, so it opens and closes with the panel. */
   .sidebar-drawer-content {
     margin-bottom: var(--space-8);
-    border-top: 1px solid var(--line);
+    border-top: 1px solid var(--color-border);
     border-radius: var(--radius-md);
   }
 
   .sidebar-drawer-caption {
     display: block;
     margin-bottom: var(--space-10);
-    color: var(--clay-700);
+    color: var(--color-tertiary);
     font-size: 11px;
     font-weight: 800;
     letter-spacing: 0.04em;

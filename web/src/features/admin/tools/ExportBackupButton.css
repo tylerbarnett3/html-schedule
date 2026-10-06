@@ -7,9 +7,9 @@
   width: 34px;
   height: 34px;
   padding: 0;
-  color: var(--cream);
-  background: rgba(255, 250, 241, 0.1);
-  border: 1px solid rgba(255, 250, 241, 0.32);
+  color: var(--color-header-text);
+  background: var(--color-header-pill);
+  border: 1px solid var(--color-header-pill-border);
   border-radius: 50%;
   cursor: pointer;
   transition: var(--transition-lift);
@@ -21,13 +21,13 @@
 }
 
 .export-backup-btn:hover:not([aria-disabled="true"]) {
-  background: rgba(255, 250, 241, 0.2);
-  border-color: rgba(255, 250, 241, 0.5);
+  background: var(--color-header-pill-hover);
+  border-color: var(--color-header-pill-border-hover);
   transform: var(--lift);
 }
 
 .export-backup-btn:focus-visible {
-  outline: 3px solid var(--gold-light);
+  outline: 3px solid var(--color-accent-on-dark);
   outline-offset: 2px;
 }
 
@@ -35,9 +35,10 @@
   cursor: progress;
 }
 
+/* The arc in the band's ring color, on a track of its text color. */
 .export-backup-spinner .spinner-ring {
-  border-color: rgba(255, 250, 241, 0.28);
-  border-top-color: var(--gold-light);
+  border-color: var(--color-accent-on-dark) color-mix(in srgb, var(--color-header-text) 28%, transparent)
+    color-mix(in srgb, var(--color-header-text) 28%, transparent);
 }
 
 @media (max-width: 768px) {

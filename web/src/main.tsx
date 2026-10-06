@@ -3,8 +3,11 @@ import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
 import { createBrowserRouter } from "react-router";
 import { RouterProvider } from "react-router/dom";
-// Tokens and base styles load before any component CSS.
+// Tokens, the theme's palette (the class on <html> names it), the color roles built on it and
+// the base styles load before any component CSS.
 import "./styles/tokens.css";
+import "./styles/themes/earth.css";
+import "./styles/roles.css";
 import "./styles/base.css";
 import App from "./App";
 import { AppCrash } from "./app/AppCrash";

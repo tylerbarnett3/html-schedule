@@ -5,7 +5,7 @@ import { useSignOut } from "./useSignOut";
 import "./AppHeader.css";
 
 export interface AppHeaderProps {
-  /** The page's call-to-action buttons, shown under the title (use <Button variant="gold">). */
+  /** The page's call-to-action buttons, shown under the title (use <Button variant="accent">). */
   actions?: ReactNode;
   /** Shown in the top left corner (Export Backup on the admin pages). */
   corner?: ReactNode;

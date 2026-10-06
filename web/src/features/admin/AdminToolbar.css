@@ -6,9 +6,9 @@
   justify-content: space-between;
   gap: var(--space-12);
   padding: var(--space-12) var(--space-22);
-  background: var(--toolbar-bg);
-  border-top: 1px solid var(--toolbar-border-top);
-  border-bottom: 1px solid var(--toolbar-border-bottom);
+  background: var(--color-toolbar);
+  border-top: 1px solid var(--color-toolbar-border);
+  border-bottom: 1px solid var(--color-toolbar-border);
 }
 
 .admin-toolbar-group {
@@ -27,9 +27,9 @@
   margin-left: auto;
 }
 
-/* The gold focus ring on the dark band: a cream outline reads better here. */
+/* The band's focus ring color, as on the header: the page's is too dark on a dark band. */
 .admin-toolbar :focus-visible {
-  outline-color: var(--gold-light);
+  outline-color: var(--color-accent-on-dark);
 }
 
 /* Toolbar buttons and links (ToolbarButton, and the Payroll or Back to schedule link). */
@@ -77,13 +77,13 @@
 }
 
 .toolbar-btn-on-dark {
-  color: var(--cream);
-  background: var(--on-dark-surface);
-  border-color: var(--on-dark-border);
+  color: var(--color-header-text);
+  background: var(--color-toolbar-button);
+  border-color: var(--color-toolbar-button-border);
 }
 
 .toolbar-btn-on-dark:hover:not(:disabled) {
-  background: var(--on-dark-surface-hover);
+  background: var(--color-toolbar-button-hover);
 }
 
 /* Undo with nothing to undo, or while an undo runs. Only aria-disabled, so it keeps focus;
@@ -94,7 +94,7 @@
 }
 
 .toolbar-btn.admin-undo-btn[aria-disabled="true"]:hover {
-  background: var(--on-dark-surface);
+  background: var(--color-toolbar-button);
   transform: none;
 }
 
@@ -102,25 +102,25 @@
   cursor: progress;
 }
 
-.toolbar-btn-cream {
-  color: var(--clay-900);
-  background: var(--cream);
-  box-shadow: 0 8px 18px rgba(0, 0, 0, 0.12);
+.toolbar-btn-light {
+  color: var(--color-emphasis);
+  background: var(--color-toolbar-button-filled);
+  box-shadow: 0 8px 18px color-mix(in srgb, var(--color-shadow) 12%, transparent);
 }
 
-.toolbar-btn-cream:hover:not(:disabled) {
-  background: var(--white);
+.toolbar-btn-light:hover:not(:disabled) {
+  background: var(--color-toolbar-button-filled-hover);
 }
 
-.toolbar-btn-gold {
-  color: var(--clay-900);
-  background: var(--gold);
-  border-color: rgba(255, 255, 255, 0.22);
-  box-shadow: 0 8px 18px rgba(0, 0, 0, 0.14);
+.toolbar-btn-accent {
+  color: var(--color-emphasis);
+  background: var(--color-button-accent);
+  border-color: color-mix(in srgb, var(--color-surface) 22%, transparent);
+  box-shadow: 0 8px 18px color-mix(in srgb, var(--color-shadow) 14%, transparent);
 }
 
-.toolbar-btn-gold:hover:not(:disabled) {
-  background: var(--gold-hover);
+.toolbar-btn-accent:hover:not(:disabled) {
+  background: var(--color-button-accent-hover);
 }
 
 

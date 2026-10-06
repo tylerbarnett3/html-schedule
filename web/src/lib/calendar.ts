@@ -7,6 +7,8 @@ import { applyReviews, type ShiftReview } from "./reviewedShifts";
 import { compareTimes, formatShiftTime } from "./time";
 import type { Availability, DateRange, Employee, ISODate, Shift, TimeOff } from "./types";
 
+// The old page's pending chip colors, kept as markers: DayCard.css paints the cards in the
+// theme's own (--color-chip-pending, --color-chip-pending-crowded).
 export const PENDING_COLOR = "#FDB913";
 export const BUSY_PENDING_COLOR = "#9333EA";
 type PendingColor = typeof PENDING_COLOR | typeof BUSY_PENDING_COLOR;
@@ -75,7 +77,8 @@ export function availabilityCardLabel(row: Pick<Availability, "period" | "status
 
 /**
  * A busy day's 4th and later pending requests (rank is 0-based, by request time over
- * every employee's pending requests that day) turn purple so the manager notices.
+ * every employee's pending requests that day) become the dark crowded chip, so the manager
+ * notices.
  */
 export function pendingCardColor(rank: number, totalForDay: number): PendingColor {
   return totalForDay >= 4 && rank >= 3 ? BUSY_PENDING_COLOR : PENDING_COLOR;

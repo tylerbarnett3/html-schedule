@@ -9,16 +9,16 @@
 .checkbox-card {
   min-height: 44px;
   padding: var(--space-12) var(--space-14);
-  background: var(--surface-82);
-  border: 1px solid var(--line);
+  background: var(--color-surface-card);
+  border: 1px solid var(--color-border);
   border-radius: var(--radius-md);
-  box-shadow: var(--shadow-card);
+  box-shadow: var(--shadow-panel);
   transition: var(--transition-lift);
 }
 
 .checkbox-card:hover {
-  background: var(--cream);
-  border-color: var(--border-hover);
+  background: var(--color-hover);
+  border-color: var(--color-border-hover);
 }
 
 .checkbox-input {
@@ -30,8 +30,8 @@
   width: 18px;
   height: 18px;
   margin: 0 var(--space-10) 0 0;
-  background: var(--surface-96);
-  border: 2px solid var(--checkbox-border);
+  background: var(--color-overlay);
+  border: 2px solid color-mix(in srgb, var(--color-foreground) 38%, transparent);
   border-radius: 3px;
   cursor: pointer;
 }
@@ -41,7 +41,7 @@
   width: 10px;
   height: 10px;
   border-radius: 2px;
-  background: var(--clay-700);
+  background: var(--color-primary);
   transform: scale(0);
   transition: transform 0.12s ease-in-out;
 }
@@ -51,7 +51,7 @@
 }
 
 .checkbox-input:focus-visible {
-  outline: 2px solid var(--focus-ring);
+  outline: 2px solid var(--color-focus);
   outline-offset: 2px;
 }
 
@@ -68,7 +68,7 @@
   font-weight: 600;
 }
 
-/* Forced colors (Windows High Contrast) replace the clay fill with the page background, so
+/* Forced colors (Windows High Contrast) replace the primary fill with the page background, so
    a checked box would look empty. Draw the check in the system highlight instead. */
 @media (forced-colors: active) {
   .checkbox-input::before {

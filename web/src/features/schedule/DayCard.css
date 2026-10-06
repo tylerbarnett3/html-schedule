@@ -3,18 +3,18 @@
   position: relative;
   overflow: hidden;
   padding: var(--space-10) 11px;
-  color: var(--white);
-  border: 1px solid var(--chip-border);
+  color: var(--color-chip-text);
+  border: 1px solid var(--color-chip-border);
   border-radius: var(--radius-md);
-  box-shadow: var(--shadow-chip);
+  box-shadow: var(--shadow-day-card);
 }
 
-/* Diagonal sheen over every chip. */
+/* Diagonal sheen over the chips; shift cards are flat. */
 .day-card::before {
   content: "";
   position: absolute;
   inset: 0;
-  background: var(--chip-sheen);
+  background: var(--gradient-chip-sheen);
   pointer-events: none;
 }
 
@@ -53,8 +53,8 @@
   display: block;
 }
 
-/* The card clips overflow, so the ring goes inside it, in the card's own text color (cream
-   on dark chips, ink on yellow and pale ones) so it always shows. */
+/* The card clips overflow, so the ring goes inside it, in the card's own text color (light
+   on dark chips, dark on pending and pale ones) so it always shows. */
 .day-card-open:focus-visible {
   outline: 3px solid currentColor;
   outline-offset: -5px;
@@ -91,21 +91,46 @@
   text-transform: uppercase;
 }
 
-/* Shift: background is the employee's color (inline). Text is white, or dark when the
-   color is too light for white (see shiftCardColors in employeeColor.ts). */
-.day-card-shift-light {
-  color: var(--chip-pending-text);
+/* Shift: the employee's color comes in inline as --employee (--employee-<name> from roles.css
+   for a palette color, a custom color as picked; employeeCardPaint in employeeColor.ts). The
+   card is solid in that color, flat, with light text and a 1px border of its own color taken
+   deeper. A property set on :root that read --employee would resolve there, where it isn't
+   set, so the mixing happens here. Paint only, no geometry: the color picker's preview card
+   (ColorPicker.tsx) carries these classes too. */
+.day-card-shift {
+  color: var(--color-chip-text);
+  background-color: var(--employee);
+  border-color: color-mix(in oklab, var(--employee) 72%, var(--color-card-ink));
+  box-shadow: var(--shadow-shift-card);
 }
 
-/* A shift reviewed in Payroll: green with dark text, and a check tucked into the top right
+/* Flat: no chip sheen. */
+.day-card-shift::before {
+  background: none;
+}
+
+/* A custom color (not one of the 16): solid as picked with the light card text or the card
+   ink, whichever employeeCardPaint found keeps 4.5:1, or darkened for the light text when
+   neither does (--custom-solid, inline). */
+.day-card-custom {
+  --card-custom-text: var(--color-chip-text);
+  color: var(--card-custom-text);
+  background-color: var(--custom-solid);
+}
+
+.day-card-custom-ink {
+  --card-custom-text: var(--color-card-ink);
+}
+
+/* A shift reviewed in Payroll: its own light tint with dark text, and a check in the top right
    corner. Where the card's text is under 100px wide (every desktop calendar column), room
    beside the name would split names mid-word, so the name starts just below the check.
    Wider cards (phones) keep the check beside the name's first line only (a float one line
    tall), so the name's other lines keep the full width. */
 .day-card-reviewed {
   container-type: inline-size;
-  color: var(--chip-pending-text);
-  background: var(--chip-reviewed);
+  color: var(--color-emphasis);
+  background: var(--color-chip-reviewed);
 }
 
 .day-card-reviewed .day-card-name::before {
@@ -120,7 +145,7 @@
   top: 4px;
   right: 3px;
   display: flex;
-  color: var(--chip-reviewed-mark);
+  color: var(--color-success);
 }
 
 .day-card-reviewed-mark svg {
@@ -139,30 +164,32 @@
 }
 
 .day-card-off {
-  background: var(--chip-day-off);
+  color: var(--color-chip-day-off-text);
+  background: var(--gradient-chip-day-off);
 }
 
-/* Pending time off: dark text on yellow (the old white text was unreadable), white on purple. */
+/* Pending time off: dark text on the light ochre tint (the old white text was unreadable),
+   light text on the dark crowded chip. */
 .day-card-pending {
-  background: var(--chip-pending);
-  color: var(--chip-pending-text);
+  background: var(--color-chip-pending);
+  color: var(--color-emphasis);
 }
 
 .day-card-pending-busy {
-  background: var(--chip-pending-crowded);
-  color: var(--white);
+  background: var(--color-chip-pending-crowded);
+  color: var(--color-chip-text);
 }
 
 .day-card-availability {
-  background: var(--chip-available-bg);
-  color: var(--chip-available-text);
-  border-color: var(--chip-available-border);
+  background: var(--color-availability-light);
+  color: var(--color-availability-text);
+  border-color: var(--color-chip-available-border);
 }
 
 .day-card-availability-pending {
-  background: var(--chip-available-pending-bg);
-  color: var(--chip-available-pending-text);
-  border-color: var(--chip-available-pending-border);
+  background: var(--color-chip-available-pending);
+  color: var(--color-chip-available-pending-text);
+  border-color: var(--color-chip-available-pending-border);
 }
 
 .day-card-cancel {
@@ -173,18 +200,18 @@
   min-height: 24px;
   margin-top: var(--space-6);
   padding: var(--space-4) var(--space-8);
-  color: var(--white);
+  color: var(--color-chip-text);
   font-size: 10px;
   font-weight: 600;
   line-height: 1.2;
-  background: rgba(255, 250, 241, 0.26);
-  border: 1px solid rgba(255, 250, 241, 0.5);
+  background: color-mix(in srgb, var(--color-inverse) 26%, transparent);
+  border: 1px solid color-mix(in srgb, var(--color-inverse) 50%, transparent);
   border-radius: var(--radius-pill);
   transition: var(--transition-lift);
 }
 
 .day-card-cancel:hover:not([aria-disabled="true"]) {
-  background: rgba(255, 250, 241, 0.4);
+  background: color-mix(in srgb, var(--color-inverse) 40%, transparent);
   transform: var(--lift);
 }
 
@@ -196,38 +223,38 @@
   outline-offset: 1px;
 }
 
-/* The gold ring disappears on the yellow, purple and pale chips: use the chip's text color
-   (dark ink on yellow and pale chips, cream on purple) so it keeps 3:1. */
+/* On the pending, crowded and pale chips the ring takes the chip's own text color (dark on
+   pending and pale chips, light on crowded ones), which is sure to stand out on it. */
 .day-card-pending .day-card-cancel:focus-visible,
 .day-card-availability .day-card-cancel:focus-visible {
-  outline-color: var(--chip-pending-text);
+  outline-color: var(--color-emphasis);
 }
 
 .day-card-pending-busy .day-card-cancel:focus-visible {
-  outline-color: var(--cream);
+  outline-color: var(--color-inverse);
 }
 
 /* On the light chips the button takes the chip's dark text color. */
 .day-card-pending .day-card-cancel,
 .day-card-availability .day-card-cancel {
   color: inherit;
-  background: rgba(255, 250, 241, 0.5);
-  border-color: rgba(35, 25, 15, 0.4);
+  background: color-mix(in srgb, var(--color-inverse) 50%, transparent);
+  border-color: color-mix(in srgb, var(--color-emphasis) 40%, transparent);
 }
 
 .day-card-pending .day-card-cancel:hover:not([aria-disabled="true"]),
 .day-card-availability .day-card-cancel:hover:not([aria-disabled="true"]) {
-  background: rgba(255, 250, 241, 0.8);
+  background: color-mix(in srgb, var(--color-inverse) 80%, transparent);
 }
 
 .day-card-pending-busy .day-card-cancel {
-  color: var(--white);
-  background: rgba(255, 250, 241, 0.2);
-  border-color: rgba(255, 250, 241, 0.55);
+  color: var(--color-chip-text);
+  background: color-mix(in srgb, var(--color-inverse) 20%, transparent);
+  border-color: color-mix(in srgb, var(--color-inverse) 55%, transparent);
 }
 
 .day-card-pending-busy .day-card-cancel:hover:not([aria-disabled="true"]) {
-  background: rgba(255, 250, 241, 0.34);
+  background: color-mix(in srgb, var(--color-inverse) 34%, transparent);
 }
 
 @media (min-width: 769px) and (max-width: 1100px) {

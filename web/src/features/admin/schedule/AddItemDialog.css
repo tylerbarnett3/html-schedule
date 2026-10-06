@@ -30,11 +30,11 @@
 
 .add-item-hint {
   padding: var(--space-12) var(--space-14);
-  color: var(--clay-800);
+  color: var(--color-secondary);
   font-size: 14px;
   line-height: 1.45;
-  background: var(--surface-tint);
-  border: 1px solid var(--line);
+  background: var(--color-surface-tint);
+  border: 1px solid var(--color-border);
   border-radius: var(--radius-sm);
 }
 
@@ -59,16 +59,16 @@
   padding: var(--space-8);
   overflow-y: auto;
   overscroll-behavior: contain;
-  background: rgba(255, 252, 246, 0.7);
-  border: 1px solid var(--line);
+  background: color-mix(in srgb, var(--color-surface) 70%, transparent);
+  border: 1px solid var(--color-border);
   border-radius: var(--radius-md);
 }
 
 .add-item-employee {
   min-height: 44px;
   padding: 9px var(--space-10);
-  background: var(--add-day-bg);
-  border: 1px solid rgba(91, 65, 40, 0.1);
+  background: var(--color-add-day);
+  border: 1px solid color-mix(in srgb, var(--color-foreground) 10%, transparent);
   border-radius: var(--radius-sm);
   transition:
     background 0.2s,
@@ -77,19 +77,19 @@
 }
 
 .add-item-employee:hover {
-  box-shadow: 0 8px 16px rgba(58, 39, 21, 0.08);
+  box-shadow: var(--shadow-control);
 }
 
 .add-item-employee:has(input:checked) {
-  background: #fffaf1;
-  border-color: rgba(216, 169, 79, 0.48);
-  box-shadow: 0 8px 16px rgba(58, 39, 21, 0.08);
+  background: var(--color-hover);
+  border-color: color-mix(in srgb, var(--color-accent) 48%, transparent);
+  box-shadow: var(--shadow-control);
 }
 
 .add-item-employee-name {
   display: block;
   overflow: hidden;
-  color: var(--ink);
+  color: var(--color-default);
   font-size: 14px;
   font-weight: 700;
   text-overflow: ellipsis;
@@ -99,12 +99,12 @@
 .add-item-empty,
 .add-item-loading {
   padding: var(--space-18) var(--space-12);
-  color: var(--muted);
+  color: var(--color-muted);
   font-size: 13px;
   font-style: italic;
   text-align: center;
-  background: rgba(255, 252, 246, 0.7);
-  border: 1px solid var(--line);
+  background: color-mix(in srgb, var(--color-surface) 70%, transparent);
+  border: 1px solid var(--color-border);
   border-radius: var(--radius-md);
 }
 
@@ -123,7 +123,7 @@
 }
 
 .add-item-quick-title {
-  color: var(--clay-800);
+  color: var(--color-secondary);
   font-size: 14px;
   font-weight: 700;
 }
@@ -137,11 +137,11 @@
 .add-item-quick-chip {
   min-height: 34px;
   padding: var(--space-8) var(--space-12);
-  color: var(--clay-800);
+  color: var(--color-secondary);
   font-size: 13px;
   font-weight: 700;
-  background: var(--surface-92);
-  border: 1px solid rgba(91, 65, 40, 0.18);
+  background: var(--color-input);
+  border: 1px solid color-mix(in srgb, var(--color-foreground) 18%, transparent);
   border-radius: var(--radius-pill);
   transition:
     background 0.15s ease,
@@ -149,8 +149,8 @@
 }
 
 .add-item-quick-chip:hover {
-  background: var(--hover-cream);
-  border-color: rgba(216, 169, 79, 0.62);
+  background: var(--color-hover-accent);
+  border-color: var(--color-accent-border);
 }
 
 /* Selected Dates: chips like the request dialog's, labelled 'Wed, Sep 30'. */
@@ -160,18 +160,18 @@
   gap: var(--space-10);
   min-height: 60px;
   padding: 15px;
-  background: var(--surface-82);
-  border: 1px solid var(--line);
+  background: var(--color-surface-card);
+  border: 1px solid var(--color-border);
   border-radius: var(--radius-md);
 }
 
 .add-item-selected:focus-visible {
-  outline: 3px solid var(--focus-ring);
+  outline: 3px solid var(--color-focus);
   outline-offset: 2px;
 }
 
 .add-item-empty-dates {
-  color: var(--slate-500);
+  color: var(--color-muted);
   font-size: 13px;
 }
 
@@ -187,11 +187,11 @@
   gap: var(--space-4);
   min-height: 32px;
   padding: var(--space-4) var(--space-4) var(--space-4) var(--space-12);
-  color: var(--cream);
+  color: var(--color-inverse);
   font-size: 13px;
   font-weight: 600;
   white-space: nowrap;
-  background: var(--gradient-clay);
+  background: var(--gradient-primary);
   border-radius: var(--radius-pill);
 }
 
@@ -203,7 +203,7 @@
   width: 26px;
   height: 26px;
   padding: 0;
-  color: var(--white);
+  color: var(--color-inverse);
   font-size: 18px;
   font-weight: 600;
   line-height: 1;
@@ -214,13 +214,13 @@
 }
 
 .add-item-chip-remove:hover {
-  background: rgba(255, 250, 241, 0.2);
+  background: var(--color-chip-remove-hover);
 }
 
 .add-item-chip-remove:focus-visible {
-  outline: 2px solid var(--cream);
+  outline: 2px solid var(--color-inverse);
   outline-offset: 0;
-  box-shadow: 0 0 0 4px var(--focus-ring);
+  box-shadow: 0 0 0 4px var(--color-focus);
 }
 
 .add-item-messages:empty {
@@ -233,8 +233,7 @@
 }
 
 .add-item-spinner .spinner-ring {
-  border-color: rgba(255, 250, 241, 0.28);
-  border-top-color: var(--gold-light);
+  border-color: var(--color-accent-on-dark) var(--color-spinner-track-on-dark) var(--color-spinner-track-on-dark);
 }
 
 .add-item-dialog .btn[aria-disabled="true"] {

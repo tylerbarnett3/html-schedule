@@ -7,7 +7,7 @@ export interface CheckboxProps extends Omit<InputHTMLAttributes<HTMLInputElement
   appearance?: "card" | "plain";
 }
 
-/** Native checkbox with the old page's square clay check, wrapped in its label. */
+/** Native checkbox with the old page's square check, wrapped in its label. */
 export function Checkbox({ label, appearance = "card", className, ...inputProps }: CheckboxProps) {
   const classes = ["checkbox", `checkbox-${appearance}`, className].filter(Boolean).join(" ");
   return (

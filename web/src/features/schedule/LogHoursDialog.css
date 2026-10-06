@@ -2,7 +2,7 @@
    full-height sheet on phones. */
 .log-hours-intro {
   margin-bottom: var(--space-14);
-  color: var(--muted);
+  color: var(--color-muted);
   font-size: 14px;
   line-height: 1.5;
 }
@@ -26,24 +26,24 @@
   width: 100%;
   min-height: 44px;
   padding: var(--space-12) var(--space-14);
-  color: var(--clay-900);
+  color: var(--color-emphasis);
   font: inherit;
   text-align: left;
-  background: var(--surface-82);
-  border: 1px solid var(--line);
+  background: var(--color-surface-card);
+  border: 1px solid var(--color-border);
   border-radius: var(--radius-md);
-  box-shadow: var(--shadow-item);
+  box-shadow: var(--shadow-row);
   cursor: pointer;
   transition: var(--transition-lift);
 }
 
 .log-hours-shift:hover {
-  border-color: var(--clay-700);
+  border-color: var(--color-border-strong);
   transform: var(--lift);
 }
 
 .log-hours-shift:focus-visible {
-  outline: 3px solid var(--focus-ring);
+  outline: 3px solid var(--color-focus);
   outline-offset: 2px;
 }
 
@@ -54,7 +54,7 @@
 
 .log-hours-shift-scheduled {
   grid-column: 1;
-  color: var(--muted);
+  color: var(--color-muted);
   font-size: 13px;
   font-variant-numeric: tabular-nums;
 }
@@ -64,7 +64,7 @@
   grid-row: 1 / span 2;
   grid-column: 2;
   align-self: center;
-  color: var(--muted);
+  color: var(--color-muted);
   font-size: 13px;
   font-weight: 600;
   font-variant-numeric: tabular-nums;
@@ -72,12 +72,12 @@
 }
 
 .log-hours-shift.is-logged .log-hours-shift-status {
-  color: var(--success-text);
+  color: var(--color-success-text);
 }
 
 .log-hours-empty {
   padding: var(--space-18) var(--space-12);
-  color: var(--clay-800);
+  color: var(--color-secondary);
   font-size: 15px;
   font-weight: 600;
   text-align: center;
@@ -95,7 +95,7 @@
 }
 
 .log-hours-error {
-  color: var(--error-text);
+  color: var(--color-danger-text);
   font-size: 14px;
   font-weight: 600;
 }
@@ -108,14 +108,14 @@
 }
 
 .log-hours-chosen-date {
-  color: var(--clay-800);
+  color: var(--color-secondary);
   font-size: 15px;
   font-weight: 700;
   line-height: 1.4;
 }
 
 .log-hours-chosen-scheduled {
-  color: var(--muted);
+  color: var(--color-muted);
   font-size: 14px;
   font-variant-numeric: tabular-nums;
 }
@@ -136,8 +136,7 @@
 }
 
 .log-hours-spinner .spinner-ring {
-  border-color: rgba(255, 250, 241, 0.28);
-  border-top-color: var(--gold-light);
+  border-color: var(--color-accent-on-dark) var(--color-spinner-track-on-dark) var(--color-spinner-track-on-dark);
 }
 
 .log-hours-dialog .btn[aria-disabled="true"] {

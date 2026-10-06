@@ -1,6 +1,6 @@
 import { useId, type KeyboardEvent, type Ref } from "react";
 import type { Employee } from "../../../lib/types";
-import { employeeColor } from "../../schedule/employeeColor";
+import { employeeFill } from "../../schedule/employeeColor";
 import "../../../components/Button.css";
 import "./EmployeesDrawer.css";
 
@@ -144,7 +144,7 @@ export function EmployeeRow({
         <span
           className="employee-row-swatch"
           aria-hidden="true"
-          style={{ background: employeeColor(employee.color) }}
+          style={{ background: employeeFill(employee.color) }}
         />
         <span className="employee-row-name">{name}</span>
       </button>

@@ -3,7 +3,7 @@ import { Button } from "../../components/Button";
 import { Checkbox } from "../../components/Checkbox";
 import { Spinner } from "../../components/Spinner";
 import type { Employee } from "../../lib/types";
-import { employeeColor } from "./employeeColor";
+import { employeeFill } from "./employeeColor";
 import { SidebarDrawer } from "./SidebarDrawer";
 import "./Sidebar.css";
 
@@ -117,7 +117,7 @@ export function Sidebar({
                       <span
                         className="sidebar-swatch"
                         aria-hidden="true"
-                        style={{ background: employeeColor(employee.color) }}
+                        style={{ background: employeeFill(employee.color) }}
                       />
                       <span className="sidebar-filter-name">{employee.name}</span>
                     </span>

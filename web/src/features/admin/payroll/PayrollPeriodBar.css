@@ -5,8 +5,8 @@
   justify-content: space-between;
   gap: var(--space-16);
   padding: var(--space-14) var(--space-16);
-  background: var(--surface-86);
-  border: 1px solid var(--line);
+  background: var(--color-surface-panel);
+  border: 1px solid var(--color-border);
   border-radius: var(--radius-md);
 }
 
@@ -18,16 +18,16 @@
   width: 42px;
   height: 42px;
   padding: 0;
-  color: var(--clay-800);
-  background: var(--cream);
-  border: 1px solid var(--line);
+  color: var(--color-secondary);
+  background: var(--color-background);
+  border: 1px solid var(--color-border);
   border-radius: 50%;
   transition: var(--transition-lift);
 }
 
 .payroll-period-arrow:hover:not(:disabled) {
-  background: var(--mini-btn-hover);
-  border-color: rgba(166, 119, 55, 0.66);
+  background: var(--color-hover-accent);
+  border-color: var(--color-payroll-hover-border);
 }
 
 .payroll-period-arrow:disabled {
@@ -54,7 +54,7 @@
 .payroll-period-field label {
   display: block;
   margin-bottom: var(--space-4);
-  color: var(--clay-700);
+  color: var(--color-tertiary);
   font-size: 10px;
   font-weight: 800;
   letter-spacing: 0.035em;
@@ -67,12 +67,12 @@
   min-width: 0;
   min-height: 36px;
   padding: 7px 9px;
-  color: var(--clay-900);
+  color: var(--color-emphasis);
   font-size: 12px;
   font-weight: 700;
   font-variant-numeric: tabular-nums;
-  background: var(--actual-input-bg);
-  border: 1px solid var(--line);
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
   border-radius: 10px;
   -webkit-appearance: none;
   appearance: none;
@@ -80,14 +80,14 @@
 
 .payroll-period-input:focus-visible {
   outline: none;
-  border-color: rgba(166, 119, 55, 0.86);
-  box-shadow: 0 0 0 3px rgba(216, 169, 79, 0.3);
+  border-color: var(--color-input-focus);
+  box-shadow: var(--shadow-payroll-focus);
 }
 
-/* End follows Start. Clay text instead of the old muted grey (4.1:1 on this background). */
+/* End follows Start. Tertiary text instead of the old muted grey (4.1:1 on this background). */
 .payroll-period-input[readonly] {
-  color: var(--clay-700);
-  background: var(--actual-readonly-bg);
+  color: var(--color-tertiary);
+  background: var(--color-elevated);
   cursor: default;
 }
 
@@ -98,7 +98,7 @@
 .payroll-period-progress {
   min-height: 1.4em;
   margin-top: var(--space-6);
-  color: var(--clay-700);
+  color: var(--color-tertiary);
   font-size: 12px;
 }
 

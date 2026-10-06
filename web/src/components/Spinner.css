@@ -1,4 +1,4 @@
-/* Gold-arc ring from the old loading overlay (design spec §2.15). */
+/* Ring with a sage arc, from the old loading overlay (design spec §2.15). */
 .spinner {
   display: inline-flex;
   flex-direction: column;
@@ -9,8 +9,8 @@
 .spinner-ring {
   display: block;
   border-style: solid;
-  border-color: var(--spinner-track);
-  border-top-color: var(--gold);
+  border-color: color-mix(in srgb, var(--color-neutral) 18%, transparent);
+  border-top-color: var(--color-accent);
   border-radius: 50%;
   animation: spinner-spin 1s linear infinite;
 }
@@ -34,7 +34,7 @@
 }
 
 .spinner-label {
-  color: var(--clay-900);
+  color: var(--color-emphasis);
   font-size: 16px;
   letter-spacing: -0.03em;
 }

@@ -3,7 +3,7 @@
 .admin-main {
   display: grid;
   grid-template-columns: var(--sidebar-width-admin) minmax(0, 1fr);
-  background: var(--surface-main);
+  background: var(--color-wash);
 }
 
 .admin-area {
@@ -14,7 +14,7 @@
 /* Stand-in text while a section is still being built. */
 .admin-placeholder {
   padding: 30px var(--space-20);
-  color: var(--muted);
+  color: var(--color-muted);
   font-size: 14px;
   font-style: italic;
   text-align: center;

@@ -6,10 +6,10 @@
   gap: var(--space-12);
   margin-bottom: var(--space-22);
   padding: var(--space-16);
-  background: var(--surface-82);
-  border: 1px solid rgba(255, 255, 255, 0.75);
+  background: var(--color-surface-card);
+  border: 1px solid var(--color-border);
   border-radius: var(--radius-lg);
-  box-shadow: var(--shadow-card);
+  box-shadow: var(--shadow-panel);
 }
 
 /* The old circles were squeezed into ellipses; flex: none keeps them round. */
@@ -21,16 +21,16 @@
   width: 48px;
   height: 48px;
   padding: 0;
-  color: var(--cream);
-  background: var(--gradient-clay);
+  color: var(--color-inverse);
+  background: var(--gradient-primary);
   border: none;
   border-radius: 50%;
-  box-shadow: var(--shadow-button);
+  box-shadow: var(--shadow-button-primary);
   transition: var(--transition-lift);
 }
 
 .period-nav-arrow:hover {
-  background: var(--gradient-clay-hover);
+  background: var(--gradient-primary-hover);
   transform: var(--lift);
 }
 
@@ -52,7 +52,7 @@
 }
 
 .period-nav-title {
-  color: var(--clay-900);
+  color: var(--color-emphasis);
   font-size: clamp(17px, 2vw, 23px);
   font-weight: 800;
   line-height: 1.2;
@@ -75,7 +75,7 @@
 }
 
 .period-nav-label {
-  color: var(--muted);
+  color: var(--color-muted);
   font-size: 14px;
   font-weight: 700;
 }
@@ -85,13 +85,13 @@
   min-width: 0;
   min-height: 48px;
   padding: var(--space-10) var(--space-12);
-  color: var(--ink);
+  color: var(--color-default);
   font-size: 16px;
   line-height: 1.2;
-  background: var(--surface-92);
-  border: 1px solid var(--line);
+  background: var(--color-input);
+  border: 1px solid var(--color-border);
   border-radius: var(--radius-sm);
-  box-shadow: var(--shadow-inset);
+  box-shadow: var(--shadow-input-inset);
   transition:
     border-color 0.18s ease,
     box-shadow 0.18s ease;
@@ -99,17 +99,17 @@
 
 .period-nav-input:focus {
   outline: none;
-  border-color: var(--focus-border);
-  box-shadow: var(--focus-glow);
+  border-color: color-mix(in srgb, var(--color-accent) 78%, transparent);
+  box-shadow: var(--shadow-focus);
 }
 
 .period-nav-input:focus-visible {
-  outline: 2px solid var(--focus-ring);
+  outline: 2px solid var(--color-focus);
   outline-offset: 1px;
 }
 
 .period-nav-note {
-  color: var(--clay-700);
+  color: var(--color-tertiary);
   font-size: 13px;
   font-weight: 600;
 }
@@ -175,7 +175,7 @@
 
   /* When the title does wrap (below about 340px), the day count moves down whole. */
   .period-nav-days {
-    color: var(--muted);
+    color: var(--color-muted);
     font-size: 14px;
     font-weight: 700;
     letter-spacing: -0.01em;

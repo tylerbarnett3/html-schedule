@@ -6,7 +6,7 @@
 
 .rate-editor-empty {
   padding: var(--space-18) var(--space-12);
-  color: var(--muted);
+  color: var(--color-muted);
   font-size: 13px;
   font-style: italic;
   text-align: center;
@@ -20,10 +20,10 @@
 .rate-editor-period {
   min-width: 0;
   padding: var(--space-12);
-  background: var(--surface-82);
-  border: 1px solid var(--line);
+  background: var(--color-surface-card);
+  border: 1px solid var(--color-border);
   border-radius: var(--radius-md);
-  box-shadow: var(--shadow-item);
+  box-shadow: var(--shadow-row);
 }
 
 .rate-editor-period-header {
@@ -35,7 +35,7 @@
 }
 
 .rate-editor-period-title {
-  color: var(--clay-900);
+  color: var(--color-emphasis);
   font-size: 15px;
   font-weight: 700;
 }
@@ -53,7 +53,7 @@
 }
 
 .rate-editor-label {
-  color: var(--clay-800);
+  color: var(--color-secondary);
   font-size: 13px;
   font-weight: 700;
 }
@@ -73,8 +73,8 @@
   display: grid;
   gap: var(--space-10);
   padding: var(--space-12);
-  background: var(--add-panel-bg);
-  border: 1px solid var(--add-panel-border);
+  background: var(--color-add-panel);
+  border: 1px solid var(--color-add-panel-border);
   border-radius: var(--radius-md);
 }
 
@@ -83,7 +83,7 @@
 }
 
 .rate-editor-new-intro {
-  color: var(--clay-800);
+  color: var(--color-secondary);
   font-size: 13px;
   line-height: 1.45;
 }

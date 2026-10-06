@@ -1,14 +1,14 @@
 /* Inline "Add work that was not on the schedule" panel (admin design spec §4.8). */
 .payroll-add {
   padding: var(--space-16);
-  background: var(--add-panel-bg);
-  border: 1px solid var(--add-panel-border);
+  background: var(--color-add-panel);
+  border: 1px solid var(--color-add-panel-border);
   border-radius: var(--radius-md);
 }
 
 .payroll-add-title {
   margin-bottom: var(--space-12);
-  color: var(--clay-900);
+  color: var(--color-emphasis);
   font-size: 16px;
 }
 
@@ -26,7 +26,7 @@
 }
 
 .payroll-add-field label {
-  color: var(--clay-800);
+  color: var(--color-secondary);
   font-size: 11px;
   font-weight: 800;
 }
@@ -34,11 +34,11 @@
 .payroll-add-error {
   margin-top: var(--space-12);
   padding: var(--space-10) var(--space-12);
-  color: var(--error-text);
+  color: var(--color-danger-text);
   font-size: 13px;
   line-height: 1.45;
-  background: var(--error-bg);
-  border: 1px solid var(--error-border);
+  background: var(--color-danger-subtle);
+  border: 1px solid var(--color-danger-border);
   border-radius: 10px;
 }
 

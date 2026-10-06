@@ -3,8 +3,8 @@
   display: grid;
   align-content: start;
   gap: var(--space-18);
-  color: var(--ink);
-  background: var(--surface-main);
+  color: var(--color-default);
+  background: var(--color-wash);
 }
 
 .payroll-heading {
@@ -15,7 +15,7 @@
 }
 
 .payroll-title {
-  color: var(--clay-900);
+  color: var(--color-emphasis);
   font-size: 24px;
   line-height: 1.15;
   letter-spacing: -0.025em;
@@ -28,27 +28,27 @@
   grid-template-columns: repeat(var(--payroll-stats, 5), minmax(0, 1fr));
   gap: 1px;
   overflow: hidden;
-  background: var(--line);
-  border: 1px solid var(--line);
+  background: var(--color-border);
+  border: 1px solid var(--color-border);
   border-radius: var(--radius-md);
 }
 
 .payroll-stat {
   min-width: 0;
   padding: 13px 15px;
-  background: var(--stat-bg);
+  background: color-mix(in srgb, var(--color-elevated) 96%, transparent);
 }
 
-/* Clay rather than the old muted grey (4.3:1 on this background). */
+/* Tertiary rather than the old muted grey (4.3:1 on this background). */
 .payroll-stat dt {
-  color: var(--clay-700);
+  color: var(--color-tertiary);
   font-size: 12px;
   font-weight: 700;
 }
 
 .payroll-stat dd {
   margin-top: 3px;
-  color: var(--clay-900);
+  color: var(--color-emphasis);
   font-size: 17px;
   font-weight: 700;
   font-variant-numeric: tabular-nums;
@@ -58,7 +58,7 @@
 .payroll-stat-note {
   display: block;
   margin-top: 2px;
-  color: var(--clay-700);
+  color: var(--color-tertiary);
   font-size: 11px;
   font-weight: 600;
   line-height: 1.35;
@@ -82,13 +82,13 @@
 .payroll-empty {
   padding: 42px var(--space-20);
   text-align: center;
-  background: rgba(255, 252, 246, 0.6);
-  border: 1px dashed rgba(103, 78, 51, 0.28);
+  background: color-mix(in srgb, var(--color-surface) 60%, transparent);
+  border: 1px dashed color-mix(in srgb, var(--color-border-strong) 28%, transparent);
   border-radius: var(--radius-md);
 }
 
 .payroll-empty strong {
-  color: var(--clay-900);
+  color: var(--color-emphasis);
 }
 
 .payroll-status {
@@ -116,12 +116,12 @@
   justify-content: space-between;
   gap: var(--space-8) var(--space-12);
   padding: var(--space-8) var(--space-8) var(--space-8) var(--space-14);
-  color: var(--error-text);
+  color: var(--color-danger-text);
   font-size: 14px;
   font-weight: 600;
   line-height: 1.4;
-  background: var(--error-bg);
-  border: 1px solid var(--error-border);
+  background: var(--color-danger-subtle);
+  border: 1px solid var(--color-danger-border);
   border-radius: var(--radius-md);
 }
 
@@ -132,33 +132,33 @@
   min-width: 0;
   min-height: 40px;
   padding: var(--space-8) var(--space-10);
-  color: var(--ink);
+  color: var(--color-default);
   font-size: 13px;
-  background-color: var(--actual-input-bg);
-  border: 1px solid var(--line);
+  background-color: var(--color-surface);
+  border: 1px solid var(--color-border);
   border-radius: 10px;
 }
 
 .payroll-input:focus-visible {
   outline: none;
-  border-color: rgba(166, 119, 55, 0.86);
-  box-shadow: 0 0 0 3px rgba(216, 169, 79, 0.3);
+  border-color: var(--color-input-focus);
+  box-shadow: var(--shadow-payroll-focus);
 }
 
 .payroll-input:disabled {
-  color: var(--clay-700);
-  background-color: var(--actual-readonly-bg);
+  color: var(--color-tertiary);
+  background-color: var(--color-elevated);
   cursor: not-allowed;
 }
 
 .payroll-input::placeholder {
-  color: var(--muted);
+  color: var(--color-input-placeholder);
   opacity: 1;
 }
 
 select.payroll-input {
   padding-right: 32px;
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23352619' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
+  background-image: var(--image-select-chevron);
   background-position: right 10px center;
   background-repeat: no-repeat;
   background-size: 16px;

@@ -1,8 +1,8 @@
 /* Review card for one shift (admin design spec §4.8 "Review card"). */
 .payroll-row {
   overflow: hidden;
-  background: var(--actual-card-body);
-  border: 1px solid rgba(91, 65, 40, 0.22);
+  background: var(--color-surface);
+  border: 1px solid color-mix(in srgb, var(--color-foreground) 22%, transparent);
   border-radius: var(--radius-md);
   transition:
     border-color 180ms ease,
@@ -11,13 +11,13 @@
 
 .payroll-row.is-adjusted,
 .payroll-row.is-unscheduled {
-  background: var(--actual-adjusted-bg);
-  border-color: rgba(166, 119, 55, 0.5);
+  background: var(--color-surface);
+  border-color: color-mix(in srgb, var(--color-accent-strong) 50%, transparent);
 }
 
 .payroll-row.is-not-worked {
-  background: var(--actual-not-worked-bg);
-  border-color: var(--actual-not-worked-border);
+  background: var(--color-surface);
+  border-color: color-mix(in srgb, var(--color-danger) 38%, transparent);
 }
 
 .payroll-row-header {
@@ -26,12 +26,12 @@
   justify-content: space-between;
   gap: var(--space-20);
   padding: 15px var(--space-18) 13px;
-  background: var(--actual-card-header);
-  border-bottom: 1px solid rgba(53, 38, 25, 0.18);
+  background: var(--color-header);
+  border-bottom: 1px solid color-mix(in srgb, var(--color-emphasis) 18%, transparent);
 }
 
 .payroll-row.is-not-worked .payroll-row-header {
-  background: var(--actual-not-worked-header);
+  background: var(--color-payroll-not-worked-header);
 }
 
 .payroll-row-who {
@@ -39,14 +39,14 @@
 }
 
 .payroll-row-name {
-  color: var(--cream);
+  color: var(--color-inverse);
   font-size: 16px;
   line-height: 1.25;
 }
 
 .payroll-row-scheduled {
   margin-top: var(--space-4);
-  color: var(--actual-card-header-muted);
+  color: var(--color-payroll-card-header-muted);
   font-size: 14px;
   font-variant-numeric: tabular-nums;
 }
@@ -58,28 +58,28 @@
 }
 
 .payroll-row-status {
-  color: var(--cream);
+  color: var(--color-inverse);
   font-size: 12px;
   font-weight: 800;
   line-height: 1.25;
 }
 
 .payroll-row-status.is-confirmed {
-  color: var(--status-confirmed);
+  color: var(--color-payroll-status-confirmed);
 }
 
 .payroll-row-status.is-adjusted,
 .payroll-row-status.is-unscheduled {
-  color: var(--status-adjusted);
+  color: var(--color-payroll-status-adjusted);
 }
 
 .payroll-row-status.is-not-worked {
-  color: var(--status-notworked);
+  color: var(--color-payroll-status-not-worked);
 }
 
 .payroll-row-difference {
   margin-top: 5px;
-  color: var(--actual-card-header-muted);
+  color: var(--color-payroll-card-header-muted);
   font-size: 12px;
   line-height: 1.35;
 }
@@ -100,7 +100,7 @@
 .payroll-field-label {
   display: block;
   margin-bottom: 7px;
-  color: var(--clay-700);
+  color: var(--color-tertiary);
   font-size: 10px;
   font-weight: 800;
   letter-spacing: 0.035em;
@@ -121,7 +121,7 @@
 .payroll-time-label {
   display: block;
   margin-bottom: 5px;
-  color: var(--clay-700);
+  color: var(--color-tertiary);
   font-size: 10px;
   font-weight: 700;
   letter-spacing: 0.035em;
@@ -130,7 +130,7 @@
 
 .payroll-row-to {
   padding-top: 37px;
-  color: var(--clay-700);
+  color: var(--color-tertiary);
   font-size: 12px;
 }
 
@@ -143,7 +143,7 @@
 
 .payroll-nudge-step {
   margin-right: auto;
-  color: var(--clay-700);
+  color: var(--color-tertiary);
   font-size: 11px;
   font-weight: 700;
 }
@@ -151,12 +151,12 @@
 .payroll-mini-btn {
   min-height: 36px;
   padding: 7px var(--space-10);
-  color: var(--clay-800);
+  color: var(--color-secondary);
   font-size: 12px;
   font-weight: 800;
   white-space: nowrap;
-  background: var(--mini-btn-bg);
-  border: 1px solid var(--line);
+  background: var(--color-elevated);
+  border: 1px solid var(--color-border);
   border-radius: 10px;
   transition:
     background 0.18s ease,
@@ -164,8 +164,8 @@
 }
 
 .payroll-mini-btn:hover:not(:disabled) {
-  background: var(--mini-btn-hover);
-  border-color: rgba(166, 119, 55, 0.66);
+  background: var(--color-hover-accent);
+  border-color: var(--color-payroll-hover-border);
 }
 
 .payroll-mini-btn:disabled {
@@ -189,7 +189,7 @@
 }
 
 .payroll-row-logged-line {
-  color: var(--clay-900);
+  color: var(--color-emphasis);
   font-size: 13px;
   font-weight: 700;
   line-height: 1.35;
@@ -198,7 +198,7 @@
 
 .payroll-row-logged-note {
   margin-top: 2px;
-  color: var(--muted);
+  color: var(--color-muted);
   font-size: 13px;
   font-style: italic;
   line-height: 1.35;
@@ -212,8 +212,8 @@
 }
 
 .payroll-use-logged[aria-disabled="true"]:hover {
-  background: var(--mini-btn-bg);
-  border-color: var(--line);
+  background: var(--color-elevated);
+  border-color: var(--color-border);
 }
 
 .payroll-row-outcomes {
@@ -223,25 +223,25 @@
 }
 
 .payroll-outcome[aria-pressed="true"] {
-  background: var(--mini-selected-bg);
-  border-color: var(--mini-selected-border);
-  box-shadow: inset 0 0 0 1px rgba(76, 55, 37, 0.08);
+  background: var(--color-selected);
+  border-color: var(--color-selected-border);
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--color-secondary) 8%, transparent);
 }
 
 .payroll-outcome[aria-pressed="true"]:hover:not(:disabled) {
-  background: var(--mini-selected-hover-bg);
-  border-color: var(--mini-selected-hover-border);
+  background: var(--color-selected-hover);
+  border-color: var(--color-selected-hover-border);
 }
 
 .payroll-outcome-vacated {
-  color: var(--vacated-text);
+  color: var(--color-danger-text);
 }
 
 .payroll-outcome-vacated[aria-pressed="true"],
 .payroll-outcome-vacated[aria-pressed="true"]:hover:not(:disabled) {
-  color: var(--vacated-selected-text);
-  background: var(--vacated-selected-bg);
-  border-color: var(--vacated-selected-border);
+  color: var(--color-danger-text);
+  background: var(--color-selected-danger);
+  border-color: var(--color-selected-danger-border);
 }
 
 .payroll-row-locked {
@@ -249,11 +249,11 @@
   align-items: center;
   min-height: 40px;
   padding: var(--space-8) var(--space-10);
-  color: var(--clay-700);
+  color: var(--color-tertiary);
   font-size: 12px;
   font-weight: 700;
-  background: rgba(246, 239, 228, 0.7);
-  border: 1px solid var(--line);
+  background: color-mix(in srgb, var(--color-elevated) 70%, transparent);
+  border: 1px solid var(--color-border);
   border-radius: 10px;
 }
 
@@ -263,18 +263,18 @@
   align-items: center;
   gap: var(--space-12);
   padding: var(--space-12) var(--space-18) var(--space-16);
-  background: var(--actual-card-footer);
-  border-top: 1px solid var(--line);
+  background: var(--color-payroll-card-footer);
+  border-top: 1px solid var(--color-border);
 }
 
 .payroll-row-note {
   min-width: 0;
 }
 
-/* Clay rather than the old muted grey, which was 3.98:1 on the footer. */
+/* Tertiary rather than the old muted grey, which was 3.98:1 on the footer. */
 .payroll-row-hint {
   margin-top: 5px;
-  color: var(--clay-700);
+  color: var(--color-tertiary);
   font-size: 12px;
 }
 
@@ -287,7 +287,7 @@
 }
 
 .payroll-row-saved {
-  color: var(--clay-700);
+  color: var(--color-tertiary);
   font-size: 12px;
   white-space: nowrap;
 }
@@ -295,21 +295,21 @@
 .payroll-row-btn {
   min-height: 36px;
   padding: 7px 11px;
-  color: var(--clay-800);
+  color: var(--color-secondary);
   font-size: 12px;
   font-weight: 800;
-  background: rgba(255, 250, 241, 0.72);
-  border: 1px solid var(--line);
+  background: color-mix(in srgb, var(--color-background) 72%, transparent);
+  border: 1px solid var(--color-border);
   border-radius: 10px;
 }
 
 .payroll-row-btn:hover:not(:disabled) {
-  background: var(--cream);
-  border-color: rgba(166, 119, 55, 0.66);
+  background: var(--color-hover);
+  border-color: var(--color-payroll-hover-border);
 }
 
 .payroll-row-remove {
-  color: var(--remove-text);
+  color: var(--color-danger-text);
 }
 
 .payroll-row-btn:disabled {

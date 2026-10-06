@@ -1,9 +1,9 @@
-/* Sign-in and no-access pages: one paper card on the page's warm wash. */
+/* Sign-in and no-access pages: one paper card on the page's wash. */
 .auth-main {
   display: grid;
   place-items: start center;
   padding: clamp(28px, 6vw, 64px) var(--space-18) clamp(36px, 7vw, 80px);
-  background: var(--surface-main);
+  background: var(--color-wash);
 }
 
 .auth-card {
@@ -13,14 +13,14 @@
   width: 100%;
   max-width: 400px;
   padding: 28px 28px 24px;
-  background: var(--surface-96);
-  border: 1px solid var(--border-white-82);
+  background: var(--color-overlay);
+  border: 1px solid var(--color-overlay-border);
   border-radius: var(--radius-modal);
-  box-shadow: var(--shadow-card);
+  box-shadow: var(--shadow-panel);
 }
 
 .auth-title {
-  color: var(--clay-900);
+  color: var(--color-emphasis);
   font-size: 24px;
   font-weight: 700;
   line-height: 1.2;
@@ -34,7 +34,7 @@
 }
 
 .auth-label {
-  color: var(--clay-800);
+  color: var(--color-secondary);
   font-size: 14px;
   font-weight: 800;
   letter-spacing: -0.01em;
@@ -45,13 +45,13 @@
   width: 100%;
   min-height: 48px;
   padding: var(--space-10) var(--space-12);
-  color: var(--ink);
+  color: var(--color-default);
   font-size: 16px;
   line-height: 1.2;
-  background: var(--surface-92);
-  border: 1px solid var(--line);
+  background: var(--color-input);
+  border: 1px solid var(--color-border);
   border-radius: var(--radius-sm);
-  box-shadow: var(--shadow-inset);
+  box-shadow: var(--shadow-input-inset);
   transition:
     border-color 0.18s ease,
     box-shadow 0.18s ease;
@@ -59,17 +59,17 @@
 
 .auth-input:focus {
   outline: none;
-  border-color: var(--focus-ring);
-  box-shadow: var(--focus-glow);
+  border-color: var(--color-input-focus);
+  box-shadow: var(--shadow-focus);
 }
 
 .auth-input[aria-invalid="true"] {
-  border-color: var(--red);
+  border-color: var(--color-danger);
 }
 
 .auth-input[aria-invalid="true"]:focus {
-  border-color: var(--red);
-  box-shadow: 0 0 0 4px rgba(207, 84, 72, 0.16);
+  border-color: var(--color-danger);
+  box-shadow: 0 0 0 4px color-mix(in srgb, var(--color-danger) 16%, transparent);
 }
 
 .auth-password {
@@ -87,7 +87,7 @@
   min-width: 60px;
   min-height: 36px;
   padding: 0 var(--space-12);
-  color: var(--clay-800);
+  color: var(--color-secondary);
   font-size: 13px;
   font-weight: 700;
   background: transparent;
@@ -97,17 +97,17 @@
 }
 
 .auth-reveal:hover {
-  background: var(--sand);
+  background: var(--color-button-secondary);
 }
 
 .auth-error {
   padding: var(--space-10) var(--space-12);
-  color: var(--error-text);
+  color: var(--color-danger-text);
   font-size: 14px;
   font-weight: 600;
   line-height: 1.4;
-  background: var(--error-bg);
-  border: 1px solid var(--error-border);
+  background: var(--color-danger-subtle);
+  border: 1px solid var(--color-danger-border);
   border-radius: var(--radius-sm);
 }
 
@@ -129,20 +129,19 @@
 }
 
 .auth-submit-spinner .spinner-ring {
-  border-color: rgba(255, 250, 241, 0.28);
-  border-top-color: var(--gold-light);
+  border-color: var(--color-accent-on-dark) var(--color-spinner-track-on-dark) var(--color-spinner-track-on-dark);
 }
 
 .auth-help,
 .auth-message {
-  color: var(--muted);
+  color: var(--color-muted);
   font-size: 14px;
   line-height: 1.5;
   text-align: center;
 }
 
 .auth-message {
-  color: var(--ink);
+  color: var(--color-default);
   font-size: 16px;
   text-align: left;
 }

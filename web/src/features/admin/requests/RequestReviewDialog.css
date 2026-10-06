@@ -4,9 +4,9 @@
   display: grid;
   gap: var(--space-4);
   padding: var(--space-16);
-  color: var(--chip-pending-text);
+  color: var(--color-emphasis);
   font-size: 15px;
-  background: var(--chip-pending);
+  background: var(--color-chip-pending);
   border-radius: var(--radius-sm);
 }
 
@@ -34,12 +34,12 @@
   align-items: center;
   gap: var(--space-6) var(--space-8);
   margin-top: var(--space-12);
-  color: var(--slate-600);
+  color: var(--color-secondary);
   font-size: 14px;
 }
 
 .request-review-missing {
-  color: var(--muted);
+  color: var(--color-muted);
   font-size: 14px;
   font-style: italic;
 }

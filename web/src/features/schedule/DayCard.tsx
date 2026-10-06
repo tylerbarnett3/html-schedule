@@ -3,7 +3,7 @@ import { formatDayLabel, formatShortDate } from "../../lib/dates";
 import { BUSY_PENDING_COLOR, type DayCard as CalendarCard } from "../../lib/calendar";
 import { cardAction } from "../../lib/scheduleEditing";
 import { CALENDAR_DRAG_TYPES } from "../admin/dragTypes";
-import { employeeColor, shiftCardColors } from "./employeeColor";
+import { employeeCardPaint } from "./employeeColor";
 import "./DayCard.css";
 
 /** Cards that carry a Cancel Request button when they belong to the signed-in employee. */
@@ -43,9 +43,10 @@ export function DayCard({ card, onCancel, cancelling = false, onOpen, draggable 
   let style: CSSProperties | undefined;
   switch (card.kind) {
     case "shift": {
-      const { background, darkText } = shiftCardColors(employeeColor(card.employee.color));
-      variant = darkText ? "day-card-shift day-card-shift-light" : "day-card-shift";
-      style = { background };
+      // The employee's color as custom properties; DayCard.css draws the card from them.
+      const paint = employeeCardPaint(card.employee.color);
+      variant = paint.className;
+      style = paint.style;
       break;
     }
     case "reviewed":

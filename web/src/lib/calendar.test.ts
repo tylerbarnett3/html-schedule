@@ -16,6 +16,7 @@ import type { ShiftReview } from "./reviewedShifts";
 import type { Availability, Employee, Shift, TimeOff } from "./types";
 
 const D = "2026-10-05";
+// The pending chips' markers (PENDING_COLOR, BUSY_PENDING_COLOR), named after the old colors.
 const YELLOW = "#FDB913";
 const PURPLE = "#9333EA";
 

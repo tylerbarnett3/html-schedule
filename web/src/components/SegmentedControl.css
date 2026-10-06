@@ -1,5 +1,5 @@
 /* Segmented choice from the old Add Shift dialog (admin design spec §4.4, §9): equal
-   segments on a sand track; the chosen one is a raised paper chip. */
+   segments on a secondary-button track; the chosen one is a raised paper chip. */
 .segmented-field {
   display: flex;
   flex-direction: column;
@@ -13,8 +13,8 @@
   grid-auto-flow: column;
   gap: var(--space-6);
   padding: 5px;
-  background: var(--sand);
-  border: 1px solid var(--segmented-track-border);
+  background: var(--color-button-secondary);
+  border: 1px solid color-mix(in srgb, var(--color-foreground) 12%, transparent);
   border-radius: var(--radius-md);
 }
 
@@ -22,7 +22,7 @@
   min-width: 0;
   min-height: 44px;
   padding: var(--space-10) var(--space-8);
-  color: var(--clay-800);
+  color: var(--color-secondary);
   font-size: 13px;
   font-weight: 800;
   line-height: 1.2;
@@ -37,13 +37,13 @@
 
 /* Hover lightens only the unchosen segments (the old hover also faded the chosen one). */
 .segmented-option[aria-checked="false"]:hover:not(:disabled) {
-  background: rgba(255, 252, 246, 0.7);
+  background: color-mix(in srgb, var(--color-surface) 70%, transparent);
 }
 
 .segmented-option[aria-checked="true"] {
-  color: var(--clay-950);
-  background: var(--surface-96);
-  box-shadow: var(--segmented-active-shadow);
+  color: var(--color-emphasis);
+  background: var(--color-overlay);
+  box-shadow: var(--shadow-segment-active);
 }
 
 .segmented-option:focus-visible {

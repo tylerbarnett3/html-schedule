@@ -6,6 +6,6 @@
 }
 
 .toolbar-btn.toolbar-tools-busy:hover {
-  background: var(--cream);
+  background: var(--color-toolbar-button-filled);
   transform: none;
 }

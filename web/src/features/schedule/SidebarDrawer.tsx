@@ -19,7 +19,7 @@ export interface SidebarDrawerProps {
   children: ReactNode;
 }
 
-/** A sidebar section with a clay header button that opens and closes the panel below it. */
+/** A sidebar section with a moss header button that opens and closes the panel below it. */
 export function SidebarDrawer({ title, icon, badge, label, open, onOpenChange, toggleId, children }: SidebarDrawerProps) {
   const drawerId = useId();
 

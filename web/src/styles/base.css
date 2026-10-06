@@ -20,11 +20,8 @@ body {
   min-height: 100dvh;
   padding: var(--space-26);
   font-family: var(--font-sans);
-  color: var(--ink);
-  background:
-    radial-gradient(circle at top left, rgba(216, 169, 79, 0.26), transparent 34rem),
-    radial-gradient(circle at 92% 18%, rgba(132, 111, 82, 0.24), transparent 28rem),
-    linear-gradient(135deg, #fff9ed 0%, #f4eadb 42%, #eadfce 100%);
+  color: var(--color-default);
+  background: var(--gradient-page);
   -webkit-font-smoothing: antialiased;
 }
 
@@ -35,10 +32,9 @@ body::before {
   inset: 0;
   z-index: -1;
   pointer-events: none;
-  background-image:
-    linear-gradient(rgba(255, 255, 255, 0.32) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(255, 255, 255, 0.24) 1px, transparent 1px);
+  background-image: var(--gradient-page-grid);
   background-size: 38px 38px;
+  /* A mask reads only alpha, so this black isn't a theme color. */
   -webkit-mask-image: linear-gradient(to bottom, rgba(0, 0, 0, 0.55), transparent 70%);
   mask-image: linear-gradient(to bottom, rgba(0, 0, 0, 0.55), transparent 70%);
 }
@@ -74,7 +70,7 @@ ol {
 }
 
 :focus-visible {
-  outline: 3px solid var(--focus-ring);
+  outline: 3px solid var(--color-focus);
   outline-offset: 2px;
 }
 
@@ -96,10 +92,10 @@ ol {
   position: relative;
   max-width: 1400px;
   margin: 0 auto;
-  background: var(--paper);
-  border: 1px solid var(--border-white-72);
+  background: var(--color-frame);
+  border: 1px solid color-mix(in srgb, var(--color-surface) 72%, transparent);
   border-radius: var(--radius-xl);
-  box-shadow: var(--shadow-soft);
+  box-shadow: var(--shadow-frame);
   overflow: hidden;
   overflow: clip;
   -webkit-backdrop-filter: blur(16px);

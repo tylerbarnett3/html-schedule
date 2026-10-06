@@ -7,7 +7,7 @@
   gap: var(--space-4);
   margin-bottom: var(--space-12);
   padding: var(--space-4);
-  background: var(--sand);
+  background: var(--color-button-secondary);
   border-radius: var(--radius-pill);
 }
 
@@ -16,7 +16,7 @@
   min-width: 0;
   min-height: 36px;
   padding: var(--space-8) var(--space-12);
-  color: var(--clay-800);
+  color: var(--color-secondary);
   font-size: 13px;
   font-weight: 600;
   white-space: nowrap;
@@ -27,12 +27,12 @@
 }
 
 .requests-tab:hover {
-  background: rgba(255, 252, 246, 0.6);
+  background: color-mix(in srgb, var(--color-surface) 60%, transparent);
 }
 
 .requests-tab[aria-selected="true"] {
-  color: var(--cream);
-  background: var(--gradient-clay);
+  color: var(--color-inverse);
+  background: var(--gradient-primary);
 }
 
 /* A nested scroller, as on the old page. The padding keeps card shadows and focus rings
@@ -51,7 +51,7 @@
 .requests-empty,
 .requests-status {
   padding: 30px var(--space-20);
-  color: var(--muted);
+  color: var(--color-muted);
   font-size: 13px;
   font-style: italic;
   text-align: center;
@@ -67,7 +67,7 @@
 }
 
 .requests-status-error {
-  color: var(--error-text);
+  color: var(--color-danger-text);
   font-weight: 600;
 }
 
@@ -75,19 +75,19 @@
   padding: var(--space-12);
   border-left: 4px solid;
   border-radius: var(--radius-md);
-  box-shadow: var(--shadow-item);
+  box-shadow: var(--shadow-row);
 }
 
 .request-card-time-off {
-  color: var(--request-timeoff-text);
-  background: #fff4f1;
-  border-left-color: var(--red);
+  color: var(--color-request-time-off-text);
+  background: var(--color-request-time-off);
+  border-left-color: var(--color-danger);
 }
 
 .request-card-availability {
-  color: var(--request-availability-text);
-  background: #ecfbf8;
-  border-left-color: #319795;
+  color: var(--color-availability-text);
+  background: var(--color-availability-light);
+  border-left-color: var(--color-availability);
 }
 
 /* Name above the request date: side by side, the old 198px row wrapped every name. */
@@ -134,13 +134,13 @@
 }
 
 .request-card-time-off .request-pill {
-  color: var(--pill-timeoff-text);
-  background: var(--pill-timeoff-bg);
+  color: var(--color-danger-text);
+  background: var(--color-request-pill-time-off);
 }
 
 .request-card-availability .request-pill {
-  color: var(--pill-availability-text);
-  background: var(--pill-availability-bg);
+  color: var(--color-availability-text);
+  background: var(--color-request-pill-availability);
 }
 
 .request-group-days {
@@ -164,10 +164,10 @@
   display: inline-flex;
   align-items: center;
   padding: 2px var(--space-8);
-  color: var(--clay-900);
+  color: var(--color-emphasis);
   font-size: 11px;
   font-weight: 700;
-  background: rgba(76, 55, 37, 0.1);
+  background: var(--color-pill);
   border-radius: var(--radius-pill);
 }
 
@@ -176,10 +176,10 @@
   vertical-align: 1px;
 }
 
-/* The closed-day banner's green, darkened for small text. */
+/* The closed-day banner's color, darkened for small text. */
 .request-flag-closed {
-  color: #2f4a2c;
-  background: rgba(94, 127, 90, 0.2);
+  color: var(--color-request-flag-closed-text);
+  background: var(--color-request-flag-closed);
 }
 
 .request-card-approved {
@@ -207,9 +207,9 @@
 }
 
 .request-card .request-action-remove {
-  color: var(--remove-text);
-  background: rgba(255, 252, 246, 0.7);
-  border-color: rgba(143, 48, 43, 0.3);
+  color: var(--color-danger-text);
+  background: color-mix(in srgb, var(--color-surface) 70%, transparent);
+  border-color: color-mix(in srgb, var(--color-danger-text) 30%, transparent);
 }
 
 /* Busy: aria-disabled keeps focus on the button, so dim it by hand. */
@@ -238,7 +238,7 @@
   }
 }
 
-/* Forced colors (Windows High Contrast) drop the clay fill of the selected tab. */
+/* Forced colors (Windows High Contrast) drop the primary fill of the selected tab. */
 @media (forced-colors: active) {
   .requests-tab[aria-selected="true"] {
     color: HighlightText;

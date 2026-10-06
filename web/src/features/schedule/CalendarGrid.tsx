@@ -213,7 +213,7 @@ function DayHeading({ day, mobile }: { day: CalendarDay; mobile: boolean }) {
           <span className="visually-hidden">{fullLabel}</span>
         </>
       )}
-      {/* The narrow desktop cells mark today with the gold date pill alone. */}
+      {/* The narrow desktop cells mark today with the sage date pill alone. */}
       {day.isToday ? (
         <span className={mobile ? "calendar-today-tag" : "visually-hidden"}>
           <span className="visually-hidden">, </span>Today

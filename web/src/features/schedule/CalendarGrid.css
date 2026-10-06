@@ -14,14 +14,14 @@
 .calendar-weekday {
   padding: var(--space-10);
   overflow: hidden;
-  color: var(--clay-800);
+  color: var(--color-secondary);
   font-size: 11px;
   font-weight: 700;
   letter-spacing: 0.12em;
   text-align: center;
   text-transform: uppercase;
-  background: var(--pill-bg);
-  border: 1px solid var(--line);
+  background: var(--color-pill);
+  border: 1px solid var(--color-border);
   border-radius: var(--radius-md);
 }
 
@@ -31,18 +31,18 @@
   min-width: 0;
   min-height: 178px;
   overflow: hidden;
-  background: var(--surface-86);
-  border: 1px solid rgba(255, 255, 255, 0.74);
+  background: var(--color-surface-panel);
+  border: 1px solid var(--color-border);
   border-radius: var(--radius-lg);
-  box-shadow: var(--shadow-card);
+  box-shadow: var(--shadow-panel);
 }
 
-/* Today: a gold ring around the day plus a small tag in its header. */
+/* Today: a sage ring around the day plus a small tag in its header. */
 .calendar-day-today {
-  border-color: var(--gold);
+  border-color: var(--color-accent);
   box-shadow:
-    0 0 0 2px rgba(216, 169, 79, 0.5),
-    var(--shadow-card);
+    0 0 0 2px color-mix(in srgb, var(--color-accent) 50%, transparent),
+    var(--shadow-panel);
 }
 
 .calendar-day-header {
@@ -52,13 +52,13 @@
   gap: var(--space-6);
   min-width: 0;
   padding: var(--space-8);
-  color: var(--clay-900);
+  color: var(--color-emphasis);
   font-size: 16px;
   font-weight: 800;
   line-height: 1.2;
   letter-spacing: -0.01em;
-  background: var(--gradient-date-header);
-  border-bottom: 1px solid var(--line);
+  background: var(--gradient-day-header);
+  border-bottom: 1px solid var(--color-border);
 }
 
 /* The day card clips overflow, so draw the focus ring inside the header. */
@@ -76,9 +76,9 @@
 .calendar-day-today .calendar-day-date {
   margin: -2px -4px;
   padding: 2px var(--space-6) 2px 5px;
-  background: rgba(216, 169, 79, 0.24);
+  background: var(--color-accent-subtle);
   border-radius: var(--radius-pill);
-  box-shadow: inset 0 0 0 1px rgba(216, 169, 79, 0.65);
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--color-accent) 65%, transparent);
 }
 
 /* A day whose hours differ from the standard: the hours follow the date, and wrap under it
@@ -93,7 +93,7 @@
 }
 
 .calendar-day-hours {
-  color: var(--clay-800);
+  color: var(--color-secondary);
   font-size: 12px;
   font-weight: 700;
   letter-spacing: 0;
@@ -140,13 +140,13 @@
 .calendar-today-tag {
   flex: 0 0 auto;
   padding: 2px 7px;
-  color: var(--clay-900);
+  color: var(--color-emphasis);
   font-size: 10px;
   font-weight: 700;
   letter-spacing: 0.08em;
   text-transform: uppercase;
-  background: rgba(216, 169, 79, 0.26);
-  border: 1px solid rgba(216, 169, 79, 0.62);
+  background: var(--color-accent-subtle);
+  border: 1px solid var(--color-accent-border);
   border-radius: var(--radius-pill);
 }
 
@@ -174,9 +174,9 @@
 /* Admin page: a card is being dragged over this day. An outline (not a border) so nothing
    moves (admin design spec §7). */
 .calendar-day-body.is-drop-target {
-  background: var(--drop-target-bg);
+  background: var(--color-drop-target);
   border-radius: var(--radius-md);
-  outline: 2px dashed var(--drop-target-border);
+  outline: 2px dashed var(--color-drop-target-border);
   outline-offset: -4px;
 }
 
@@ -189,7 +189,7 @@
 
 .calendar-skeleton span {
   height: 44px;
-  background: var(--pill-bg);
+  background: var(--color-pill);
   border-radius: var(--radius-md);
   animation: calendar-skeleton-pulse 1.2s ease-in-out infinite alternate;
 }
@@ -210,7 +210,7 @@
   }
 }
 
-/* Closed day: C L O S E D stacked on a sage block; it replaces every card. */
+/* Closed day: C L O S E D stacked on a closed-day block; it replaces every card. */
 .calendar-closed {
   display: flex;
   flex: 1;
@@ -218,13 +218,13 @@
   justify-content: center;
   min-height: 160px;
   padding: var(--space-18) var(--space-10);
-  color: var(--white);
+  color: var(--color-chip-text);
   font-size: 20px;
   font-weight: 800;
   line-height: 1.45;
   letter-spacing: 0.12em;
   text-align: center;
-  background: var(--closed-day);
+  background: var(--gradient-closed-day);
   border-radius: var(--radius-sm);
 }
 
@@ -309,7 +309,7 @@
 
   .calendar-empty {
     padding: var(--space-10) 2px;
-    color: var(--muted);
+    color: var(--color-muted);
     font-size: 13px;
     font-style: italic;
   }

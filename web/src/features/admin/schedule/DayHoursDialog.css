@@ -2,7 +2,7 @@
    Modal makes it a full-height sheet on phones. */
 .day-hours-date {
   margin-bottom: var(--space-18);
-  color: var(--clay-800);
+  color: var(--color-secondary);
   font-size: 15px;
   font-weight: 700;
   line-height: 1.4;
@@ -38,7 +38,7 @@
 }
 
 .day-hours-error {
-  color: var(--error-text);
+  color: var(--color-danger-text);
   font-size: 14px;
   font-weight: 600;
 }
@@ -48,8 +48,7 @@
 }
 
 .day-hours-spinner .spinner-ring {
-  border-color: rgba(255, 250, 241, 0.28);
-  border-top-color: var(--gold-light);
+  border-color: var(--color-accent-on-dark) var(--color-spinner-track-on-dark) var(--color-spinner-track-on-dark);
 }
 
 /* Save waits for the hours to load; Save and Retry wait for their own work. */

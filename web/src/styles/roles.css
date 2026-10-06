@@ -1,0 +1,460 @@
+/*
+ * Color roles: the jobs the palette does, after Nebula's pattern. The theme file in themes/ sets
+ * the palette (the 16 ANSI slots, --terminal-background and --terminal-foreground, and the levels
+ * --terminal-surface and --terminal-ink); this file turns it into every color the app paints and
+ * reads nothing else. Component CSS uses these roles (--color-*, --gradient-*, --shadow-*;
+ * --employee-* through employeeColor.ts) and never the palette itself. The one exception is
+ * --image-select-chevron, which the theme sets directly: a data URL can't read variables.
+ * colors.test.ts checks all of that, and that every role is used.
+ *
+ * Earth is light, so it keeps a light gray in --color-black and a darker one in --color-white.
+ * Roles soften by mixing toward linen or the paper and deepen toward umber or the ink, never
+ * toward black or white, so every shade stays in the palette's warm family.
+ *
+ * Mixes between two colors use oklab, not Nebula's oklch: oklch interpolates hue, so light tints
+ * take the paper's warm hue (the reviewed chip's sage came out khaki, the plum pill border tan).
+ * Translucent shades are color-mix(in srgb, X N%, transparent), which matches rgba() exactly.
+ *
+ * Roles marked (base) are opaque, so a component may wrap one as
+ * color-mix(in srgb, var(--role) N%, transparent) for a shade of its own.
+ */
+:root {
+  /* Layout: a linen page, paper cards and a faint sage wash for depth */
+  --color-background: var(--terminal-background); /* (base) the page; also solid light fills */
+  /* (base) body text, and the dark end of the neutral mixes and hairlines */
+  --color-foreground: var(--terminal-foreground);
+  /* (base) paper: cards, panels, inputs, dialogs, light edges and rings */
+  --color-surface: var(--terminal-surface);
+  /* (base) Tinted boxes (hints, the foot of the sidebar, day headers, and Payroll's stat boxes,
+     read-only inputs and rows): a breath of sage takes the warmth out of linen, so they read
+     cool rather than as a warm gray. */
+  --color-elevated: color-mix(in oklab, var(--color-blue) 7%, var(--color-background));
+  /* the far end of the page wash: linen with a little more sage */
+  --color-backdrop: color-mix(in oklab, var(--color-blue) 12%, var(--color-background));
+  --color-frame: color-mix(in srgb, var(--color-surface) 93%, transparent); /* the app frame card */
+  --color-wash: color-mix(in srgb, var(--color-background) 34%, transparent); /* behind page content */
+  /* rows, toggles, list cards */
+  --color-surface-card: color-mix(in srgb, var(--color-surface) 82%, transparent);
+  /* day columns, payroll panels */
+  --color-surface-panel: color-mix(in srgb, var(--color-surface) 86%, transparent);
+  --color-surface-tint: color-mix(in srgb, var(--color-elevated) 68%, transparent); /* hint and note boxes */
+  /* Dialogs, toasts and raised controls stay on paper: crisper, and the page keeps one paper
+     color. */
+  --color-overlay: color-mix(in srgb, var(--color-surface) 96%, transparent);
+  /* Weekday pills, skeleton bars, the login badge and request flags: a whisper of moss, the
+     header band's color. */
+  --color-pill: color-mix(in srgb, var(--color-green) 8%, transparent);
+
+  /* Text: umber, then stone pulled toward umber until each step keeps 4.5:1 on the sage tints
+     too (stone itself is 4.6:1 on linen but only 4.0:1 on the backdrop) */
+  --color-default: var(--color-foreground); /* body text */
+  /* (base) headings, titles, strong labels, and the text on light chips */
+  --color-emphasis: var(--color-foreground);
+  /* (base) labels, dialog copy */
+  --color-secondary: color-mix(in oklab, var(--color-white) 34%, var(--color-foreground));
+  /* captions, small notes */
+  --color-tertiary: color-mix(in oklab, var(--color-white) 46%, var(--color-foreground));
+  /* hints, empty states */
+  --color-muted: color-mix(in oklab, var(--color-white) 64%, var(--color-foreground));
+  --color-disabled: var(--color-muted); /* text in disabled controls and past dates */
+  --color-inverse: var(--color-background); /* (base) text and marks on dark fills */
+  /* secondary text on dark fills (drawer chevron, tab progress) */
+  --color-inverse-muted: color-mix(in srgb, var(--color-inverse) 85%, transparent);
+
+  /* Interactive: moss acts, sage informs */
+  /* (base) Moss deepened toward the ink, so light text keeps 4.5:1 even where a control lays 20%
+     linen over it (the remove buttons on picked-date chips) and on the 11px day-tab progress. */
+  --color-primary: color-mix(in oklab, var(--color-green) 68%, var(--terminal-ink));
+  /* (base) Sage: today, spinners, the "new" panels, input focus glows. */
+  --color-accent: var(--color-blue);
+  /* Focus rings on the header and toolbar bands (the page's --color-focus is too dark there),
+     spinner arcs on moss fills: sage lifted toward the paper to keep 3:1. */
+  --color-accent-on-dark: color-mix(in oklab, var(--color-accent) 40%, var(--terminal-surface));
+  /* (base) a deeper sage for payroll borders and the new-item panels */
+  --color-accent-strong: color-mix(in oklab, var(--color-accent) 70%, var(--color-foreground));
+  --color-accent-subtle: color-mix(in srgb, var(--color-accent) 25%, transparent); /* today tints */
+  --color-accent-border: color-mix(in srgb, var(--color-accent) 62%, transparent); /* today tag, pick hover */
+  /* (base) Stone for handles and dots: medium contrast, as it is meant. */
+  --color-neutral: var(--color-white);
+  /* Focus rings: between sage and moss, still reading as sage, and 3:1 on every light tint here. */
+  --color-focus: color-mix(in oklab, var(--color-blue) 45%, var(--color-green));
+
+  /* Hover and selection */
+  /* Hovered or picked cards and rows: a visible, slightly cool step from the paper. */
+  --color-hover: color-mix(in oklab, var(--color-blue) 8%, var(--color-surface));
+  --color-hover-tint: color-mix(in srgb, var(--color-green) 8%, transparent); /* ghost controls */
+  /* date cells, chips */
+  --color-hover-accent: color-mix(in oklab, var(--color-accent) 12%, var(--color-background));
+  /* hovered remove (x) button on the dark picked-date chips; it must keep the --color-inverse x readable */
+  --color-chip-remove-hover: color-mix(in srgb, var(--color-inverse) 20%, transparent);
+  /* Payroll's chosen outcome: a moss selection, not a gray one. */
+  --color-selected: color-mix(in oklab, var(--color-green) 9%, var(--color-background));
+  --color-selected-border: color-mix(in oklab, var(--color-green) 50%, var(--color-background));
+  --color-selected-hover: color-mix(in oklab, var(--color-green) 14%, var(--color-background));
+  --color-selected-hover-border: color-mix(in oklab, var(--color-green) 60%, var(--color-background));
+  /* the chosen destructive outcome (Vacated), in brick */
+  --color-selected-danger: color-mix(in oklab, var(--color-danger) 12%, var(--color-background));
+  --color-selected-danger-border: color-mix(in oklab, var(--color-danger) 40%, var(--color-background));
+
+  /* States: brick errors, moss success, ochre warnings, sage information */
+  /* (base) Brick a little deeper: the error toast's "!" is light text on it and needs 4.5:1. */
+  --color-danger: color-mix(in oklab, var(--color-red) 84%, var(--terminal-ink));
+  /* (base) Error messages, Remove and Vacated, the TIME OFF pill. Error and success words deepen
+     toward the ink rather than umber: the darker end reaches 4.5:1 with less of it, so they stay
+     brick and moss instead of turning brown. */
+  --color-danger-text: color-mix(in oklab, var(--color-red) 62%, var(--terminal-ink));
+  --color-danger-subtle: color-mix(in srgb, var(--color-danger) 10%, transparent); /* error box and banner fill */
+  /* error box border, invalid control border */
+  --color-danger-border: color-mix(in srgb, var(--color-danger) 28%, transparent);
+  --color-success: var(--color-green); /* (base) success toasts, the reviewed shift's check */
+  --color-success-text: color-mix(in oklab, var(--color-green) 85%, var(--terminal-ink)); /* status text */
+  --color-warning: var(--color-yellow); /* (base) pending time off and availability */
+  --color-info: var(--color-blue); /* (base) reviewed shifts, drop targets */
+  /* Sage toward moss: the info toast's "i" is light text on it and needs 4.5:1 too. */
+  --color-toast-info: color-mix(in oklab, var(--color-blue) 30%, var(--color-green));
+
+  /* Borders: crisp hairlines in the palette's highlights */
+  --color-border: var(--color-bright-white); /* hairline borders and dividers; day columns, nav bar */
+  /* border of hovered cards and rows */
+  --color-border-hover: color-mix(in srgb, var(--color-blue) 60%, transparent);
+  /* (base) moss: hovered rows and choice cards, the chosen day tab, the empty payroll box */
+  --color-border-strong: var(--color-green);
+  --color-overlay-border: var(--color-bright-black); /* dialogs, toasts, sign-in card */
+
+  /* Inputs */
+  /* also small controls, open drawer */
+  --color-input: color-mix(in srgb, var(--color-surface) 92%, transparent);
+  --color-input-placeholder: var(--color-muted); /* placeholder text */
+  /* Focused form controls. Payroll's inputs drop the outline, so there it is the only focus mark. */
+  --color-input-focus: var(--color-focus);
+
+  /* Buttons */
+  /* Secondary buttons and tracks: paper with a little moss, quiet next to the moss primary. */
+  --color-button-secondary: color-mix(in oklab, var(--color-green) 9%, var(--terminal-surface));
+  /* hovered secondary button and circles */
+  --color-button-secondary-hover: color-mix(in oklab, var(--color-green) 15%, var(--terminal-surface));
+  /* (base) danger button, start of its gradient and its shadow: brick deepened toward the ink */
+  --color-button-danger: color-mix(in oklab, var(--color-danger) 84%, var(--terminal-ink));
+  /* (base) Approve and Save in deep sage, apart from the moss primary. */
+  --color-button-success: color-mix(in oklab, var(--color-blue) 62%, var(--terminal-ink));
+  /* (base) The ochre call to action, lifted only as far as its umber label needs. */
+  --color-button-accent: color-mix(in oklab, var(--color-yellow) 78%, var(--terminal-surface));
+  /* hovered accent call-to-action button */
+  --color-button-accent-hover: color-mix(in oklab, var(--color-yellow) 66%, var(--terminal-surface));
+  --color-button-accent-text: var(--color-emphasis); /* label on the accent call-to-action button */
+
+  /* Header band: deep moss, light paper text, plum pills */
+  /* (base) The band: moss deepened toward the ink at the top left, easing lighter toward its
+     end. Payroll's review cards wear it too. */
+  --color-header: color-mix(in oklab, var(--color-green) 62%, var(--terminal-ink));
+  --color-header-end: color-mix(in oklab, var(--color-green) 82%, var(--terminal-ink));
+  --color-header-text: var(--terminal-surface); /* (base) text and icons on the header band */
+  /* user name and notes on the header band */
+  --color-header-text-muted: color-mix(in srgb, var(--color-header-text) 88%, transparent);
+  /* Pill buttons (Admin, Employee view, Sign out, backup): plum, as a glassy tint on the moss. */
+  --color-header-pill: color-mix(in srgb, var(--color-magenta) 32%, transparent);
+  --color-header-pill-hover: color-mix(in srgb, var(--color-magenta) 46%, transparent);
+  --color-header-pill-border: color-mix(in oklab, var(--color-magenta) 75%, var(--terminal-surface));
+  --color-header-pill-border-hover: color-mix(in oklab, var(--color-magenta) 45%, var(--terminal-surface));
+
+  /* Admin toolbar: the band's deep end, edged in sage */
+  --color-toolbar: color-mix(in srgb, var(--color-header) 97%, transparent);
+  --color-toolbar-border: color-mix(in srgb, var(--color-blue) 45%, transparent); /* top and bottom edges */
+  /* ghost toolbar button fill */
+  --color-toolbar-button: color-mix(in srgb, var(--color-header-text) 12%, transparent);
+  /* hovered ghost toolbar button */
+  --color-toolbar-button-hover: color-mix(in srgb, var(--color-header-text) 18%, transparent);
+  /* ghost toolbar button border */
+  --color-toolbar-button-border: color-mix(in srgb, var(--color-header-text) 26%, transparent);
+  --color-toolbar-button-filled: var(--terminal-surface); /* (base) the light filled button */
+  /* hover fill of the light filled toolbar button */
+  --color-toolbar-button-filled-hover: color-mix(in oklab, var(--color-blue) 18%, var(--terminal-surface));
+
+  /* Drawers */
+  /* Count pill on the moss drawer headers: translucent ink, dark enough for --color-inverse text. */
+  --color-badge-on-primary: color-mix(in srgb, var(--terminal-ink) 35%, transparent);
+
+  /* Calendar */
+  /* day body while a card is dragged over it */
+  --color-drop-target: color-mix(in srgb, var(--color-info) 12%, transparent);
+  /* dashed outline of the drop target */
+  --color-drop-target-border: color-mix(in srgb, var(--color-focus) 85%, transparent);
+  --color-add-day: color-mix(in srgb, var(--color-background) 72%, transparent); /* "+ Add" and pick cards */
+  /* (base) Closed days: stone deepened, a neutral, so it reads as neither success nor primary. */
+  --color-closed-day: color-mix(in oklab, var(--color-neutral) 70%, var(--color-foreground));
+
+  /* New-item panels */
+  /* (base) "New hours", new rate and add-work panels */
+  --color-add-panel: color-mix(in oklab, var(--color-accent) 6%, var(--color-background));
+  --color-add-panel-border: color-mix(in srgb, var(--color-accent-strong) 42%, transparent); /* "new" panel border */
+
+  /* Calendar chips: pale tints with dark text, one palette color each */
+  /* Names on solid shift cards and dark chips: the palette's lightest color. employeeColor.ts
+     decides custom colors' card text against LIGHT_CARD_TEXT, a limit this stays at least as
+     light as (colors.test.ts checks it). */
+  --color-chip-text: var(--terminal-surface);
+  /* A dark hairline, so the pale chips keep a crisp edge on the paper columns. */
+  --color-chip-border: color-mix(in srgb, var(--color-foreground) 12%, transparent);
+  /* Approved time off: brick (the person is away) as a soft diagonal hatch, so it never reads as a
+     shift, with deep brick text on both stripes. */
+  --color-chip-day-off: color-mix(in oklab, var(--color-danger) 16%, var(--terminal-surface));
+  --color-chip-day-off-text: color-mix(in oklab, var(--color-danger) 55%, var(--terminal-ink));
+  /* Pending time off (and its panel in the review dialog): ochre, the warning color, as a warm
+     tint with umber text. */
+  --color-chip-pending: color-mix(in oklab, var(--color-warning) 34%, var(--terminal-surface));
+  /* Pending time off on a crowded day takes the light chip text, so it needs a dark fill: the ink
+     itself, darker than every employee color, so it is the one chip that shouts. */
+  --color-chip-pending-crowded: var(--terminal-ink);
+  /* Reviewed in Payroll: a light sage tint, with a moss check (--color-success). */
+  --color-chip-reviewed: color-mix(in oklab, var(--color-info) 22%, var(--terminal-surface));
+  /* (base) Availability: plum, its own hue, apart from information (reviewed shifts, drop
+     targets) and danger (time off). */
+  --color-availability: var(--color-magenta);
+  /* opaque availability tint: available chips and availability request cards */
+  --color-availability-light: color-mix(in oklab, var(--color-availability) 16%, var(--color-background));
+  /* text on availability chips, request cards and AVAILABILITY pills */
+  --color-availability-text: color-mix(in oklab, var(--color-availability) 32%, var(--color-foreground));
+  /* availability chip border */
+  --color-chip-available-border: color-mix(in srgb, var(--color-availability) 34%, transparent);
+  /* Pending availability: outlined rather than filled (paper with a breath of ochre, an ochre
+     edge), so it reads as "not yet" next to the filled pending time off. Its text is ochre
+     deepened toward the ink, a warm brown. */
+  --color-chip-available-pending: color-mix(in oklab, var(--color-warning) 7%, var(--terminal-surface));
+  --color-chip-available-pending-text: color-mix(in oklab, var(--color-warning) 34%, var(--terminal-ink));
+  --color-chip-available-pending-border: color-mix(in srgb, var(--color-warning) 80%, transparent);
+
+  /* Shift cards: a shift in its employee's color, which the card gets as --employee:
+     --employee-<name> below for one of the 16, or a custom color as picked. DayCard.css draws it
+     (the color picker's preview card too): solid in the color itself, flat, with light text
+     (--color-chip-text) and a border of its own color taken deeper toward --color-card-ink. */
+  /* A short, close shadow: the card sits on the column rather than floating over it. */
+  --shadow-shift-card:
+    0 1px 2px color-mix(in srgb, var(--color-shadow-soft) 22%, transparent),
+    0 4px 10px color-mix(in srgb, var(--color-shadow-soft) 10%, transparent);
+  /* The ink: what shift cards' borders deepen toward, and the dark text on a light custom
+     color's solid card. employeeColor.ts decides that text against CARD_INK, a limit this stays
+     at least as dark as (colors.test.ts checks it). */
+  --color-card-ink: var(--terminal-ink);
+
+  /* Employee colors: the 16 of employeePalette.ts, in its order, on shift cards, dots and the
+     color picker's swatches. An employee's record stores the entry's original hex, which
+     employeeColor.ts turns into var(--employee-<name>). The earth accents at the depths that keep
+     light names readable (4.5:1) and every color apart from the others, the first 12 (new
+     employees get them first) the most. */
+  --employee-terracotta: color-mix(in oklab, var(--color-cyan) 65%, var(--terminal-ink));
+  --employee-sage: color-mix(in oklab, var(--color-blue) 70%, var(--terminal-ink));
+  --employee-moss: color-mix(in oklab, var(--color-green) 75%, var(--terminal-ink));
+  --employee-mustard: color-mix(in oklab, var(--color-yellow) 65%, var(--terminal-ink));
+  --employee-brick: var(--color-red);
+  --employee-mauve: color-mix(in oklab, var(--color-magenta) 95%, var(--terminal-ink));
+  --employee-fern: var(--color-green);
+  --employee-mahogany: color-mix(in oklab, var(--color-red) 45%, var(--terminal-ink));
+  --employee-mulberry: color-mix(in oklab, var(--color-magenta) 70%, var(--terminal-ink));
+  --employee-juniper: color-mix(in oklab, var(--color-green) 40%, var(--terminal-ink));
+  --employee-stone: color-mix(in oklab, var(--color-white) 95%, var(--terminal-ink));
+  --employee-spruce: color-mix(in oklab, var(--color-blue) 45%, var(--terminal-ink));
+  /* The last four add what the single accents leave out: ochre with brick, moss with ochre, and
+     the deepest plum. */
+  --employee-cinnamon: color-mix(
+    in oklab,
+    color-mix(in oklab, var(--color-yellow) 50%, var(--color-red)) 50%,
+    var(--terminal-ink)
+  );
+  --employee-lichen: color-mix(
+    in oklab,
+    color-mix(in oklab, var(--color-green) 50%, var(--color-yellow)) 65%,
+    var(--terminal-ink)
+  );
+  --employee-aubergine: color-mix(in oklab, var(--color-magenta) 35%, var(--terminal-ink));
+  --employee-bark: color-mix(
+    in oklab,
+    color-mix(in oklab, var(--color-green) 50%, var(--color-yellow)) 44%,
+    var(--terminal-ink)
+  );
+
+  /* Requests */
+  /* time-off request card fill */
+  --color-request-time-off: color-mix(in oklab, var(--color-danger) 6%, var(--color-background));
+  /* time-off request card text */
+  --color-request-time-off-text: color-mix(in oklab, var(--color-danger) 45%, var(--color-foreground));
+  --color-request-pill-time-off: color-mix(in srgb, var(--color-danger) 14%, transparent); /* TIME OFF pill fill */
+  /* AVAILABILITY pill fill */
+  --color-request-pill-availability: color-mix(in srgb, var(--color-availability) 16%, transparent);
+  /* CLOSED flag pill fill */
+  --color-request-flag-closed: color-mix(in srgb, var(--color-closed-day) 20%, transparent);
+  /* CLOSED flag pill text */
+  --color-request-flag-closed-text: color-mix(in oklab, var(--color-closed-day) 40%, var(--color-foreground));
+
+  /* Date picker */
+  --color-datepicker-closed: color-mix(in srgb, var(--color-closed-day) 21%, transparent); /* closed date cell fill */
+  /* selectable closed date text */
+  --color-datepicker-closed-text: color-mix(in oklab, var(--color-closed-day) 50%, var(--color-foreground));
+  /* disabled closed date text */
+  --color-datepicker-closed-text-disabled:
+    color-mix(in oklab, var(--color-closed-day) 70%, var(--color-foreground));
+
+  /* Payroll: review cards wear the band's moss (--color-header) with light text */
+  /* scheduled time and hours difference on the card header */
+  --color-payroll-card-header-muted: color-mix(in oklab, var(--color-inverse) 85%, var(--color-header));
+  /* review card footer band */
+  --color-payroll-card-footer: color-mix(in oklab, var(--color-green) 6%, var(--color-background));
+  /* A not-worked card swaps the moss for deep brick, the error states' red. */
+  --color-payroll-not-worked-header: color-mix(in oklab, var(--color-danger) 45%, var(--terminal-ink));
+  /* Status words on the dark card headers: sage confirmed, ochre changed, brick not worked. */
+  --color-payroll-status-confirmed: color-mix(in oklab, var(--color-blue) 40%, var(--color-inverse));
+  --color-payroll-status-adjusted: color-mix(in oklab, var(--color-yellow) 50%, var(--color-inverse));
+  --color-payroll-status-not-worked: color-mix(in oklab, var(--color-danger) 22%, var(--color-inverse));
+  /* hover border of payroll arrows, mini and footer buttons */
+  --color-payroll-hover-border: color-mix(in srgb, var(--color-accent-strong) 66%, transparent);
+
+  /* Overlays and spinners */
+  /* Dialog backdrop: the band's deep moss, so the page dims toward the header's color. */
+  --color-scrim: color-mix(in srgb, var(--color-header) 40%, transparent);
+  /* spinner track inside dark buttons (the backup spinner on the header uses its own, from
+     --color-header-text) */
+  --color-spinner-track-on-dark: color-mix(in srgb, var(--color-inverse) 28%, transparent);
+
+  /* Shadow colors: tinted with moss */
+  /* (base) The paper's shadows (frame, panels, rows, the bands, the call-to-action buttons):
+     moss-tinted umber. */
+  --color-shadow: color-mix(in oklab, var(--color-green) 30%, var(--color-foreground));
+  /* (base) The floating things (chips, dialogs, toasts) and swatch rings cast a lighter moss-stone
+     shadow, so a toast passing over a label doesn't drown it. */
+  --color-shadow-soft: color-mix(in oklab, var(--color-green) 35%, var(--color-white));
+
+  /* Shadows: short and close, for a crisp page */
+  /* lifts the app frame off the page */
+  --shadow-frame: 0 16px 44px color-mix(in srgb, var(--color-shadow) 12%, transparent);
+  /* cards and panels (toggles, sign-in card, day columns, nav bar, drawers, save bar) */
+  --shadow-panel:
+    0 1px 2px color-mix(in srgb, var(--color-shadow) 8%, transparent),
+    0 8px 20px color-mix(in srgb, var(--color-shadow) 7%, transparent);
+  --shadow-row: 0 8px 18px color-mix(in srgb, var(--color-shadow) 6%, transparent); /* list rows and choice cards */
+  --shadow-control: 0 8px 16px color-mix(in srgb, var(--color-shadow) 8%, transparent); /* hovered or picked */
+  /* the chosen segment chip */
+  --shadow-segment-active: 0 8px 18px color-mix(in srgb, var(--color-shadow) 12%, transparent);
+  /* primary buttons and arrow circles */
+  --shadow-button-primary: 0 12px 24px color-mix(in srgb, var(--color-primary) 20%, transparent);
+  /* accent call-to-action button */
+  --shadow-button-accent: 0 14px 28px color-mix(in srgb, var(--color-shadow) 22%, transparent);
+  /* hovered accent call-to-action button */
+  --shadow-button-accent-hover: 0 18px 34px color-mix(in srgb, var(--color-shadow) 26%, transparent);
+  /* danger button */
+  --shadow-button-danger: 0 12px 24px color-mix(in srgb, var(--color-button-danger) 22%, transparent);
+  /* success button */
+  --shadow-button-success: 0 12px 24px color-mix(in srgb, var(--color-button-success) 22%, transparent);
+  --shadow-selected: 0 6px 14px color-mix(in srgb, var(--color-primary) 22%, transparent); /* selected date cell */
+  /* The calendar chips other than shifts (--shadow-shift-card): the same short shadow, a touch lighter. */
+  --shadow-day-card:
+    0 1px 2px color-mix(in srgb, var(--color-shadow-soft) 16%, transparent),
+    0 4px 10px color-mix(in srgb, var(--color-shadow-soft) 7%, transparent);
+  --shadow-dialog: 0 30px 80px color-mix(in srgb, var(--color-shadow-soft) 26%, transparent); /* dialog cards */
+  /* toasts; it falls on whatever is under the toast */
+  --shadow-toast: 0 18px 44px color-mix(in srgb, var(--color-shadow-soft) 22%, transparent);
+  /* hairline ring inside employee color dots */
+  --shadow-swatch: inset 0 0 0 1px color-mix(in srgb, var(--color-shadow-soft) 18%, transparent);
+  /* light top edge inside inputs */
+  --shadow-input-inset: inset 0 1px 0 color-mix(in srgb, var(--color-surface) 78%, transparent);
+  /* glow around a focused input */
+  --shadow-focus: 0 0 0 4px color-mix(in srgb, var(--color-accent) 24%, transparent);
+  /* glow around a focused payroll input */
+  --shadow-payroll-focus: 0 0 0 3px color-mix(in srgb, var(--color-accent) 30%, transparent);
+
+  /* Gradients */
+  /* The page: a sage glow at the top left and a faint moss one at the right, over the cool wash. */
+  --gradient-page:
+    radial-gradient(
+      circle at top left,
+      color-mix(in srgb, var(--color-blue) 20%, transparent),
+      transparent 34rem
+    ),
+    radial-gradient(
+      circle at 92% 18%,
+      color-mix(in srgb, var(--color-green) 10%, transparent),
+      transparent 28rem
+    ),
+    linear-gradient(
+      135deg,
+      var(--color-background) 0%,
+      color-mix(in oklab, var(--color-backdrop) 60%, var(--color-background)) 42%,
+      var(--color-backdrop) 100%
+    );
+  /* faint paper grid over the backdrop */
+  --gradient-page-grid:
+    linear-gradient(color-mix(in srgb, var(--color-surface) 32%, transparent) 1px, transparent 1px),
+    linear-gradient(90deg, color-mix(in srgb, var(--color-surface) 24%, transparent) 1px, transparent 1px);
+  /* Ends on --color-primary, its lightest stop, so --color-inverse text holds across it. */
+  --gradient-primary: linear-gradient(
+    135deg,
+    color-mix(in oklab, var(--color-primary) 80%, var(--color-foreground)),
+    var(--color-primary)
+  );
+  /* hovered primary fills */
+  --gradient-primary-hover: linear-gradient(
+    135deg,
+    color-mix(in oklab, var(--color-primary) 65%, var(--color-foreground)),
+    color-mix(in oklab, var(--color-primary) 85%, var(--color-foreground))
+  );
+  /* The ochre call to action, darkest stop first, so the umber label holds across it. */
+  --gradient-accent: linear-gradient(
+    135deg,
+    var(--color-button-accent),
+    color-mix(in oklab, var(--color-yellow) 62%, var(--terminal-surface))
+  );
+  /* danger button, conflicting date chip */
+  --gradient-button-danger: linear-gradient(
+    135deg,
+    var(--color-button-danger),
+    color-mix(in oklab, var(--color-button-danger) 85%, var(--color-danger))
+  );
+  /* approve and save buttons */
+  --gradient-button-success: linear-gradient(
+    135deg,
+    var(--color-button-success),
+    color-mix(in oklab, var(--color-button-success) 85%, var(--color-success))
+  );
+  /* The header band: opaque moss with a faint sage light at the top left (on top, so it shows). */
+  --gradient-header-band:
+    radial-gradient(
+      circle at 22% 20%,
+      color-mix(in srgb, var(--color-blue) 16%, transparent),
+      transparent 22rem
+    ),
+    linear-gradient(135deg, var(--color-header), var(--color-header-end));
+  /* soft sage glow at the foot of the header band */
+  --gradient-header-band-glow: radial-gradient(
+    ellipse at center,
+    color-mix(in srgb, var(--color-blue) 24%, transparent),
+    transparent 68%
+  );
+  /* sidebar background */
+  --gradient-sidebar-panel: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--color-background) 78%, transparent),
+    color-mix(in srgb, var(--color-elevated) 86%, transparent)
+  );
+  /* calendar day column header */
+  --gradient-day-header: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--color-background) 98%, transparent),
+    color-mix(in srgb, var(--color-elevated) 68%, transparent)
+  );
+  /* diagonal paper sheen over the pale chips (shift cards are flat) */
+  --gradient-chip-sheen: linear-gradient(
+    135deg,
+    color-mix(in srgb, var(--color-surface) 20%, transparent),
+    transparent 42%
+  );
+  /* approved time off: the brick hatch */
+  --gradient-chip-day-off: repeating-linear-gradient(
+    135deg,
+    var(--color-chip-day-off) 0 7px,
+    color-mix(in oklab, var(--color-danger) 23%, var(--terminal-surface)) 7px 14px
+  );
+  /* Light end first; both ends stay dark enough for --color-chip-text CLOSED letters (3:1, large). */
+  --gradient-closed-day: linear-gradient(
+    135deg,
+    color-mix(in oklab, var(--color-closed-day) 85%, var(--color-background)) 0%,
+    var(--color-closed-day) 100%
+  );
+}

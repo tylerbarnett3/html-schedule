@@ -177,13 +177,13 @@ export function SchedulePage() {
   if (employee && !employee.archived) {
     actions = (
       <div className="schedule-actions">
-        <Button variant="gold" onClick={() => setDialog("time-off")}>
+        <Button variant="accent" onClick={() => setDialog("time-off")}>
           Request Time Off
         </Button>
-        <Button variant="gold" onClick={() => setDialog("availability")}>
+        <Button variant="accent" onClick={() => setDialog("availability")}>
           Add Availability
         </Button>
-        <Button variant="gold" onClick={() => setLogHoursOpen(true)}>
+        <Button variant="accent" onClick={() => setLogHoursOpen(true)}>
           Log My Hours
         </Button>
       </div>

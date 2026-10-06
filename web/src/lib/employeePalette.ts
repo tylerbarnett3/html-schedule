@@ -8,28 +8,28 @@ export interface PaletteColor {
 }
 
 /**
- * Every color keeps 4.5:1 contrast with white, so shift cards show it unchanged. Each has
- * at least 5:1 on its own, because the cards' white sheen (--chip-sheen) lightens the
- * background behind the name a little. That is why Green and Orange are a shade darker
- * than the U3 table's #2F855A and #C05621, which fell to about 4.2:1 under the sheen.
+ * The 16 employee colors, in the order new employees get them. The hex is what an employee's
+ * record stores: the original palette's color, kept as the entry's identity so stored colors
+ * still match. The color shown comes from the theme instead: roles.css defines each one as
+ * --employee-<name in lowercase> (employeeColor.ts), which shift cards, dots and swatches use.
  */
 export const EMPLOYEE_PALETTE: readonly PaletteColor[] = [
-  { name: "Clay", hex: "#7F6C50" },
-  { name: "Blue", hex: "#2B6CB0" },
-  { name: "Green", hex: "#147C44" },
-  { name: "Orange", hex: "#B84A1E" },
-  { name: "Pink", hex: "#B83280" },
-  { name: "Teal", hex: "#0F766E" },
-  { name: "Slate", hex: "#4A5568" },
-  { name: "Brown", hex: "#744210" },
-  { name: "Purple", hex: "#553C9A" },
-  { name: "Ochre", hex: "#975A16" },
-  { name: "Navy", hex: "#2C5282" },
-  { name: "Olive", hex: "#5A6B2E" },
-  { name: "Plum", hex: "#702459" },
-  { name: "Cyan", hex: "#086F83" },
-  { name: "Indigo", hex: "#4338CA" },
-  { name: "Forest", hex: "#22543D" },
+  { name: "Terracotta", hex: "#7F6C50" },
+  { name: "Sage", hex: "#2B6CB0" },
+  { name: "Moss", hex: "#147C44" },
+  { name: "Mustard", hex: "#B84A1E" },
+  { name: "Brick", hex: "#B83280" },
+  { name: "Mauve", hex: "#0F766E" },
+  { name: "Fern", hex: "#4A5568" },
+  { name: "Mahogany", hex: "#744210" },
+  { name: "Mulberry", hex: "#553C9A" },
+  { name: "Juniper", hex: "#975A16" },
+  { name: "Stone", hex: "#2C5282" },
+  { name: "Spruce", hex: "#5A6B2E" },
+  { name: "Cinnamon", hex: "#702459" },
+  { name: "Lichen", hex: "#086F83" },
+  { name: "Aubergine", hex: "#4338CA" },
+  { name: "Bark", hex: "#22543D" },
 ];
 
 /** The palette position of a stored color (any letter case), or -1. */
@@ -38,7 +38,7 @@ export function paletteIndex(color: string): number {
   return EMPLOYEE_PALETTE.findIndex((entry) => entry.hex === wanted);
 }
 
-/** "Blue" for "#2b6cb0"; null for colors outside the palette. */
+/** "Sage" for "#2b6cb0"; null for colors outside the palette. */
 export function paletteColorName(color: string): string | null {
   const index = paletteIndex(color);
   return index === -1 ? null : EMPLOYEE_PALETTE[index].name;

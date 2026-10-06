@@ -7,7 +7,7 @@
   align-items: center;
   justify-content: center;
   padding: var(--space-16);
-  background: var(--overlay-modal);
+  background: var(--color-scrim);
   -webkit-backdrop-filter: blur(6px);
   backdrop-filter: blur(6px);
   animation: modal-fade 0.18s ease-out;
@@ -18,10 +18,10 @@
   flex-direction: column;
   width: 100%;
   max-height: calc(100dvh - 48px);
-  background: var(--surface-96);
-  border: 1px solid var(--border-white-82);
+  background: var(--color-overlay);
+  border: 1px solid var(--color-overlay-border);
   border-radius: var(--radius-modal);
-  box-shadow: var(--shadow-modal);
+  box-shadow: var(--shadow-dialog);
   outline: none;
   animation: modal-rise 0.2s ease-out;
 }
@@ -48,7 +48,7 @@
 .modal-title {
   flex: 1;
   min-width: 0;
-  color: var(--clay-900);
+  color: var(--color-emphasis);
   font-size: 24px;
   font-weight: 700;
   line-height: 1.2;
@@ -63,15 +63,15 @@
   width: 40px;
   height: 40px;
   margin: -6px -8px 0 0;
-  color: var(--clay-900);
-  background: var(--sand);
+  color: var(--color-emphasis);
+  background: var(--color-button-secondary);
   border: none;
   border-radius: var(--radius-pill);
   transition: var(--transition-lift);
 }
 
 .modal-close:hover {
-  background: var(--sand-hover);
+  background: var(--color-button-secondary-hover);
 }
 
 /* A little vertical padding keeps focus rings from being clipped by the scroll box. */
@@ -140,7 +140,7 @@
     flex-direction: column;
     gap: var(--space-8);
     padding: var(--space-14) var(--space-18) max(var(--space-18), env(safe-area-inset-bottom));
-    border-top: 1px solid var(--line);
+    border-top: 1px solid var(--color-border);
   }
 
   .modal-footer > * {

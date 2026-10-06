@@ -1,6 +1,6 @@
 /* "Save Current Hours": two answers as large buttons, each with a line saying what it does. */
 .apply-hours-message {
-  color: var(--clay-800);
+  color: var(--color-secondary);
   font-size: 14px;
   line-height: 1.5;
 }
@@ -17,24 +17,24 @@
   width: 100%;
   min-height: 44px;
   padding: var(--space-12) var(--space-14);
-  color: var(--clay-900);
+  color: var(--color-emphasis);
   font: inherit;
   text-align: left;
-  background: var(--surface-82);
-  border: 1px solid var(--line);
+  background: var(--color-surface-card);
+  border: 1px solid var(--color-border);
   border-radius: var(--radius-md);
-  box-shadow: var(--shadow-item);
+  box-shadow: var(--shadow-row);
   cursor: pointer;
   transition: var(--transition-lift);
 }
 
 .apply-hours-choice:hover {
-  border-color: var(--clay-700);
+  border-color: var(--color-border-strong);
   transform: var(--lift);
 }
 
 .apply-hours-choice:focus-visible {
-  outline: 3px solid var(--focus-ring);
+  outline: 3px solid var(--color-focus);
   outline-offset: 2px;
 }
 
@@ -44,7 +44,7 @@
 }
 
 .apply-hours-choice-text {
-  color: var(--muted);
+  color: var(--color-muted);
   font-size: 13px;
   line-height: 1.4;
 }

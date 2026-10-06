@@ -409,7 +409,7 @@ export function PayrollPage() {
 
   return (
     <main className="admin-area payroll" aria-labelledby={`${id}-title`}>
-      {/* "Back to schedule" is the toolbar's gold button on this page. */}
+      {/* "Back to schedule" is the toolbar's ochre button on this page. */}
       <div className="payroll-heading">
         <h2 id={`${id}-title`} className="payroll-title">
           Payroll

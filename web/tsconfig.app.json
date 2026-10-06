@@ -23,5 +23,7 @@
     "erasableSyntaxOnly": true,
     "noFallthroughCasesInSwitch": true
   },
-  "include": ["src"]
+  "include": ["src"],
+  /* Reads the stylesheets with node:fs, so tsconfig.node.json checks it. */
+  "exclude": ["src/styles/colors.test.ts"]
 }

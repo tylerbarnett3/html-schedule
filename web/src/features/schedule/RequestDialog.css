@@ -6,13 +6,13 @@
 }
 
 .request-dialog-requester {
-  color: var(--muted);
+  color: var(--color-muted);
   font-size: 14px;
   line-height: 1.4;
 }
 
 .request-dialog-requester strong {
-  color: var(--clay-900);
+  color: var(--color-emphasis);
   font-weight: 700;
 }
 
@@ -23,7 +23,7 @@
 }
 
 .request-dialog-label {
-  color: var(--clay-800);
+  color: var(--color-secondary);
   font-size: 16px;
   font-weight: 800;
   letter-spacing: -0.01em;
@@ -34,17 +34,17 @@
   width: 100%;
   min-height: 44px;
   padding: var(--space-10) 40px var(--space-10) var(--space-12);
-  color: var(--ink);
+  color: var(--color-default);
   font-size: 16px;
   line-height: 1.2;
-  background-color: var(--surface-92);
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23352619' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
+  background-color: var(--color-input);
+  background-image: var(--image-select-chevron);
   background-position: right 12px center;
   background-repeat: no-repeat;
   background-size: 18px;
-  border: 1px solid var(--line);
+  border: 1px solid var(--color-border);
   border-radius: var(--radius-sm);
-  box-shadow: var(--shadow-inset);
+  box-shadow: var(--shadow-input-inset);
   appearance: none;
   transition:
     border-color 0.18s ease,
@@ -53,8 +53,8 @@
 
 .request-dialog-select:focus-visible {
   outline: none;
-  border-color: var(--focus-ring);
-  box-shadow: var(--focus-glow);
+  border-color: var(--color-input-focus);
+  box-shadow: var(--shadow-focus);
 }
 
 .request-dialog-loading,
@@ -70,7 +70,7 @@
 }
 
 .request-dialog-load-error p {
-  color: var(--error-text);
+  color: var(--color-danger-text);
   font-size: 14px;
   font-weight: 600;
   line-height: 1.4;
@@ -82,18 +82,18 @@
   gap: var(--space-10);
   min-height: 60px;
   padding: 15px;
-  background: var(--surface-82);
-  border: 1px solid var(--line);
+  background: var(--color-surface-card);
+  border: 1px solid var(--color-border);
   border-radius: var(--radius-md);
 }
 
 .request-dialog-selected:focus-visible {
-  outline: 3px solid var(--focus-ring);
+  outline: 3px solid var(--color-focus);
   outline-offset: 2px;
 }
 
 .request-dialog-empty {
-  color: var(--slate-500);
+  color: var(--color-muted);
   font-size: 13px;
 }
 
@@ -109,17 +109,17 @@
   gap: var(--space-4);
   min-height: 32px;
   padding: var(--space-4) var(--space-4) var(--space-4) var(--space-12);
-  color: var(--cream);
+  color: var(--color-inverse);
   font-size: 13px;
   font-weight: 600;
   white-space: nowrap;
-  background: var(--gradient-clay);
+  background: var(--gradient-primary);
   border-radius: var(--radius-pill);
 }
 
 /* A selected date that now clashes (e.g. after a refresh) stands out until removed. */
 .request-dialog-chip.is-conflict {
-  background: var(--gradient-danger);
+  background: var(--gradient-button-danger);
 }
 
 .request-dialog-chip-remove {
@@ -130,7 +130,7 @@
   width: 26px;
   height: 26px;
   padding: 0;
-  color: var(--white);
+  color: var(--color-inverse);
   font-size: 18px;
   font-weight: 600;
   line-height: 1;
@@ -141,13 +141,13 @@
 }
 
 .request-dialog-chip-remove:hover {
-  background: rgba(255, 250, 241, 0.2);
+  background: var(--color-chip-remove-hover);
 }
 
 .request-dialog-chip-remove:focus-visible {
-  outline: 2px solid var(--cream);
+  outline: 2px solid var(--color-inverse);
   outline-offset: 0;
-  box-shadow: 0 0 0 4px var(--focus-ring);
+  box-shadow: 0 0 0 4px var(--color-focus);
 }
 
 .request-dialog-note,
@@ -161,16 +161,16 @@
 
 .request-dialog-note,
 .request-dialog-notice-info {
-  color: var(--clay-900);
-  background: rgba(216, 169, 79, 0.14);
-  border: 1px solid rgba(216, 169, 79, 0.42);
+  color: var(--color-emphasis);
+  background: color-mix(in srgb, var(--color-accent) 14%, transparent);
+  border: 1px solid color-mix(in srgb, var(--color-accent) 42%, transparent);
 }
 
 .request-dialog-notice-error {
-  color: var(--error-text);
+  color: var(--color-danger-text);
   font-weight: 600;
-  background: var(--error-bg);
-  border: 1px solid var(--error-border);
+  background: var(--color-danger-subtle);
+  border: 1px solid var(--color-danger-border);
 }
 
 /* Always rendered (live regions); with no messages it only adds the form's bottom gap. */
@@ -179,8 +179,7 @@
 }
 
 .request-dialog-spinner .spinner-ring {
-  border-color: rgba(255, 250, 241, 0.28);
-  border-top-color: var(--gold-light);
+  border-color: var(--color-accent-on-dark) var(--color-spinner-track-on-dark) var(--color-spinner-track-on-dark);
 }
 
 .request-dialog .btn[aria-disabled="true"] {

@@ -62,7 +62,7 @@ function DownloadPdfButton() {
 
   return (
     <ToolbarButton
-      variant="cream"
+      variant="light"
       className={busy ? "toolbar-tools-busy" : undefined}
       disabled={!employeesLoaded}
       aria-disabled={busy || undefined}

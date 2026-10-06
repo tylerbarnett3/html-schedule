@@ -11,7 +11,7 @@
 }
 
 .employee-dialog-rates-title {
-  color: var(--clay-900);
+  color: var(--color-emphasis);
   font-size: 16px;
   font-weight: 700;
 }
@@ -33,12 +33,12 @@
 }
 
 .employee-dialog-error:focus-visible {
-  outline: 3px solid var(--focus-ring);
+  outline: 3px solid var(--color-focus);
   outline-offset: 2px;
 }
 
 .employee-dialog-message {
-  color: var(--ink);
+  color: var(--color-default);
   font-size: 15px;
   line-height: 1.5;
 }

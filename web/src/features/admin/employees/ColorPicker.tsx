@@ -1,7 +1,9 @@
 import { useId, useState } from "react";
 import { EMPLOYEE_PALETTE, paletteIndex } from "../../../lib/employeePalette";
-import { employeeColor, shiftCardColors } from "../../schedule/employeeColor";
+import { employeeCardPaint, employeeColor, employeeFill } from "../../schedule/employeeColor";
 import "../../../components/Field.css";
+// The preview card is drawn by the shift card's own rules (.day-card-shift and friends).
+import "../../schedule/DayCard.css";
 import "./ColorPicker.css";
 
 export interface ColorPickerProps {
@@ -22,8 +24,8 @@ function toColorInputValue(color: string): string {
 
 /**
  * The employee color (D6): the palette as named swatches (native radios, so the arrow
- * keys move between them), a Custom color, and a shift card showing how the calendar
- * will draw it.
+ * keys move between them) in the colors the theme shows, a Custom color, and a shift card
+ * showing how the calendar will draw it.
  */
 export function ColorPicker({ value, onChange, previewName, disabled = false }: ColorPickerProps) {
   const id = useId();
@@ -32,8 +34,7 @@ export function ColorPicker({ value, onChange, previewName, disabled = false }: 
   const [customChosen, setCustomChosen] = useState(index === -1);
   const [custom, setCustom] = useState(() => toColorInputValue(value));
   const isCustom = customChosen || index === -1;
-  const card = shiftCardColors(employeeColor(value));
-  const darkened = card.background.toLowerCase() !== toColorInputValue(value);
+  const card = employeeCardPaint(value);
 
   const chooseCustom = (color: string) => {
     setCustomChosen(true);
@@ -58,7 +59,7 @@ export function ColorPicker({ value, onChange, previewName, disabled = false }: 
                 onChange(color.hex);
               }}
             />
-            <span className="color-picker-chip" style={{ background: color.hex }} aria-hidden="true" />
+            <span className="color-picker-chip" style={{ background: employeeFill(color.hex) }} aria-hidden="true" />
             <span className="visually-hidden">{color.name}</span>
           </label>
         ))}
@@ -84,20 +85,23 @@ export function ColorPicker({ value, onChange, previewName, disabled = false }: 
         </span>
       </div>
       <div className="color-picker-preview">
-        <div
-          className={["color-picker-card", card.darkText ? "color-picker-card-dark" : ""].filter(Boolean).join(" ")}
-          style={{ background: card.background }}
-          aria-hidden="true"
-        >
+        <div className={`color-picker-card ${card.className}`} style={card.style} aria-hidden="true">
           <span className="color-picker-card-name">{previewName.trim() || "New employee"}</span>
           <span className="color-picker-card-label">9:00 AM - 5:00 PM</span>
         </div>
         <p className="field-hint color-picker-summary">
+          {/* A palette color shows its name only: its stored hex is an identity key, not the
+              color shown. */}
           <span>
-            {isCustom ? "Custom" : EMPLOYEE_PALETTE[index].name}{" "}
-            <span className="color-picker-hex">{toColorInputValue(value).toUpperCase()}</span>
+            {isCustom ? (
+              <>
+                Custom <span className="color-picker-hex">{toColorInputValue(value).toUpperCase()}</span>
+              </>
+            ) : (
+              EMPLOYEE_PALETTE[index].name
+            )}
           </span>
-          {darkened ? (
+          {card.darkened ? (
             <span className="color-picker-note">Shift cards use a darker shade so the text stays readable.</span>
           ) : null}
         </p>

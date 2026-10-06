@@ -1,5 +1,5 @@
 .confirm-message {
-  color: var(--slate-600);
+  color: var(--color-secondary);
   font-size: 16px;
   line-height: 1.5;
   white-space: pre-wrap;

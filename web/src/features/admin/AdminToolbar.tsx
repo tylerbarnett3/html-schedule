@@ -6,7 +6,7 @@ import "./AdminToolbar.css";
 
 /**
  * The dark band under the header on every admin page. On Payroll it drops Undo and Download
- * PDF (D14), and the gold Payroll button becomes "Back to schedule". Export Backup sits in the
+ * PDF (D14), and the ochre Payroll button becomes "Back to schedule". Export Backup sits in the
  * header's top left corner (ExportBackupButton), and an admin who is also an employee finds
  * "Employee view" in the header, where "Admin" is on their schedule.
  */
@@ -26,7 +26,7 @@ export function AdminToolbar() {
         <ToolbarTools />
         {onPayroll ? (
           // Payroll staff who aren't admins go back to their own schedule.
-          <Link to={isAdmin ? "/admin" : "/"} className="toolbar-btn toolbar-btn-gold">
+          <Link to={isAdmin ? "/admin" : "/"} className="toolbar-btn toolbar-btn-accent">
             <span className="toolbar-btn-icon" aria-hidden="true">
               <svg
                 viewBox="0 0 24 24"
@@ -44,7 +44,7 @@ export function AdminToolbar() {
             Back to schedule
           </Link>
         ) : (
-          <Link to="/admin/payroll" className="toolbar-btn toolbar-btn-gold" title="Review payroll">
+          <Link to="/admin/payroll" className="toolbar-btn toolbar-btn-accent" title="Review payroll">
             <span className="toolbar-btn-icon" aria-hidden="true">
               <svg
                 viewBox="0 0 24 24"
