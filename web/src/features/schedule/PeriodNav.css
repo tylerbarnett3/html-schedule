@@ -80,10 +80,15 @@
   font-weight: 700;
 }
 
+/* iOS Safari sizes a native date input to its own content and ignores width: 100% and
+   min-width: 0, so without appearance: none the fields overflow their columns on phones. */
 .period-nav-input {
+  display: block;
   width: 100%;
   min-width: 0;
   min-height: 48px;
+  -webkit-appearance: none;
+  appearance: none;
   padding: var(--space-10) var(--space-12);
   color: var(--color-default);
   font-size: 16px;
