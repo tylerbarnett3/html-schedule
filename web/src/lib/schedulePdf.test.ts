@@ -38,7 +38,7 @@ function employee(id: string, name: string, display_order: number, archived = fa
 }
 
 const times = (start_time: string, end_time: string) => ({ start_time, end_time });
-const off = (period: DayPeriod, status: RequestStatus = "approved") => ({ period, status });
+const off = (period: DayPeriod) => ({ period });
 
 const hours = (open: string, close: string): Hours => ({ open, close });
 
@@ -242,15 +242,12 @@ describe("pdfCellText", () => {
 describe("pdfTimeOffText and mixed cells", () => {
   it("keeps the part of the day (D3)", () => {
     expect(pdfTimeOffText(off("full-day"))).toBe("OFF");
-    expect(pdfTimeOffText(off("full-day", "pending"))).toBe("PENDING");
     expect(pdfTimeOffText(off("morning"))).toBe("MORNING OFF");
     expect(pdfTimeOffText(off("evening"))).toBe("EVENING OFF");
-    expect(pdfTimeOffText(off("morning", "pending"))).toBe("PENDING - MORNING");
-    expect(pdfTimeOffText(off("evening", "pending"))).toBe("PENDING - EVENING");
   });
 
   it("treats an unknown period as a full day", () => {
-    expect(pdfTimeOffText({ period: "lunch" as DayPeriod, status: "approved" })).toBe("OFF");
+    expect(pdfTimeOffText({ period: "lunch" as DayPeriod })).toBe("OFF");
   });
 
   it("lists shifts before time off", () => {
@@ -263,9 +260,9 @@ describe("pdfTimeOffText and mixed cells", () => {
     expect(pdfCellText({ closed: false, shifts: [], timeOff: [off("evening"), off("morning")] })).toBe(
       "MORNING OFF, EVENING OFF",
     );
-    expect(
-      pdfCellText({ closed: false, shifts: [], timeOff: [off("evening", "pending"), off("full-day")] }),
-    ).toBe("OFF, PENDING - EVENING");
+    expect(pdfCellText({ closed: false, shifts: [], timeOff: [off("evening"), off("full-day")] })).toBe(
+      "OFF, EVENING OFF",
+    );
   });
 
   it("doesn't reorder the caller's arrays", () => {
@@ -322,9 +319,23 @@ describe("buildSchedulePdfTables", () => {
     expect(tables[0]?.body.map((row) => row[0])).toEqual(["Avery Lane", "Casey Nguyen"]);
   });
 
-  it("counts time off, pending included, as something to print for an archived employee", () => {
-    const tables = buildSchedulePdfTables(input({ timeOff: [timeOff("t1", "b", "2026-10-07", "morning", "pending")] }));
-    expect(tables[1]?.body.find((row) => row[0] === "Blake Archived")?.[2]).toBe("PENDING - MORNING");
+  it("counts approved time off as something to print for an archived employee", () => {
+    const tables = buildSchedulePdfTables(input({ timeOff: [timeOff("t1", "b", "2026-10-07", "morning", "approved")] }));
+    expect(tables[1]?.body.find((row) => row[0] === "Blake Archived")?.[2]).toBe("MORNING OFF");
+  });
+
+  it("leaves out pending requests, so they don't give an archived employee a row either", () => {
+    const tables = buildSchedulePdfTables(
+      input({
+        timeOff: [
+          timeOff("t1", "a", "2026-10-07", "full-day", "pending"),
+          timeOff("t2", "b", "2026-10-08", "evening", "pending"),
+        ],
+      }),
+    );
+    expect(tables.flatMap((table) => table.body.flat()).join(" ")).not.toContain("PENDING");
+    expect(tables[1]?.body.find((row) => row[0] === "Avery Lane")?.[2]).toBe("—");
+    expect(tables.flatMap((table) => table.body.map((row) => row[0]))).not.toContain("Blake Archived");
   });
 
   it("doesn't count rows on a closed date for an archived employee", () => {
@@ -401,7 +412,7 @@ describe("buildSchedulePdfTables", () => {
       ["Casey Nguyen", "OFF", "—", "—", "—", "—", "—", "—"],
     ]);
     expect(tables[1]?.body).toEqual([
-      ["Avery Lane", "—", "—", "—", "—", "—", "—", "PENDING - EVENING"],
+      ["Avery Lane", "—", "—", "—", "—", "—", "—", "—"],
       ["Casey Nguyen", "10:00 PM - 2:00 AM", "—", "—", "—", "—", "—", "—"],
     ]);
   });

@@ -137,24 +137,18 @@ export function pdfFirstStartY(keyLines: number): number {
   return keyLines <= 1 ? firstStartY : firstStartY + (keyLines - 1) * key.lineHeight;
 }
 
-const APPROVED_TEXT = { "full-day": "OFF", morning: "MORNING OFF", evening: "EVENING OFF" } as const;
-const PENDING_TEXT = {
-  "full-day": "PENDING",
-  morning: "PENDING - MORNING",
-  evening: "PENDING - EVENING",
-} as const;
+const TIME_OFF_TEXT = { "full-day": "OFF", morning: "MORNING OFF", evening: "EVENING OFF" } as const;
 
 /** Time off keeps its part of the day (the old PDF printed every approved day as "OFF"). */
-export function pdfTimeOffText(row: Pick<TimeOff, "period" | "status">): string {
-  const period = normalizePeriod(row.period);
-  return row.status === "pending" ? PENDING_TEXT[period] : APPROVED_TEXT[period];
+export function pdfTimeOffText(row: Pick<TimeOff, "period">): string {
+  return TIME_OFF_TEXT[normalizePeriod(row.period)];
 }
 
 /** Shifts by start then end time, then time off by part of the day, joined with ", ". */
 export function pdfCellText(cell: {
   closed: boolean;
   shifts: readonly Pick<Shift, "start_time" | "end_time">[];
-  timeOff: readonly Pick<TimeOff, "period" | "status">[];
+  timeOff: readonly Pick<TimeOff, "period">[];
 }): string {
   if (cell.closed) return PDF_CLOSED_CELL;
   const shifts = [...cell.shifts].sort(
@@ -196,10 +190,10 @@ function pushTo<T>(map: Map<string, T[]>, key: string, item: T): void {
 
 /**
  * One table per week. Rows follow the admin's employee filter in display order; an archived
- * employee only gets a row when something of theirs prints in the range (D3). Time off always
- * prints (whatever the Show Time Off toggle says) and availability never does. With hours, a
- * date whose hours differ from the standard (specialHoursOn; never a closed date) prints them
- * in its header.
+ * employee only gets a row when something of theirs prints in the range (D3). Approved time off
+ * always prints (whatever the Show Time Off toggle says); pending requests and availability never
+ * do, since the PDF is the schedule as decided. With hours, a date whose hours differ from the
+ * standard (specialHoursOn; never a closed date) prints them in its header.
  */
 export function buildSchedulePdfTables(input: SchedulePdfInput): SchedulePdfTable[] {
   const { range, closedDays, hours } = input;
@@ -208,7 +202,7 @@ export function buildSchedulePdfTables(input: SchedulePdfInput): SchedulePdfTabl
   const prints = (d: ISODate) => d >= range.start && d <= range.end && !closedDays.has(d);
 
   const shiftsByCell = new Map<string, Pick<Shift, "start_time" | "end_time">[]>();
-  const timeOffByCell = new Map<string, Pick<TimeOff, "period" | "status">[]>();
+  const timeOffByCell = new Map<string, Pick<TimeOff, "period">[]>();
   const withRows = new Set<string>();
   for (const shift of input.shifts) {
     if (!prints(shift.shift_date)) continue;
@@ -216,7 +210,7 @@ export function buildSchedulePdfTables(input: SchedulePdfInput): SchedulePdfTabl
     withRows.add(shift.employee_id);
   }
   for (const row of input.timeOff) {
-    if (!prints(row.off_date)) continue;
+    if (row.status !== "approved" || !prints(row.off_date)) continue;
     pushTo(timeOffByCell, cellKey(row.employee_id, row.off_date), row);
     withRows.add(row.employee_id);
   }
